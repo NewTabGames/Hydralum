@@ -67,16 +67,18 @@ public class MenuUI : MonoBehaviour
 
         if (Input.GetKeyDown(Utils.StringToKeycode(MalumMenu.menuKeybind.Value)))
         {
-            // Enable or disable GUI with DELETE key
-            isGUIActive = !isGUIActive;
-
-            if (isGUIActive)
+            bool hydraOpen = IsHydraOpen();
+            if (isGUIActive || hydraOpen)
             {
+                isGUIActive = false;
                 CloseHydraMenu();
+            }
+            else
+            {
+                isGUIActive = true;
 
                 if (MalumMenu.menuOpenOnMouse.Value)
                 {
-                    // Teleport the window to the mouse for immediate use
                     Vector2 mousePosition = Input.mousePosition;
                     _windowRect.position = new Vector2(mousePosition.x, Screen.height - mousePosition.y);
                 }
@@ -337,5 +339,29 @@ public class MenuUI : MonoBehaviour
             }
         }
         catch { }
+    }
+
+    public static bool IsHydraOpen()
+    {
+        try
+        {
+            System.Type hydraType = null;
+            foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+            {
+                hydraType = asm.GetType("HydraMenu.ui.MainUI");
+                if (hydraType != null) break;
+            }
+
+            if (hydraType != null)
+            {
+                var visField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (visField != null)
+                {
+                    return (bool)visField.GetValue(null);
+                }
+            }
+        }
+        catch { }
+        return false;
     }
 }
