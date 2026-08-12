@@ -18,10 +18,6 @@ public class ESPTab : ITab
 
         DrawCamera();
 
-        GUILayout.Space(15);
-
-        DrawVisual();
-
         GUILayout.EndVertical();
 
         GUILayout.BeginVertical();
@@ -63,17 +59,6 @@ public class ESPTab : ITab
         CheatToggles.spectate = GUILayout.Toggle(CheatToggles.spectate, " Spectate");
 
         CheatToggles.freecam = GUILayout.Toggle(CheatToggles.freecam, " Freecam");
-    }
-
-    private void DrawVisual()
-    {
-        GUILayout.Label("Visual", GUIStylePreset.TabSubtitle);
-
-        CheatToggles.showProtections = GUILayout.Toggle(CheatToggles.showProtections, " Show GA Protections");
-
-        CheatToggles.skipShhh = GUILayout.Toggle(CheatToggles.skipShhh, " Skip Shhh Animation");
-
-        CheatToggles.accurateDisconnects = GUILayout.Toggle(CheatToggles.accurateDisconnects, " Accurate Disconnects");
     }
 
     private void DrawTracers()

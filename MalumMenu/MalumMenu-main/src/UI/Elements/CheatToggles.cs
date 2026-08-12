@@ -54,10 +54,6 @@ public struct CheatToggles
     public static bool taskArrows;
     public static bool revealVotes;
     public static bool seeLobbyInfo;
-    // Visual (ported from Hydra)
-    public static bool skipShhh;
-    public static bool accurateDisconnects;
-    public static bool showProtections;
 
     // Camera
     public static bool spectate;

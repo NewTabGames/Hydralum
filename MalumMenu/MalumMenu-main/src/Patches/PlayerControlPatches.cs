@@ -97,7 +97,7 @@ public static class PlayerControl_TurnOnProtection
     // for the same effect without turning on full see-ghosts.
     public static void Prefix(ref bool visible)
     {
-		if (CheatToggles.seeGhosts || CheatToggles.showProtections)
+		if (CheatToggles.seeGhosts)
         {
             visible = true;
         }
