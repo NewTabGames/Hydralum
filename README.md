@@ -14,23 +14,8 @@
 
 ## Features
 
-- **Hydralum Integration**:
-  - Quick **`[ Switch ]`** header button to swap between MalumMenu and HydraMenu seamlessly.
-  - Hover-aware input protection: Mouse scrolling and clicking over menu windows stay inside the GUI and won't trigger in-game camera zoom or click in-game UI buttons.
-
-- **MalumMenu**:
-  - Themes & Gradients + live animated RGB rainbow mode.
-  - Menu scale and opacity sliders.
-  - Adjustable FPS Unlocker (30–240 FPS).
-  - Profile persistence (`MalumProfile.txt`) for scale, opacity, themes, keybinds, and toggles.
-  - Vent Network (Left/Right arrow keys cycle through map vents for all roles).
-  - Distance-override Disable Vents with **Exclude Yourself** support.
-  - Replay-style Console with 12-hour timestamps `[h:mm:ss tt]` and event logging.
-  - Continuous Disable Sabotage, Door controls, and gameplay cheats.
-
-- **HydraMenu**:
-  - BepInEx configuration system (`com.mrd.hydramenu.cfg`) saving UI scale, opacity, primary theme color, notifications toggle, and window screen position.
-  - Host controls, player utilities, teleporters, and notification system.
+- Includes **MalumMenu** and **HydraMenu** with custom features and enhancements.
+- Added a persistent configuration system for **HydraMenu** (`BepInEx/config/com.mrd.hydramenu.cfg`) that automatically saves and loads UI scale, primary theme color, notifications state, and window position.
 
 ---
 
