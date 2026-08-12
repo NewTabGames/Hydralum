@@ -1,4 +1,4 @@
-﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 using Hazel;
 using HydraMenu.features;
 using HydraMenu.network;
@@ -48,12 +48,6 @@ namespace HydraMenu.ui.sections
 
 					Utilities.KickPlayer(player, true);
 				}
-			}
-
-			if(GUILayout.Button("Copy Random Player"))
-			{
-				PlayerControl randomPl = Utilities.GetRandomPlayer();
-				Utilities.CopyPlayer(randomPl);
 			}
 
 			if(GUILayout.Button("Trigger All Spores"))
