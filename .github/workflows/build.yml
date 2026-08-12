@@ -22,7 +22,7 @@ jobs:
         dotnet-version: '6.0.x'
 
     - name: Build MalumMenu
-      run: dotnet build MalumMenu/MalumMenu-main/src/MalumMenu.csproj -c Release
+      run: dotnet build MalumMenuPlus/MalumMenu-main/src/MalumMenu.csproj -c Release
 
     - name: Build HydraMenu
       run: dotnet build Hydra-main/src/HydraMenu.csproj -c Release

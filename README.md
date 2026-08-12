@@ -54,7 +54,7 @@ Both projects are configured to automatically copy output binaries to the local 
 
 ```bash
 # Build MalumMenu
-cd MalumMenu/MalumMenu-main
+cd MalumMenuPlus/MalumMenu-main
 dotnet build src/MalumMenu.csproj -c Release
 
 # Build HydraMenu
