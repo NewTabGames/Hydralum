@@ -89,22 +89,10 @@ public class MenuUI : MonoBehaviour
             if (hue > 1f) hue -= 1f; // Loop hue back to 0 when it exceeds 1
         }
 
-        if (CheatToggles.stealthMode != MalumMenu.inStealthMode)
-        {
-            MalumMenu.inStealthMode = CheatToggles.stealthMode;
-
-            Scene scene = SceneManager.GetActiveScene();
-
-            if (scene.name == "MainMenu" || scene.name == "MatchMaking")
-            {
-                SceneManager.LoadScene(scene.name);
-            }
-        }
-
         if (CheatToggles.panicMode) Utils.Panic();
 
         var stamp = ModManager.Instance.ModStamp;
-        if (stamp) stamp.enabled = !(MalumMenu.inStealthMode || MalumMenu.isPanicked);
+        if (stamp) stamp.enabled = !MalumMenu.isPanicked;
 
         if (CheatToggles.openConfig)
         {

@@ -697,8 +697,11 @@ public static class Utils
         }
     }
 
+    public static void Eject() => Panic();
+
     public static void Panic()
     {
+        if (MalumMenu.isPanicked) return;
         MalumMenu.isPanicked = true;
 
         CheatToggles.DisableAll();
@@ -722,6 +725,29 @@ public static class Utils
         // UnityEngine.Object.Destroy(MalumMenu.rolesUI);
 
         UnityEngine.Object.Destroy(MalumMenu.keybindListener);
+
+        // Eject HydraMenu simultaneously if present
+        try
+        {
+            var hydraType = System.Type.GetType("HydraMenu.Hydra, HydraMenu");
+            if (hydraType == null)
+            {
+                foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    if (asm.GetName().Name == "HydraMenu")
+                    {
+                        hydraType = asm.GetType("HydraMenu.Hydra");
+                        break;
+                    }
+                }
+            }
+            if (hydraType != null)
+            {
+                var ejectMethod = hydraType.GetMethod("Eject", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                ejectMethod?.Invoke(null, null);
+            }
+        }
+        catch { }
 
         PanicCleaner.Create();
     }

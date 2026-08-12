@@ -111,9 +111,10 @@ public class ConfigTab : ITab
     {
         GUILayout.Label("Modes", GUIStylePreset.TabSubtitle);
 
-        CheatToggles.stealthMode = GUILayout.Toggle(CheatToggles.stealthMode, " Stealth Mode");
-
-        CheatToggles.panicMode = GUILayout.Toggle(CheatToggles.panicMode, " Panic Mode");
+        if (GUILayout.Button("Eject", GUIStylePreset.NormalButton, GUILayout.Width(200)))
+        {
+            Utils.Eject();
+        }
     }
 
     private void DrawThemes()

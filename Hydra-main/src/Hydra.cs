@@ -62,6 +62,29 @@ internal class Hydra : BasePlugin
 
 		ModManager.Instance.ModStamp.enabled = false;
 		ModManager.Instance.gameObject.SetActive(false);
+
+		// Eject MalumMenu simultaneously if present
+		try
+		{
+			var malumType = System.Type.GetType("MalumMenu.Utils, MalumMenu");
+			if (malumType == null)
+			{
+				foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+				{
+					if (asm.GetName().Name == "MalumMenu")
+					{
+						malumType = asm.GetType("MalumMenu.Utils");
+						break;
+					}
+				}
+			}
+			if (malumType != null)
+			{
+				var ejectMethod = malumType.GetMethod("Eject", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+				ejectMethod?.Invoke(null, null);
+			}
+		}
+		catch { }
 	}
 
 	[HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.Awake))]

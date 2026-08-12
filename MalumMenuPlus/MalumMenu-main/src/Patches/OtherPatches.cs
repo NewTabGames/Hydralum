@@ -83,57 +83,6 @@ public static class SystemInfo_deviceUniqueIdentifier_Getter
     }
 }
 
-[HarmonyPatch(typeof(VersionShower), nameof(VersionShower.Start))]
-public static class VersionShower_Start
-{
-    // Postfix patch of VersionShower.Start to show MalumMenu version
-    public static void Postfix(VersionShower __instance)
-    {
-        if (MalumMenu.inStealthMode || MalumMenu.isPanicked) return;
-
-        if (MalumMenu.supportedAU.Contains(Application.version)) // Checks if Among Us version is supported
-        {
-            __instance.text.text =  $"MalumMenu+ v{MalumMenu.malumVersion} (v{Application.version})"; // Supported
-        }
-        else
-        {
-            __instance.text.text =  $"MalumMenu+ v{MalumMenu.malumVersion} (<color=red>v{Application.version}</color>)"; // Unsupported
-        }
-    }
-}
-
-[HarmonyPatch(typeof(PingTracker), nameof(PingTracker.Update))]
-public static class PingTracker_Update
-{
-    // Postfix patch of PingTracker.Update to show MalumMenu authors and colored ping text
-    public static void Postfix(PingTracker __instance)
-    {
-        if (MalumMenu.inStealthMode)
-        {
-            __instance.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
-
-            return;
-        }
-
-        __instance.text.alignment = TMPro.TextAlignmentOptions.Center;
-
-        int ping = Utils.GetPing();
-        string pingText = Utils.GetColoredPingText($"PING: {ping} ms", ping);
-
-        if (AmongUsClient.Instance.IsGameStarted)
-        {
-            __instance.aspectPosition.DistanceFromEdge = new Vector3(-0.21f, 0.50f, 0f);
-
-            __instance.text.text = $"MalumMenu+ by scp222thj & Astral ~ {pingText}";
-
-            return;
-        }
-
-        __instance.text.text = $"MalumMenu+ by scp222thj & Astral\n{pingText}";
-
-    }
-}
-
 [HarmonyPatch(typeof(DisconnectPopup), nameof(DisconnectPopup.DoShow))]
 public static class DisconnectPopup_DoShow
 {

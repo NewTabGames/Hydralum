@@ -189,7 +189,6 @@ public struct CheatToggles
 
     // Modes
     public static bool rgbMode;
-    public static bool stealthMode;
     public static bool panicMode;
 
     // Config
