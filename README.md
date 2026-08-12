@@ -6,8 +6,8 @@
 
 ## Credits & License
 
-- **MalumMenu**: Developed by scp222thj & astra1dev (GPL-3.0).
-- **Hydra**: Developed by MrDiamond64 (GPL-3.0).
+- **[MalumMenu](https://github.com/scp222thj/MalumMenu)**: Developed by scp222thj & astra1dev (GPL-3.0).
+- **[Hydra](https://github.com/MrDiamond64/Hydra)**: Developed by MrDiamond64 (GPL-3.0).
 - **Hydralum**: Dual-menu integration & features by the project authors.
 
 ---
