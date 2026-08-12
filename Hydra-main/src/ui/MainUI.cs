@@ -62,18 +62,6 @@ namespace HydraMenu.ui
 
 		public void Update()
 		{
-			// Input::GetKeyDown(KeyCodes.Insert) returns true if you press the dedicated Insert key, but not the numpad Insert key
-			// so we have to rely on Event.current here
-			Event currentEvent = Event.current;
-			if(currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Insert)
-			{
-				visible = !visible;
-				if (visible)
-				{
-					CloseMalumMenu();
-				}
-			}
-
 			// Tool to test the notifications system
 			if(Input.GetKeyDown(KeyCode.F6))
 			{

@@ -8,8 +8,6 @@
 
 - **Unified Hydralum Container**:
   - Top header bar with a **`[ Switch ]`** button to morph between MalumMenu and HydraMenu instantly.
-  - Window position transfer: moving the menu in one mode preserves its exact location on screen when switching.
-  - Strict mutual exclusion: opening one menu automatically closes the other.
 
 - **MalumMenu**:
   - Themes & Gradients + live animated RGB rainbow mode.
@@ -21,8 +19,6 @@
   - Continuous Disable Sabotage, Disable Vents + Exclude Yourself, Door controls, and gameplay cheats.
 
 - **HydraMenu**:
-  - Full host powers, Disco party, shapeshift controls, and map spawner.
-  - Complete defensive Protections and Hydra Anticheat.
   - BepInEx configuration system (`com.mrd.hydramenu.cfg`) saving UI scale, opacity, primary theme color, notifications toggle, and window screen position.
 
 ---
@@ -45,10 +41,7 @@
 
 | Action | Keybind / Control |
 | :--- | :--- |
-| **Toggle MalumMenu** | `Delete` key |
-| **Toggle HydraMenu** | `Insert` key |
-| **Switch Menu Views** | Click **`[ Switch ]`** in the top header bar |
-| **Vent Network Hop** | `Left Arrow` / `Right Arrow` (while inside a vent) |
+| **Hydralum** | `Delete` key |
 
 ---
 
