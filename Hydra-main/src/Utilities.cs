@@ -1,3 +1,4 @@
+using AmongUs.Data;
 using AmongUs.GameOptions;
 using Hazel;
 using HydraMenu.network;
@@ -81,9 +82,32 @@ namespace HydraMenu
 			return validPlayers[rnd.Next(validPlayers.Count)];
 		}
 
+		public static NetworkedPlayerInfo.PlayerOutfit OriginalOutfit = null;
+
 		public static void CopyPlayer(PlayerControl player)
 		{
 			if (player == null || player.CurrentOutfit == null) return;
+
+			if (OriginalOutfit == null && PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.CurrentOutfit != null)
+			{
+				var cur = PlayerControl.LocalPlayer.CurrentOutfit;
+				OriginalOutfit = new NetworkedPlayerInfo.PlayerOutfit
+				{
+					PlayerName = cur.PlayerName,
+					ColorId = cur.ColorId,
+					HatId = cur.HatId,
+					VisorId = cur.VisorId,
+					SkinId = cur.SkinId,
+					PetId = cur.PetId,
+					NamePlateId = cur.NamePlateId,
+					HatSequenceId = cur.HatSequenceId,
+					VisorSequenceId = cur.VisorSequenceId,
+					SkinSequenceId = cur.SkinSequenceId,
+					PetSequenceId = cur.PetSequenceId,
+					NamePlateSequenceId = cur.NamePlateSequenceId
+				};
+			}
+
 			NetworkedPlayerInfo.PlayerOutfit outfit = player.CurrentOutfit;
 
 			try
@@ -116,6 +140,58 @@ namespace HydraMenu
 			batch.QueueSetPetStr(PlayerControl.LocalPlayer, outfit.PetId, ++outfit.PetSequenceId);
 
 			batch.FinishBatch();
+		}
+
+		public static void RevertOutfit()
+		{
+			if (PlayerControl.LocalPlayer == null) return;
+
+			try
+			{
+				var cus = DataManager.Player.Customization;
+				byte colorId = cus.Color;
+				string hatId = cus.Hat;
+				string visorId = cus.Visor;
+				string skinId = cus.Skin;
+				string petId = cus.Pet;
+				string namePlateId = cus.NamePlate;
+
+				if (OriginalOutfit != null)
+				{
+					colorId = (byte)OriginalOutfit.ColorId;
+					hatId = OriginalOutfit.HatId;
+					visorId = OriginalOutfit.VisorId;
+					skinId = OriginalOutfit.SkinId;
+					petId = OriginalOutfit.PetId;
+					namePlateId = OriginalOutfit.NamePlateId;
+				}
+
+				PlayerControl.LocalPlayer.CmdCheckColor(colorId);
+				PlayerControl.LocalPlayer.SetColor(colorId);
+				if (PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.DefaultOutfit != null)
+				{
+					PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId = colorId;
+				}
+
+				BatchedMessage batch = new BatchedMessage();
+
+				batch.QueueSetColor(PlayerControl.LocalPlayer, colorId);
+
+				var localOutfit = PlayerControl.LocalPlayer.CurrentOutfit;
+				byte seq = localOutfit != null ? (byte)(localOutfit.HatSequenceId + 1) : (byte)100;
+
+				batch.QueueSetNameplateStr(PlayerControl.LocalPlayer, namePlateId, ++seq);
+				batch.QueueSetHatStr(PlayerControl.LocalPlayer, hatId, ++seq);
+				batch.QueueSetVisorStr(PlayerControl.LocalPlayer, visorId, ++seq);
+				batch.QueueSetSkinStr(PlayerControl.LocalPlayer, skinId, ++seq);
+				batch.QueueSetPetStr(PlayerControl.LocalPlayer, petId, ++seq);
+
+				batch.FinishBatch();
+			}
+			catch (System.Exception ex)
+			{
+				Hydra.Log.LogError($"Error restoring avatar: {ex}");
+			}
 		}
 
 		public static void AttemptStartMeeting(PlayerControl reporter, NetworkedPlayerInfo target)

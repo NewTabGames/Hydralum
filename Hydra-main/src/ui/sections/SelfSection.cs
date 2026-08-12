@@ -55,11 +55,7 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Restore Avatar"))
 			{
-				PlayerControl.LocalPlayer.CmdCheckColor(DataManager.Player.Customization.Color);
-				PlayerControl.LocalPlayer.RpcSetHat(DataManager.Player.Customization.Hat);
-				PlayerControl.LocalPlayer.RpcSetVisor(DataManager.Player.Customization.Visor);
-				PlayerControl.LocalPlayer.RpcSetSkin(DataManager.Player.Customization.Skin);
-				PlayerControl.LocalPlayer.RpcSetPet(DataManager.Player.Customization.Pet);
+				Utilities.RevertOutfit();
 			}
 		}
 	}
