@@ -1,4 +1,4 @@
-﻿using AmongUs.GameOptions;
+using AmongUs.GameOptions;
 using Hazel;
 using HydraMenu.network;
 using InnerNet;
@@ -83,7 +83,19 @@ namespace HydraMenu
 
 		public static void CopyPlayer(PlayerControl player)
 		{
+			if (player == null || player.CurrentOutfit == null) return;
 			NetworkedPlayerInfo.PlayerOutfit outfit = player.CurrentOutfit;
+
+			try
+			{
+				PlayerControl.LocalPlayer.CmdCheckColor((byte)outfit.ColorId);
+				PlayerControl.LocalPlayer.SetColor(outfit.ColorId);
+				if (PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.DefaultOutfit != null)
+				{
+					PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId = outfit.ColorId;
+				}
+			}
+			catch { }
 
 			bool hasAnticheat = IsAnticheatPresent();
 
@@ -95,10 +107,7 @@ namespace HydraMenu
 				batch.QueueSetName(PlayerControl.LocalPlayer, outfit.PlayerName);
 			}
 
-			if(!hasAnticheat || AmongUsClient.Instance.AmHost)
-			{
-				batch.QueueSetColor(PlayerControl.LocalPlayer, (byte)outfit.ColorId);
-			}
+			batch.QueueSetColor(PlayerControl.LocalPlayer, (byte)outfit.ColorId);
 
 			batch.QueueSetNameplateStr(PlayerControl.LocalPlayer, outfit.NamePlateId, ++outfit.NamePlateSequenceId);
 			batch.QueueSetHatStr(PlayerControl.LocalPlayer, outfit.HatId, ++outfit.HatSequenceId);
