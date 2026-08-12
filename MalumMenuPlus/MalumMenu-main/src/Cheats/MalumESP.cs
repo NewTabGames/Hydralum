@@ -28,7 +28,7 @@ public static class MalumESP
         return CheatToggles.noShadows || Camera.main.orthographicSize > 3f || Camera.main.gameObject.GetComponent<FollowerCamera>().Target != PlayerControl.LocalPlayer;
     }
 
-    private static bool IsMouseOverActiveMenuGUI()
+    public static bool IsMouseOverActiveMenuGUI()
     {
         var mousePos = Input.mousePosition;
         var guiMousePos = new Vector2(mousePos.x, Screen.height - mousePos.y);
