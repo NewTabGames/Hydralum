@@ -23,13 +23,14 @@
 
 ---
 
-## Installation
+## Installation & Download
 
 1. Make sure you have **BepInEx IL2CPP** installed for Among Us.
-2. Download or copy both precompiled DLLs from the [`DLLs/`](./DLLs/) folder:
-   - `MalumMenuPlus.dll`
-   - `HydraMenu.dll`
-3. Paste both `.dll` files into your Among Us plugins folder:
+2. Download the precompiled DLLs:
+   - Go to the **[Actions tab](https://github.com/NewTabGames/Hydralum/actions)** on GitHub.
+   - Click the latest successful build run.
+   - Scroll down to **Artifacts** and download `Hydralum-DLLs`.
+3. Extract `MalumMenuPlus.dll` and `HydraMenu.dll` into your Among Us plugins folder:
    ```text
    Among Us/BepInEx/plugins/
    ```
@@ -49,7 +50,7 @@
 
 Prerequisites: [.NET 6.0 SDK](https://dotnet.microsoft.com/download/dotnet/6.0).
 
-Both projects are configured to automatically copy output binaries to the root [`DLLs/`](./DLLs/) folder upon building:
+Both projects are configured to automatically copy output binaries to the local `DLLs/` folder upon building:
 
 ```bash
 # Build MalumMenu

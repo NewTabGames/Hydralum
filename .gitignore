@@ -1,3 +1,7 @@
+# Built DLLs output folder (built by GitHub Actions)
+DLLs/
+**/DLLs/
+
 # Build output directories
 **/bin/
 **/obj/

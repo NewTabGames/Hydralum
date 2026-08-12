@@ -1,0 +1,36 @@
+name: Build Hydralum DLLs
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build & Artifact DLLs
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 6.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.0.x'
+
+    - name: Build MalumMenu
+      run: dotnet build MalumMenu/MalumMenu-main/src/MalumMenu.csproj -c Release
+
+    - name: Build HydraMenu
+      run: dotnet build Hydra-main/src/HydraMenu.csproj -c Release
+
+    - name: Upload Hydralum DLLs Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Hydralum-DLLs
+        path: |
+          DLLs/*.dll
+        if-no-files-found: error
