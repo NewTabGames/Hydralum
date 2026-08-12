@@ -280,12 +280,29 @@ public static class MalumCheats
     {
         if (!CheatToggles.ventNetwork) return;
 
-        var current = Vent.currentVent;
-        if (current == null || ShipStatus.Instance == null) return;
-
         var forward = Input.GetKeyDown(KeyCode.RightArrow);
         var backward = Input.GetKeyDown(KeyCode.LeftArrow);
         if (!forward && !backward) return;
+
+        if (PlayerControl.LocalPlayer == null || ShipStatus.Instance == null) return;
+
+        var current = Vent.currentVent;
+        if (current == null)
+        {
+            float minDst = float.MaxValue;
+            foreach (var v in ShipStatus.Instance.AllVents)
+            {
+                if (v == null) continue;
+                float dst = Vector2.Distance(PlayerControl.LocalPlayer.transform.position, v.transform.position);
+                if (dst < minDst)
+                {
+                    minDst = dst;
+                    current = v;
+                }
+            }
+        }
+
+        if (current == null) return;
 
         var tour = BuildNearestVentTour();
         if (tour.Count < 2) return;
@@ -303,12 +320,19 @@ public static class MalumCheats
 
         try
         {
-            // Point the current vent's Right arrow at the target, trigger the game's own move (which
-            // snapshots the target immediately), then restore the link so the arrows stay untouched.
-            var original = current.Right;
-            current.Right = target;
-            current.ClickRight();
-            current.Right = original;
+            var local = PlayerControl.LocalPlayer;
+            if (local.inVent)
+            {
+                var original = current.Right;
+                current.Right = target;
+                current.ClickRight();
+                current.Right = original;
+            }
+            else
+            {
+                local.MyPhysics.RpcEnterVent(target.Id);
+                Vent.currentVent = target;
+            }
         }
         catch { }
     }

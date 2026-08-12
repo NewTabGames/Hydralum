@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System.Collections.Generic;
 
 namespace HydraMenu.features
@@ -28,33 +28,6 @@ namespace HydraMenu.features
 
 				Hydra.notifications.Send("Auto Report Bodies", $"{target.Data.PlayerName} was killed by {__instance.Data.PlayerName} ({Utilities.GetPlayerColor(__instance.Data)}), their body has been automatically reported.");
 				PlayerControl.LocalPlayer.CmdReportDeadBody(target.Data);
-			}
-		}
-
-		[HarmonyPatch(typeof(VentilationSystem), nameof(VentilationSystem.Deserialize))]
-		public static class BlockVenting
-		{
-			public static bool Enabled { get; set; } = false;
-
-			static void Postfix(VentilationSystem __instance)
-			{
-				if(!Enabled) return;
-
-				Hydra.Log.LogInfo($"Received update for VentilationSystem, going to kick out all players who are inside a vent");
-
-				if(__instance.PlayersInsideVents.Count >= PlayerControl.AllPlayerControls.Count)
-				{
-					Hydra.Log.LogInfo($"Apparently there are more people inside of vents than people inside the game, the host may be trying to overload our game! Players in vents: {__instance.PlayersInsideVents.Count}, total players: {PlayerControl.AllPlayerControls.Count}");
-					return;
-				}
-
-				foreach(byte ventId in __instance.PlayersInsideVents.Values)
-				{
-					if(ventId >= ShipStatus.Instance.AllVents.Count) continue;
-
-					Hydra.Log.LogInfo($"Kicked someone out of vent {ventId}");
-					VentilationSystem.Update(VentilationSystem.Operation.StartCleaning, ventId);
-				}
 			}
 		}
 
