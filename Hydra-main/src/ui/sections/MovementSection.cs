@@ -1,4 +1,4 @@
-﻿using HydraMenu.features;
+using HydraMenu.features;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,9 +13,6 @@ namespace HydraMenu.ui.sections
 			if(PlayerControl.LocalPlayer == null)
 			{
 				GUILayout.Label("You are not currently in a game, these options will not work.");
-
-				// Having all possible options shown at once (even if the player isn't in a game) is nice user experience
-				GUILayout.Toggle(false, "Noclip");
 			}
 			else
 			{
@@ -23,8 +20,6 @@ namespace HydraMenu.ui.sections
 				Vector2 position = PlayerControl.LocalPlayer.transform.position;
 
 				GUILayout.Label($"Current Map: {Utilities.GetCurrentMap()}\nCurrent Position:\nX: {position.x:F2}\nY: {position.y:F2}");
-
-				PlayerControl.LocalPlayer.Collider.enabled = !GUILayout.Toggle(!PlayerControl.LocalPlayer.Collider.enabled, "Noclip");
 			}
 
 			GUILayout.Label($"Speed Modifier: {Self.PlayerSpeedModifier.Multiplier:F2}x");
