@@ -28,11 +28,43 @@ public static class MalumESP
         return CheatToggles.noShadows || Camera.main.orthographicSize > 3f || Camera.main.gameObject.GetComponent<FollowerCamera>().Target != PlayerControl.LocalPlayer;
     }
 
+    private static bool IsAnyMenuOpen()
+    {
+        if (MenuUI.isGUIActive) return true;
+
+        try
+        {
+            var hydraType = System.Type.GetType("HydraMenu.ui.MainUI, HydraMenu");
+            if (hydraType == null)
+            {
+                foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    if (asm.GetName().Name == "HydraMenu")
+                    {
+                        hydraType = asm.GetType("HydraMenu.ui.MainUI");
+                        break;
+                    }
+                }
+            }
+            if (hydraType != null)
+            {
+                var field = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (field != null && (bool)field.GetValue(null))
+                {
+                    return true;
+                }
+            }
+        }
+        catch { }
+
+        return false;
+    }
+
     public static void ZoomOut(HudManager hudManager)
     {
         if (CheatToggles.zoomOut)
         {
-            if (hudManager.Chat.IsOpenOrOpening || PlayerCustomizationMenu.Instance || (Utils.isLobby && (FriendsListUI.Instance.IsOpen ||
+            if (IsAnyMenuOpen() || hudManager.Chat.IsOpenOrOpening || PlayerCustomizationMenu.Instance || (Utils.isLobby && (FriendsListUI.Instance.IsOpen ||
                 GameStartManager.Instance.LobbyInfoPane.LobbyViewSettingsPane.gameObject.active || GameStartManager.Instance.RulesEditPanel))) return;
 
             _resolutionChangeNeeded = true;
