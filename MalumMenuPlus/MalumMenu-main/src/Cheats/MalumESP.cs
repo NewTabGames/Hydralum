@@ -28,9 +28,15 @@ public static class MalumESP
         return CheatToggles.noShadows || Camera.main.orthographicSize > 3f || Camera.main.gameObject.GetComponent<FollowerCamera>().Target != PlayerControl.LocalPlayer;
     }
 
-    private static bool IsAnyMenuOpen()
+    private static bool IsMouseOverActiveMenuGUI()
     {
-        if (MenuUI.isGUIActive) return true;
+        var mousePos = Input.mousePosition;
+        var guiMousePos = new Vector2(mousePos.x, Screen.height - mousePos.y);
+
+        if (MenuUI.isGUIActive && MenuUI._windowRect.Contains(guiMousePos))
+        {
+            return true;
+        }
 
         try
         {
@@ -48,10 +54,21 @@ public static class MalumESP
             }
             if (hydraType != null)
             {
-                var field = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (field != null && (bool)field.GetValue(null))
+                var visibleField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (visibleField != null && (bool)visibleField.GetValue(null))
                 {
-                    return true;
+                    var posField = hydraType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    var sizeProp = hydraType.GetProperty("WindowSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    if (posField != null && sizeProp != null)
+                    {
+                        var pos = (Vector2)posField.GetValue(null);
+                        var size = (Vector2)sizeProp.GetValue(null, null);
+                        var hydraRect = new Rect(pos.x, pos.y, size.x, size.y);
+                        if (hydraRect.Contains(guiMousePos))
+                        {
+                            return true;
+                        }
+                    }
                 }
             }
         }
@@ -64,7 +81,7 @@ public static class MalumESP
     {
         if (CheatToggles.zoomOut)
         {
-            if (IsAnyMenuOpen() || hudManager.Chat.IsOpenOrOpening || PlayerCustomizationMenu.Instance || (Utils.isLobby && (FriendsListUI.Instance.IsOpen ||
+            if (IsMouseOverActiveMenuGUI() || hudManager.Chat.IsOpenOrOpening || PlayerCustomizationMenu.Instance || (Utils.isLobby && (FriendsListUI.Instance.IsOpen ||
                 GameStartManager.Instance.LobbyInfoPane.LobbyViewSettingsPane.gameObject.active || GameStartManager.Instance.RulesEditPanel))) return;
 
             _resolutionChangeNeeded = true;
