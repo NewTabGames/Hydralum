@@ -17,7 +17,6 @@ internal class Hydra : BasePlugin
 	private static readonly Harmony harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
 
 	private static MainUI mainUI;
-	private static Roles roles;
 	public static RoutineManager routines;
 	public static NotificationManager notifications;
 
@@ -28,7 +27,6 @@ internal class Hydra : BasePlugin
 		HydraConfig.Init(Config);
 
 		mainUI = AddComponent<MainUI>();
-		roles = AddComponent<Roles>();
 		notifications = AddComponent<NotificationManager>();
 		routines = AddComponent<RoutineManager>();
 		notifications.DisableNotifications = HydraConfig.DisableNotifications.Value;
@@ -59,7 +57,6 @@ internal class Hydra : BasePlugin
 		}
 
 		Object.Destroy(mainUI);
-		Object.Destroy(roles);
 		Object.Destroy(notifications);
 		Object.Destroy(routines);
 

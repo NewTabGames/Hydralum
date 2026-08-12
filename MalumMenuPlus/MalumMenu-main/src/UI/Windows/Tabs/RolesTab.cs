@@ -69,7 +69,7 @@ public class RolesTab : ITab
 
         CheatToggles.noKillChecks = GUILayout.Toggle(CheatToggles.noKillChecks, " No Kill Checks");
 
-        CheatToggles.sabotageInVents = GUILayout.Toggle(CheatToggles.sabotageInVents, " Sabotage In Vents");
+        CheatToggles.sabotageInVents = GUILayout.Toggle(CheatToggles.sabotageInVents, " Allow Sabotaging In Vents");
 
         // CheatToggles.impostorTasks = GUILayout.Toggle(CheatToggles.impostorTasks, " Allow Tasks");
     }
