@@ -1,0 +1,11 @@
+# Build output directories
+**/bin/
+**/obj/
+
+# Visual Studio & IDE files
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
