@@ -4,6 +4,14 @@
 
 ---
 
+## Credits & License
+
+- **MalumMenu**: Developed by scp222thj & astra1dev (GPL-3.0).
+- **Hydra**: Developed by MrDiamond64 (GPL-3.0).
+- **Hydralum**: Dual-menu integration & features by the project authors.
+
+---
+
 ## Features
 
 - **Unified Hydralum Container**:
@@ -61,11 +69,3 @@ dotnet build src/MalumMenu.csproj -c Release
 cd ../../Hydra-main
 dotnet build src/HydraMenu.csproj -c Release
 ```
-
----
-
-## Credits & License
-
-- **MalumMenu**: Developed by scp222thj & astra1dev (GPL-3.0).
-- **Hydra**: Developed by MrDiamond64 (GPL-3.0).
-- **Hydralum**: Dual-menu integration & features by the project authors.
