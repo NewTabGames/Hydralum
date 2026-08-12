@@ -20,17 +20,6 @@ namespace HydraMenu.features
 			}
 		}
 
-		[HarmonyPatch(typeof(PlayerPhysics), nameof(PlayerPhysics.TrueSpeed), MethodType.Getter)]
-		public static class PlayerSpeedModifier
-		{
-			public static float Multiplier { get; set; } = 1.0f;
-
-			static void Postfix(ref float __result)
-			{
-				__result *= Multiplier;
-			}
-		}
-
 		[HarmonyPatch(typeof(Ladder), nameof(Ladder.SetDestinationCooldown))]
 		public static class NoLadderCooldown
 		{

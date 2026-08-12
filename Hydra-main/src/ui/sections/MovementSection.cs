@@ -22,9 +22,6 @@ namespace HydraMenu.ui.sections
 				GUILayout.Label($"Current Map: {Utilities.GetCurrentMap()}\nCurrent Position:\nX: {position.x:F2}\nY: {position.y:F2}");
 			}
 
-			GUILayout.Label($"Speed Modifier: {Self.PlayerSpeedModifier.Multiplier:F2}x");
-			Self.PlayerSpeedModifier.Multiplier = GUILayout.HorizontalSlider(Self.PlayerSpeedModifier.Multiplier, 0f, 5f);
-
 			Teleporter.UseSnapToRPC = GUILayout.Toggle(Teleporter.UseSnapToRPC, "Use SnapTo RPC For Teleports");
 			GUILayout.Label("Teleport To Location:");
 
