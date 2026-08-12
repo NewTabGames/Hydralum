@@ -1,6 +1,6 @@
 # Hydralum
 
-**Hydralum** is a dual-menu Among Us mod system for BepInEx IL2CPP, seamlessly pairing customized versions of **MalumMenu** and **HydraMenu** into a single unified in-game GUI experience.
+**Hydralum** is an Among Us mod system for BepInEx IL2CPP that pairs customized versions of **MalumMenu** and **HydraMenu**, allowing you to quickly switch between both menus in-game.
 
 ---
 
