@@ -339,32 +339,4 @@ public static class PlayerPurchasesData_GetPurchase
     }
 }
 
-[HarmonyPatch(typeof(PassiveButton), nameof(PassiveButton.ReceiveClickDown))]
-public static class PassiveButton_ReceiveClickDown
-{
-    public static bool Prefix()
-    {
-        if (MalumESP.IsMouseOverActiveMenuGUI()) return false;
-        return true;
-    }
-}
 
-[HarmonyPatch(typeof(PassiveButton), nameof(PassiveButton.ReceiveClickUp))]
-public static class PassiveButton_ReceiveClickUp
-{
-    public static bool Prefix()
-    {
-        if (MalumESP.IsMouseOverActiveMenuGUI()) return false;
-        return true;
-    }
-}
-
-[HarmonyPatch(typeof(PassiveButton), nameof(PassiveButton.OnClick))]
-public static class PassiveButton_OnClick
-{
-    public static bool Prefix()
-    {
-        if (MalumESP.IsMouseOverActiveMenuGUI()) return false;
-        return true;
-    }
-}
