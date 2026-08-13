@@ -21,17 +21,20 @@
 
 ## How to Install BepInEx (Easy 3-Step Guide)
 
-If you don't have BepInEx IL2CPP installed yet, follow these simple steps:
+Among Us is an **IL2CPP** game, so it requires **BepInEx 6 (IL2CPP)** instead of standard BepInEx 5.
 
-1. **Download BepInEx 6 (IL2CPP x64)**:
-   - Download the latest **BepInEx 6.0 IL2CPP x64** release from the [BepInEx GitHub Releases](https://github.com/BepInEx/BepInEx/releases) (look for a zip named like `BepInEx_UnityIL2CPP_x64_...zip`).
+> ⚠️ **Important**: Do **NOT** download BepInEx 5 (`BepInEx_win_x64_5.4.x.zip`). That version is for Mono games and will not load in Among Us.
+
+1. **Download BepInEx 6 IL2CPP x64**:
+   - Download the latest BepInEx 6 IL2CPP build from **[BepInEx Bleeding Edge Builds](https://builds.bepinex.dev/projects/bepinex_be)** or from **[BepInEx v6.0.0 Pre-Releases](https://github.com/BepInEx/BepInEx/releases?q=v6.0.0&expanded=true)**.
+   - Make sure to download a zip named **`BepInEx_UnityIL2CPP_x64_...zip`** (for example `BepInEx_UnityIL2CPP_x64_6.0.0-be.675.zip`).
 2. **Extract to your Among Us Game Folder**:
-   - Open your Among Us game directory (where `Among Us.exe` is located).
+   - Open your Among Us game folder (where `Among Us.exe` is located).
      - *Steam*: Right-click **Among Us** in Steam library -> **Manage** -> **Browse local files**.
      - *Epic Games*: Navigate to your install folder (e.g. `C:\Program Files\Epic Games\AmongUs`).
-   - Drag and extract all files from the BepInEx zip directly into your Among Us game folder so `winhttp.dll`, `doorstop_config.ini`, and the `BepInEx` folder sit right next to `Among Us.exe`.
+   - Extract all contents of the zip file directly into your game folder so `winhttp.dll`, `doorstop_config.ini`, and the `BepInEx` folder sit right next to `Among Us.exe`.
 3. **Run the Game Once**:
-   - Launch Among Us once so BepInEx initializes its file structure, then exit the game.
+   - Launch Among Us once so BepInEx initializes its folder structure (`BepInEx/plugins/`), then exit the game.
 
 ---
 
