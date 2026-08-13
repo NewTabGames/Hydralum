@@ -15,30 +15,46 @@
 ## Features
 
 - Includes **MalumMenu** and **HydraMenu** with custom features and enhancements.
-- Added a persistent configuration system for **HydraMenu** (`BepInEx/config/com.mrd.hydramenu.cfg`) that automatically saves and loads UI scale, primary theme color, notifications state, and window position.
+- Persistent configuration system for **HydraMenu** (`BepInEx/config/com.mrd.hydramenu.cfg`) that automatically saves and loads UI scale, primary theme color, notifications state, and window position.
 
 ---
 
-## Installation & Download
+## How to Install BepInEx (Easy 3-Step Guide)
 
-1. Make sure you have **BepInEx IL2CPP** installed for Among Us.
-2. Download the precompiled DLLs:
+If you don't have BepInEx IL2CPP installed yet, follow these simple steps:
+
+1. **Download BepInEx 6 (IL2CPP x64)**:
+   - Download the latest **BepInEx 6.0 IL2CPP x64** release from the [BepInEx GitHub Releases](https://github.com/BepInEx/BepInEx/releases) (look for a zip named like `BepInEx_UnityIL2CPP_x64_...zip`).
+2. **Extract to your Among Us Game Folder**:
+   - Open your Among Us game directory (where `Among Us.exe` is located).
+     - *Steam*: Right-click **Among Us** in Steam library -> **Manage** -> **Browse local files**.
+     - *Epic Games*: Navigate to your install folder (e.g. `C:\Program Files\Epic Games\AmongUs`).
+   - Drag and extract all files from the BepInEx zip directly into your Among Us game folder so `winhttp.dll`, `doorstop_config.ini`, and the `BepInEx` folder sit right next to `Among Us.exe`.
+3. **Run the Game Once**:
+   - Launch Among Us once so BepInEx initializes its file structure, then exit the game.
+
+---
+
+## Installing Hydralum
+
+1. Download the precompiled DLLs:
    - Go to the **[Actions tab](https://github.com/NewTabGames/Hydralum/actions)** on GitHub.
    - Click the latest successful build run.
    - Scroll down to **Artifacts** and download `Hydralum-DLLs`.
-3. Extract `MalumMenuPlus.dll` and `HydraMenu.dll` into your Among Us plugins folder:
+2. Extract `MalumMenuPlus.dll` and `HydraMenu.dll` into your Among Us plugins folder:
    ```text
    Among Us/BepInEx/plugins/
    ```
-4. Launch Among Us.
+3. Launch Among Us and press **`Delete`** to open the menu!
 
 ---
 
-## Default Controls & Keybinds
+## Controls & Keybinds
 
 | Action | Keybind / Control |
 | :--- | :--- |
-| **Hydralum** | `Delete` key |
+| **Toggle Menu** | `Delete` key |
+| **Switch Menu** | `[ Switch ]` header button in top-right of menu |
 
 ---
 
