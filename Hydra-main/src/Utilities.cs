@@ -131,8 +131,6 @@ namespace HydraMenu
 				batch.QueueSetName(PlayerControl.LocalPlayer, outfit.PlayerName);
 			}
 
-			batch.QueueSetColor(PlayerControl.LocalPlayer, (byte)outfit.ColorId);
-
 			batch.QueueSetNameplateStr(PlayerControl.LocalPlayer, outfit.NamePlateId, ++outfit.NamePlateSequenceId);
 			batch.QueueSetHatStr(PlayerControl.LocalPlayer, outfit.HatId, ++outfit.HatSequenceId);
 			batch.QueueSetVisorStr(PlayerControl.LocalPlayer, outfit.VisorId, ++outfit.VisorSequenceId);
@@ -174,8 +172,6 @@ namespace HydraMenu
 				}
 
 				BatchedMessage batch = new BatchedMessage();
-
-				batch.QueueSetColor(PlayerControl.LocalPlayer, colorId);
 
 				var localOutfit = PlayerControl.LocalPlayer.CurrentOutfit;
 				byte seq = localOutfit != null ? (byte)(localOutfit.HatSequenceId + 1) : (byte)100;
