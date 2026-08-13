@@ -13,3 +13,7 @@ DLLs/
 *.suo
 *.userosscache
 *.sln.docstates
+
+# Custom user testing folder
+TESTING/
+**/TESTING/
