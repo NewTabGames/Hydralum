@@ -11,6 +11,7 @@ public class MenuUI : MonoBehaviour
     public static Rect _windowRect;
 
     public static bool isGUIActive = false;
+    public static bool lastOpenedWasHydra = false;
     private List<ITab> _tabs = new();
     private int _selectedTab;
     private Vector2 _contentScroll = Vector2.zero; // vertical scroll for the active tab's body
@@ -70,17 +71,25 @@ public class MenuUI : MonoBehaviour
             bool hydraOpen = IsHydraOpen();
             if (isGUIActive || hydraOpen)
             {
+                lastOpenedWasHydra = hydraOpen;
                 isGUIActive = false;
                 CloseHydraMenu();
             }
             else
             {
-                isGUIActive = true;
-
-                if (MalumMenu.menuOpenOnMouse.Value)
+                if (lastOpenedWasHydra)
                 {
-                    Vector2 mousePosition = Input.mousePosition;
-                    _windowRect.position = new Vector2(mousePosition.x, Screen.height - mousePosition.y);
+                    SwitchToHydra();
+                }
+                else
+                {
+                    isGUIActive = true;
+
+                    if (MalumMenu.menuOpenOnMouse.Value)
+                    {
+                        Vector2 mousePosition = Input.mousePosition;
+                        _windowRect.position = new Vector2(mousePosition.x, Screen.height - mousePosition.y);
+                    }
                 }
             }
         }
@@ -283,6 +292,7 @@ public class MenuUI : MonoBehaviour
 
     public static void SwitchToHydra()
     {
+        lastOpenedWasHydra = true;
         isGUIActive = false;
         try
         {

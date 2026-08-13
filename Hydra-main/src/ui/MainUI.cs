@@ -211,6 +211,12 @@ namespace HydraMenu.ui
 						rectField.SetValue(null, r);
 					}
 
+					var lastOpenedField = malumUIType.GetField("lastOpenedWasHydra", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+					if (lastOpenedField != null)
+					{
+						lastOpenedField.SetValue(null, false);
+					}
+
 					var field = malumUIType.GetField("isGUIActive", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
 					if (field != null)
 					{
