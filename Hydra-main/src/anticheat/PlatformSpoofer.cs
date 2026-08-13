@@ -1,5 +1,6 @@
 using HarmonyLib;
 using InnerNet;
+using UnityEngine;
 
 namespace HydraMenu.anticheat
 {
@@ -24,6 +25,19 @@ namespace HydraMenu.anticheat
 				if (!IsValidPlatform(platformData))
 				{
 					Anticheat.Flag(__instance, $"{clientData.PlayerName} was detected with spoofed platform information. Platform: {platformData.Platform}, Platform name: {platformData.PlatformName}, XUID: {platformData.XboxPlatformId}, PSID: {platformData.PsnPlatformId}.");
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.Start))]
+		class OnPlayerSpawn_AutoApplyPreset
+		{
+			static void Postfix(PlayerControl __instance)
+			{
+				if (__instance != null && __instance.AmOwner && CosmeticPresetManager.AutoApplyOnJoin && CosmeticPresetManager.Presets.Count > 0)
+				{
+					int idx = Mathf.Clamp(CosmeticPresetManager.SelectedPresetIndex, 0, CosmeticPresetManager.Presets.Count - 1);
+					CosmeticPresetManager.ApplyPreset(CosmeticPresetManager.Presets[idx]);
 				}
 			}
 		}

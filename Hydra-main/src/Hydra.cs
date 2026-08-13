@@ -25,6 +25,7 @@ internal class Hydra : BasePlugin
 		Log = base.Log;
 
 		HydraConfig.Init(Config);
+		CosmeticPresetManager.Init(Config);
 
 		mainUI = AddComponent<MainUI>();
 		notifications = AddComponent<NotificationManager>();

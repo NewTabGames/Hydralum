@@ -57,6 +57,57 @@ namespace HydraMenu.ui.sections
 			{
 				Utilities.RevertOutfit();
 			}
+
+			GUILayout.Space(10);
+			GUILayout.Label("<b>Cosmetic Presets Manager</b>");
+
+			bool prevAutoApply = CosmeticPresetManager.AutoApplyOnJoin;
+			CosmeticPresetManager.AutoApplyOnJoin = GUILayout.Toggle(CosmeticPresetManager.AutoApplyOnJoin, " Auto-Apply Selected Preset on Join");
+			if (prevAutoApply != CosmeticPresetManager.AutoApplyOnJoin)
+			{
+				CosmeticPresetManager.SaveToConfig();
+			}
+
+			if (CosmeticPresetManager.Presets.Count > 0)
+			{
+				CosmeticPresetManager.SelectedPresetIndex = Mathf.Clamp(CosmeticPresetManager.SelectedPresetIndex, 0, CosmeticPresetManager.Presets.Count - 1);
+				var currentPreset = CosmeticPresetManager.Presets[CosmeticPresetManager.SelectedPresetIndex];
+
+				GUILayout.Label($"Preset ({CosmeticPresetManager.SelectedPresetIndex + 1}/{CosmeticPresetManager.Presets.Count}): <b>{currentPreset.Name}</b>");
+
+				GUILayout.BeginHorizontal();
+				if (GUILayout.Button("< Prev", GUILayout.Width(60)))
+				{
+					CosmeticPresetManager.SelectedPresetIndex = (CosmeticPresetManager.SelectedPresetIndex - 1 + CosmeticPresetManager.Presets.Count) % CosmeticPresetManager.Presets.Count;
+				}
+				if (GUILayout.Button("Next >", GUILayout.Width(60)))
+				{
+					CosmeticPresetManager.SelectedPresetIndex = (CosmeticPresetManager.SelectedPresetIndex + 1) % CosmeticPresetManager.Presets.Count;
+				}
+				if (GUILayout.Button("Apply Preset", GUILayout.Width(90)))
+				{
+					CosmeticPresetManager.ApplyPreset(currentPreset);
+				}
+				if (GUILayout.Button("Delete", GUILayout.Width(60)))
+				{
+					CosmeticPresetManager.DeleteSelected();
+				}
+				GUILayout.EndHorizontal();
+			}
+			else
+			{
+				GUILayout.Label("<color=#AAAAAA>No cosmetic presets saved yet.</color>");
+			}
+
+			GUILayout.Space(4);
+			GUILayout.BeginHorizontal();
+			GUILayout.Label("Name:", GUILayout.Width(45));
+			CosmeticPresetManager.NewPresetName = GUILayout.TextField(CosmeticPresetManager.NewPresetName, GUILayout.Width(130));
+			if (GUILayout.Button("Save Outfit", GUILayout.Width(90)))
+			{
+				CosmeticPresetManager.SaveCurrentOutfit(CosmeticPresetManager.NewPresetName);
+			}
+			GUILayout.EndHorizontal();
 		}
 	}
 }
