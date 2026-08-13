@@ -29,19 +29,6 @@ namespace HydraMenu.anticheat
 			}
 		}
 
-		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.Start))]
-		class OnPlayerSpawn_AutoApplyPreset
-		{
-			static void Postfix(PlayerControl __instance)
-			{
-				if (__instance != null && __instance.AmOwner && CosmeticPresetManager.AutoApplyOnJoin && CosmeticPresetManager.Presets.Count > 0)
-				{
-					int idx = Mathf.Clamp(CosmeticPresetManager.SelectedPresetIndex, 0, CosmeticPresetManager.Presets.Count - 1);
-					CosmeticPresetManager.ApplyPreset(CosmeticPresetManager.Presets[idx]);
-				}
-			}
-		}
-
 		public static bool IsValidPlatform(PlatformSpecificData platform)
 		{
 			string platformName = platform.PlatformName;
