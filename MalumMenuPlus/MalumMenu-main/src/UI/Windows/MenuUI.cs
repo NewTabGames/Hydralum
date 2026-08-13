@@ -101,8 +101,10 @@ public class MenuUI : MonoBehaviour
 
         if (CheatToggles.panicMode) Utils.Panic();
 
-        var stamp = ModManager.Instance.ModStamp;
-        if (stamp) stamp.enabled = false;
+        if (ModManager.Instance != null && ModManager.Instance.ModStamp != null)
+        {
+            ModManager.Instance.ModStamp.enabled = false;
+        }
 
         if (CheatToggles.openConfig)
         {
@@ -284,9 +286,20 @@ public class MenuUI : MonoBehaviour
         GUILayout.EndVertical();
 
         GUILayout.EndHorizontal();
-
         // Make the window draggable
         GUI.DragWindow();
+    }
+
+    private static System.Type _cachedHydraUIType;
+    public static System.Type GetHydraUIType()
+    {
+        if (_cachedHydraUIType != null) return _cachedHydraUIType;
+        foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+        {
+            _cachedHydraUIType = asm.GetType("HydraMenu.ui.MainUI");
+            if (_cachedHydraUIType != null) break;
+        }
+        return _cachedHydraUIType;
     }
 
     public static void SwitchToHydra()
@@ -295,12 +308,7 @@ public class MenuUI : MonoBehaviour
         isGUIActive = false;
         try
         {
-            System.Type hydraType = null;
-            foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
-            {
-                hydraType = asm.GetType("HydraMenu.ui.MainUI");
-                if (hydraType != null) break;
-            }
+            System.Type hydraType = GetHydraUIType();
 
             if (hydraType != null)
             {
@@ -340,12 +348,7 @@ public class MenuUI : MonoBehaviour
     {
         try
         {
-            System.Type hydraType = null;
-            foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
-            {
-                hydraType = asm.GetType("HydraMenu.ui.MainUI");
-                if (hydraType != null) break;
-            }
+            System.Type hydraType = GetHydraUIType();
 
             if (hydraType != null)
             {
@@ -363,12 +366,7 @@ public class MenuUI : MonoBehaviour
     {
         try
         {
-            System.Type hydraType = null;
-            foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
-            {
-                hydraType = asm.GetType("HydraMenu.ui.MainUI");
-                if (hydraType != null) break;
-            }
+            System.Type hydraType = GetHydraUIType();
 
             if (hydraType != null)
             {

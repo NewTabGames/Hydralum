@@ -95,7 +95,7 @@ namespace HydraMenu.anticheat
 
 		private static bool HandleRpc(Type sourceNetObj, PlayerControl player, RpcCalls rpc, MessageReader reader)
 		{
-			if(player == PlayerControl.LocalPlayer) return true;
+			if(player != null && (player.AmOwner || (PlayerControl.LocalPlayer != null && player == PlayerControl.LocalPlayer))) return true;
 
 			RpcHandlers.TryGetValue(rpc, out RpcCheck rpcCheck);
 			if(!Enabled || rpcCheck == null || !rpcCheck.Enabled) return true;

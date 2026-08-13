@@ -188,17 +188,24 @@ namespace HydraMenu.ui
 			}
 		}
 
+		private static Type _cachedMalumUIType;
+		public static Type GetMalumUIType()
+		{
+			if (_cachedMalumUIType != null) return _cachedMalumUIType;
+			foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+			{
+				_cachedMalumUIType = asm.GetType("MalumMenu.MenuUI");
+				if (_cachedMalumUIType != null) break;
+			}
+			return _cachedMalumUIType;
+		}
+
 		public static void SwitchToMalum()
 		{
 			visible = false;
 			try
 			{
-				Type malumUIType = null;
-				foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-				{
-					malumUIType = asm.GetType("MalumMenu.MenuUI");
-					if (malumUIType != null) break;
-				}
+				Type malumUIType = GetMalumUIType();
 
 				if (malumUIType != null)
 				{
@@ -240,12 +247,7 @@ namespace HydraMenu.ui
 		{
 			try
 			{
-				Type malumUIType = null;
-				foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-				{
-					malumUIType = asm.GetType("MalumMenu.MenuUI");
-					if (malumUIType != null) break;
-				}
+				Type malumUIType = GetMalumUIType();
 
 				if (malumUIType != null)
 				{

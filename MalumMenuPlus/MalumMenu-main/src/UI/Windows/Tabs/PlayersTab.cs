@@ -114,7 +114,7 @@ public class PlayersTab : ITab
 
             if (teleportClicked && canTeleport)
             {
-                PlayerControl.LocalPlayer.NetTransform.RpcSnapTo(player.GetTruePosition());
+                MalumTeleport.TeleportTo(player.GetTruePosition());
             }
 
             // Copy this player's outfit onto yourself (client-side cosmetic RPCs).

@@ -12,19 +12,25 @@ namespace HydraMenu
 {
 	internal class Utilities
 	{
-		private static readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<SkinData> allSkins = HatManager.Instance.allSkins;
-		private static readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<HatData> allHats = HatManager.Instance.allHats;
-		private static readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<VisorData> allVisors = HatManager.Instance.allVisors;
-		private static readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<PetData> allPets = HatManager.Instance.allPets;
-		private static readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<NamePlateData> allNameplates = HatManager.Instance.allNamePlates;
+		private static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<SkinData> allSkins => HatManager.Instance != null ? HatManager.Instance.allSkins : null;
+		private static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<HatData> allHats => HatManager.Instance != null ? HatManager.Instance.allHats : null;
+		private static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<VisorData> allVisors => HatManager.Instance != null ? HatManager.Instance.allVisors : null;
+		private static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<PetData> allPets => HatManager.Instance != null ? HatManager.Instance.allPets : null;
+		private static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<NamePlateData> allNameplates => HatManager.Instance != null ? HatManager.Instance.allNamePlates : null;
 
 		public static int GetRandomUnusedColor()
 		{
 			List<int> colors = Enumerable.Range(0, 18).ToList();
 
-			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+			if (PlayerControl.AllPlayerControls != null)
 			{
-				colors.Remove(player.Data.DefaultOutfit.ColorId);
+				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+				{
+					if (player != null && player.Data != null && player.Data.DefaultOutfit != null)
+					{
+						colors.Remove(player.Data.DefaultOutfit.ColorId);
+					}
+				}
 			}
 
 			System.Random rnd = new System.Random();
@@ -40,22 +46,23 @@ namespace HydraMenu
 
 			if(ingame)
 			{
+				if (PlayerControl.LocalPlayer == null) return;
 				PlayerControl.LocalPlayer.CmdCheckColor((byte)GetRandomUnusedColor());
 
-				PlayerControl.LocalPlayer.RpcSetHat(allHats[rnd.Next(0, allHats.Length)].ProductId);
-				PlayerControl.LocalPlayer.RpcSetVisor(allVisors[rnd.Next(0, allVisors.Length)].ProductId);
-				PlayerControl.LocalPlayer.RpcSetSkin(allSkins[rnd.Next(0, allSkins.Length)].ProductId);
-				PlayerControl.LocalPlayer.RpcSetPet(allPets[rnd.Next(0, allPets.Length)].ProductId);
+				if (allHats != null && allHats.Length > 0) PlayerControl.LocalPlayer.RpcSetHat(allHats[rnd.Next(0, allHats.Length)].ProductId);
+				if (allVisors != null && allVisors.Length > 0) PlayerControl.LocalPlayer.RpcSetVisor(allVisors[rnd.Next(0, allVisors.Length)].ProductId);
+				if (allSkins != null && allSkins.Length > 0) PlayerControl.LocalPlayer.RpcSetSkin(allSkins[rnd.Next(0, allSkins.Length)].ProductId);
+				if (allPets != null && allPets.Length > 0) PlayerControl.LocalPlayer.RpcSetPet(allPets[rnd.Next(0, allPets.Length)].ProductId);
 			}
 			else
 			{
-				AccountManager.Instance.RandomizeName();
+				if (AccountManager.Instance != null) AccountManager.Instance.RandomizeName();
 
-				PlayerCustomization.EquipHat(allHats[rnd.Next(0, allHats.Length)]);
-				PlayerCustomization.EquipVisor(allVisors[rnd.Next(0, allVisors.Length)]);
-				PlayerCustomization.EquipSkin(allSkins[rnd.Next(0, allSkins.Length)]);
-				PlayerCustomization.EquipPet(allPets[rnd.Next(0, allPets.Length)]);
-				PlayerCustomization.EquipNameplate(allNameplates[rnd.Next(0, allNameplates.Length)]);
+				if (allHats != null && allHats.Length > 0) PlayerCustomization.EquipHat(allHats[rnd.Next(0, allHats.Length)]);
+				if (allVisors != null && allVisors.Length > 0) PlayerCustomization.EquipVisor(allVisors[rnd.Next(0, allVisors.Length)]);
+				if (allSkins != null && allSkins.Length > 0) PlayerCustomization.EquipSkin(allSkins[rnd.Next(0, allSkins.Length)]);
+				if (allPets != null && allPets.Length > 0) PlayerCustomization.EquipPet(allPets[rnd.Next(0, allPets.Length)]);
+				if (allNameplates != null && allNameplates.Length > 0) PlayerCustomization.EquipNameplate(allNameplates[rnd.Next(0, allNameplates.Length)]);
 			}
 		}
 
@@ -252,9 +259,10 @@ namespace HydraMenu
 
 		public static void OpenMeeting(PlayerControl reporter, NetworkedPlayerInfo target)
 		{
-			MeetingRoomManager.Instance.AssignSelf(reporter, target);
+			if (reporter == null) return;
+			MeetingRoomManager.Instance?.AssignSelf(reporter, target);
 			reporter.RpcStartMeeting(target);
-			HudManager.Instance.OpenMeetingRoom(reporter);
+			HudManager.Instance?.OpenMeetingRoom(reporter);
 		}
 
 		public static bool DoesDeadBodyExist(byte playerId)

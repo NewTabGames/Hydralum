@@ -60,8 +60,11 @@ internal class Hydra : BasePlugin
 		Object.Destroy(notifications);
 		Object.Destroy(routines);
 
-		ModManager.Instance.ModStamp.enabled = false;
-		ModManager.Instance.gameObject.SetActive(false);
+		if (ModManager.Instance != null)
+		{
+			if (ModManager.Instance.ModStamp != null) ModManager.Instance.ModStamp.enabled = false;
+			if (ModManager.Instance.gameObject != null) ModManager.Instance.gameObject.SetActive(false);
+		}
 
 		// Eject MalumMenu simultaneously if present
 		try

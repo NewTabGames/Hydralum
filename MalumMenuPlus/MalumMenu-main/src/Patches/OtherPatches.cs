@@ -106,19 +106,25 @@ public static class ChatBubble_SetName
 [HarmonyPatch(typeof(SystemInfo), nameof(SystemInfo.deviceUniqueIdentifier), MethodType.Getter)]
 public static class SystemInfo_deviceUniqueIdentifier_Getter
 {
+    private static string _cachedSpoofedId;
+
     // Postfix patch of SystemInfo.deviceUniqueIdentifier Getter method
     // Made to hide the user's real unique deviceId by generating a random fake one
     public static void Postfix(ref string __result)
     {
         if (!MalumMenu.spoofDeviceId.Value) return;
 
-        var bytes = new byte[16];
-        using (var rng = RandomNumberGenerator.Create())
+        if (string.IsNullOrEmpty(_cachedSpoofedId))
         {
-            rng.GetBytes(bytes);
+            var bytes = new byte[16];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
+            _cachedSpoofedId = BitConverter.ToString(bytes).Replace("-", "").ToLower();
         }
 
-        __result = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+        __result = _cachedSpoofedId;
     }
 }
 
@@ -280,6 +286,7 @@ public static class IntroCutscene_CoBegin
     public static void Prefix()
     {
         if (!Utils.isHost || !CheatToggles.forcedRole.HasValue) return;
+        if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
 
         var forcedRole = CheatToggles.forcedRole.Value;
 
@@ -291,18 +298,25 @@ public static class IntroCutscene_CoBegin
 
         // Find a player with the forced role to swap roles with
         PlayerControl roleSwapTarget = null;
-        foreach (var player in PlayerControl.AllPlayerControls)
+        if (PlayerControl.AllPlayerControls != null)
         {
-            if (player.Data.RoleType != forcedRole) continue;
-            roleSwapTarget = player;
-            break;
+            foreach (var player in PlayerControl.AllPlayerControls)
+            {
+                if (player == null || player.Data == null || player.Data.RoleType != forcedRole) continue;
+                roleSwapTarget = player;
+                break;
+            }
         }
 
-        DestroyableSingleton<RoleManager>.Instance.SetRole(PlayerControl.LocalPlayer, forcedRole);
-
-        if (roleSwapTarget != null)
+        var roleManager = DestroyableSingleton<RoleManager>.Instance;
+        if (roleManager != null)
         {
-            DestroyableSingleton<RoleManager>.Instance.SetRole(roleSwapTarget, PlayerControl.LocalPlayer.Data.RoleType);
+            roleManager.SetRole(PlayerControl.LocalPlayer, forcedRole);
+
+            if (roleSwapTarget != null && PlayerControl.LocalPlayer.Data != null)
+            {
+                roleManager.SetRole(roleSwapTarget, PlayerControl.LocalPlayer.Data.RoleType);
+            }
         }
     }
 }

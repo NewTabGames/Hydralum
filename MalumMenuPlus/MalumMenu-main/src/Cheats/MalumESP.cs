@@ -40,18 +40,7 @@ public static class MalumESP
 
         try
         {
-            var hydraType = System.Type.GetType("HydraMenu.ui.MainUI, HydraMenu");
-            if (hydraType == null)
-            {
-                foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    if (asm.GetName().Name == "HydraMenu")
-                    {
-                        hydraType = asm.GetType("HydraMenu.ui.MainUI");
-                        break;
-                    }
-                }
-            }
+            var hydraType = MenuUI.GetHydraUIType();
             if (hydraType != null)
             {
                 var visibleField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
