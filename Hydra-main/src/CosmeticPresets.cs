@@ -109,19 +109,47 @@ namespace HydraMenu
 
 		public static void SaveCurrentOutfit(string presetName)
 		{
-			if (PlayerControl.LocalPlayer == null) return;
-			var cur = PlayerControl.LocalPlayer.CurrentOutfit;
-			if (cur == null) return;
+			byte colorId = 0;
+			string hatId = "";
+			string visorId = "";
+			string skinId = "";
+			string petId = "";
+			string namePlateId = "";
+
+			if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.CurrentOutfit != null)
+			{
+				var cur = PlayerControl.LocalPlayer.CurrentOutfit;
+				colorId = (byte)cur.ColorId;
+				hatId = cur.HatId ?? "";
+				visorId = cur.VisorId ?? "";
+				skinId = cur.SkinId ?? "";
+				petId = cur.PetId ?? "";
+				namePlateId = cur.NamePlateId ?? "";
+			}
+			else
+			{
+				try
+				{
+					var cus = DataManager.Player.Customization;
+					colorId = cus.Color;
+					hatId = cus.Hat ?? "";
+					visorId = cus.Visor ?? "";
+					skinId = cus.Skin ?? "";
+					petId = cus.Pet ?? "";
+					namePlateId = cus.NamePlate ?? "";
+				}
+				catch { }
+			}
 
 			var preset = new CosmeticPreset
 			{
 				Name = string.IsNullOrWhiteSpace(presetName) ? $"Preset {Presets.Count + 1}" : presetName,
-				ColorId = (byte)cur.ColorId,
-				HatId = cur.HatId ?? "",
-				VisorId = cur.VisorId ?? "",
-				SkinId = cur.SkinId ?? "",
-				PetId = cur.PetId ?? "",
-				NamePlateId = cur.NamePlateId ?? ""
+				ColorId = colorId,
+				HatId = hatId,
+				VisorId = visorId,
+				SkinId = skinId,
+				PetId = petId,
+				NamePlateId = namePlateId
 			};
 
 			Presets.Add(preset);
@@ -132,28 +160,44 @@ namespace HydraMenu
 
 		public static void ApplyPreset(CosmeticPreset preset)
 		{
-			if (PlayerControl.LocalPlayer == null || preset == null) return;
+			if (preset == null) return;
 
 			try
 			{
-				PlayerControl.LocalPlayer.CmdCheckColor(preset.ColorId);
-				PlayerControl.LocalPlayer.SetColor(preset.ColorId);
-				if (PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.DefaultOutfit != null)
+				try
 				{
-					PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId = preset.ColorId;
+					var cus = DataManager.Player.Customization;
+					cus.Color = preset.ColorId;
+					cus.Hat = preset.HatId;
+					cus.Visor = preset.VisorId;
+					cus.Skin = preset.SkinId;
+					cus.Pet = preset.PetId;
+					cus.NamePlate = preset.NamePlateId;
+				}
+				catch { }
+
+				if (PlayerControl.LocalPlayer != null)
+				{
+					PlayerControl.LocalPlayer.CmdCheckColor(preset.ColorId);
+					PlayerControl.LocalPlayer.SetColor(preset.ColorId);
+					if (PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.DefaultOutfit != null)
+					{
+						PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId = preset.ColorId;
+					}
+
+					BatchedMessage batch = new BatchedMessage();
+					var localOutfit = PlayerControl.LocalPlayer.CurrentOutfit;
+					byte seq = localOutfit != null ? (byte)(localOutfit.HatSequenceId + 1) : (byte)100;
+
+					batch.QueueSetNameplateStr(PlayerControl.LocalPlayer, preset.NamePlateId ?? "", ++seq);
+					batch.QueueSetHatStr(PlayerControl.LocalPlayer, preset.HatId ?? "", ++seq);
+					batch.QueueSetVisorStr(PlayerControl.LocalPlayer, preset.VisorId ?? "", ++seq);
+					batch.QueueSetSkinStr(PlayerControl.LocalPlayer, preset.SkinId ?? "", ++seq);
+					batch.QueueSetPetStr(PlayerControl.LocalPlayer, preset.PetId ?? "", ++seq);
+
+					batch.FinishBatch();
 				}
 
-				BatchedMessage batch = new BatchedMessage();
-				var localOutfit = PlayerControl.LocalPlayer.CurrentOutfit;
-				byte seq = localOutfit != null ? (byte)(localOutfit.HatSequenceId + 1) : (byte)100;
-
-				batch.QueueSetNameplateStr(PlayerControl.LocalPlayer, preset.NamePlateId, ++seq);
-				batch.QueueSetHatStr(PlayerControl.LocalPlayer, preset.HatId, ++seq);
-				batch.QueueSetVisorStr(PlayerControl.LocalPlayer, preset.VisorId, ++seq);
-				batch.QueueSetSkinStr(PlayerControl.LocalPlayer, preset.SkinId, ++seq);
-				batch.QueueSetPetStr(PlayerControl.LocalPlayer, preset.PetId, ++seq);
-
-				batch.FinishBatch();
 				Hydra.notifications?.Send("Cosmetics", $"Applied preset '{preset.Name}'!", 4f);
 			}
 			catch (Exception ex)
