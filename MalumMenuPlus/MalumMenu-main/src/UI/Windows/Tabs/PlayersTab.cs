@@ -128,6 +128,17 @@ public class PlayersTab : ITab
                 MalumTroll.CopyPlayerOutfit(player);
             }
 
+            // Restore your original avatar.
+            var canRestore = Utils.isPlayer;
+            GUI.enabled = canRestore;
+            var restoreClicked = GUILayout.Button("Restore Avatar", GUIStylePreset.NormalButton);
+            GUI.enabled = true;
+
+            if (restoreClicked && canRestore)
+            {
+                MalumTroll.RestoreOriginalOutfit();
+            }
+
             // Murder the player. Routed through CmdCheckMurder so the existing patch picks the right
             // path: a direct kill as host, or a check-murder request as a non-host impostor.
             var canMurder = Utils.isShip && !player.AmOwner && !data.IsDead && !data.Disconnected;

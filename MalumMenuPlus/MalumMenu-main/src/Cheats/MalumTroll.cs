@@ -29,6 +29,8 @@ public static class MalumTroll
         CopyPlayerOutfit(GetRandomPlayer());
     }
 
+    public static NetworkedPlayerInfo.PlayerOutfit OriginalOutfit = null;
+
     // Copies a specific player's outfit onto yourself (color/hat/visor/skin/pet/nameplate) via the
     // normal cosmetic RPCs. The name is deliberately skipped - mid-game name changes are rejected by
     // the anticheat, same reason Hydra leaves it out in server-authoritative lobbies.
@@ -36,6 +38,26 @@ public static class MalumTroll
     {
         var localPlayer = PlayerControl.LocalPlayer;
         if (localPlayer == null || target == null) return;
+
+        if (OriginalOutfit == null && localPlayer.CurrentOutfit != null)
+        {
+            var cur = localPlayer.CurrentOutfit;
+            OriginalOutfit = new NetworkedPlayerInfo.PlayerOutfit
+            {
+                PlayerName = cur.PlayerName,
+                ColorId = cur.ColorId,
+                HatId = cur.HatId,
+                VisorId = cur.VisorId,
+                SkinId = cur.SkinId,
+                PetId = cur.PetId,
+                NamePlateId = cur.NamePlateId,
+                HatSequenceId = cur.HatSequenceId,
+                VisorSequenceId = cur.VisorSequenceId,
+                SkinSequenceId = cur.SkinSequenceId,
+                PetSequenceId = cur.PetSequenceId,
+                NamePlateSequenceId = cur.NamePlateSequenceId
+            };
+        }
 
         try
         {
@@ -47,6 +69,40 @@ public static class MalumTroll
             localPlayer.RpcSetSkin(outfit.SkinId);
             localPlayer.RpcSetPet(outfit.PetId);
             localPlayer.RpcSetNamePlate(outfit.NamePlateId);
+        }
+        catch { }
+    }
+
+    public static void RestoreOriginalOutfit()
+    {
+        var localPlayer = PlayerControl.LocalPlayer;
+        if (localPlayer == null) return;
+
+        try
+        {
+            byte colorId = AmongUs.Data.DataManager.Player.Customization.Color;
+            string hatId = AmongUs.Data.DataManager.Player.Customization.Hat;
+            string visorId = AmongUs.Data.DataManager.Player.Customization.Visor;
+            string skinId = AmongUs.Data.DataManager.Player.Customization.Skin;
+            string petId = AmongUs.Data.DataManager.Player.Customization.Pet;
+            string namePlateId = AmongUs.Data.DataManager.Player.Customization.NamePlate;
+
+            if (OriginalOutfit != null)
+            {
+                colorId = (byte)OriginalOutfit.ColorId;
+                hatId = OriginalOutfit.HatId;
+                visorId = OriginalOutfit.VisorId;
+                skinId = OriginalOutfit.SkinId;
+                petId = OriginalOutfit.PetId;
+                namePlateId = OriginalOutfit.NamePlateId;
+            }
+
+            localPlayer.CmdCheckColor(colorId);
+            localPlayer.RpcSetHat(hatId);
+            localPlayer.RpcSetVisor(visorId);
+            localPlayer.RpcSetSkin(skinId);
+            localPlayer.RpcSetPet(petId);
+            localPlayer.RpcSetNamePlate(namePlateId);
         }
         catch { }
     }
