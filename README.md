@@ -26,8 +26,8 @@ Among Us is an **IL2CPP** game, so it requires **BepInEx 6 (IL2CPP)** instead of
 > ⚠️ **Important**: Do **NOT** download BepInEx 5 (`BepInEx_win_x64_5.4.x.zip`). That version is for Mono games and will not load in Among Us.
 
 1. **Download BepInEx 6 IL2CPP x64**:
-   - Download the latest BepInEx 6 IL2CPP build from **[BepInEx Bleeding Edge Builds](https://builds.bepinex.dev/projects/bepinex_be)** or from **[BepInEx v6.0.0 Pre-Releases](https://github.com/BepInEx/BepInEx/releases?q=v6.0.0&expanded=true)**.
-   - Make sure to download a zip named **`BepInEx_UnityIL2CPP_x64_...zip`** (for example `BepInEx_UnityIL2CPP_x64_6.0.0-be.675.zip`).
+   - **[Direct Download: BepInEx 6 IL2CPP x64 (Build 785)](https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.785%2B6abdba4.zip)**
+   - Alternatively, browse all builds on **[BepInEx Bleeding Edge Builds](https://builds.bepinex.dev/projects/bepinex_be)**.
 2. **Extract to your Among Us Game Folder**:
    - Open your Among Us game folder (where `Among Us.exe` is located).
      - *Steam*: Right-click **Among Us** in Steam library -> **Manage** -> **Browse local files**.
