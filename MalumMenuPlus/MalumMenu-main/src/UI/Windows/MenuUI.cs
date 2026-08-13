@@ -103,7 +103,7 @@ public class MenuUI : MonoBehaviour
         if (CheatToggles.panicMode) Utils.Panic();
 
         var stamp = ModManager.Instance.ModStamp;
-        if (stamp) stamp.enabled = !MalumMenu.isPanicked;
+        if (stamp) stamp.enabled = false;
 
         if (CheatToggles.openConfig)
         {

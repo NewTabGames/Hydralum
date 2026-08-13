@@ -99,14 +99,4 @@ internal class Hydra : BasePlugin
 		}
 		catch { }
 	}
-
-	[HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.Awake))]
-	class OnGameLoad
-	{
-		public static void Postfix()
-		{
-			Log.LogInfo("Adding mod stamp");
-			ModManager.Instance.ShowModStamp();
-		}
-	}
 }
