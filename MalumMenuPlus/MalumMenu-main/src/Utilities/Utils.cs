@@ -729,16 +729,13 @@ public static class Utils
         // Eject HydraMenu simultaneously if present
         try
         {
-            var hydraType = System.Type.GetType("HydraMenu.Hydra, HydraMenu");
-            if (hydraType == null)
+            System.Type hydraType = null;
+            foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
             {
-                foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+                if (asm.GetName().Name == "HydraMenu")
                 {
-                    if (asm.GetName().Name == "HydraMenu")
-                    {
-                        hydraType = asm.GetType("HydraMenu.Hydra");
-                        break;
-                    }
+                    hydraType = asm.GetType("HydraMenu.Hydra");
+                    if (hydraType != null) break;
                 }
             }
             if (hydraType != null)

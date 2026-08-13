@@ -66,22 +66,35 @@ internal class Hydra : BasePlugin
 		// Eject MalumMenu simultaneously if present
 		try
 		{
-			var malumType = System.Type.GetType("MalumMenu.Utils, MalumMenu");
-			if (malumType == null)
+			System.Type malumType = null;
+			foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
 			{
-				foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+				string asmName = asm.GetName().Name;
+				if (asmName == "MalumMenuPlus" || asmName == "MalumMenu")
 				{
-					if (asm.GetName().Name == "MalumMenu")
-					{
-						malumType = asm.GetType("MalumMenu.Utils");
-						break;
-					}
+					malumType = asm.GetType("MalumMenu.Utils");
+					if (malumType != null) break;
 				}
 			}
 			if (malumType != null)
 			{
-				var ejectMethod = malumType.GetMethod("Eject", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-				ejectMethod?.Invoke(null, null);
+				System.Type mainMalumType = null;
+				foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+				{
+					string asmName = asm.GetName().Name;
+					if (asmName == "MalumMenuPlus" || asmName == "MalumMenu")
+					{
+						mainMalumType = asm.GetType("MalumMenu.MalumMenu");
+						if (mainMalumType != null) break;
+					}
+				}
+				var isPanickedField = mainMalumType?.GetField("isPanicked", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+				bool isPanicked = isPanickedField != null && (bool)isPanickedField.GetValue(null);
+				if (!isPanicked)
+				{
+					var ejectMethod = malumType.GetMethod("Eject", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+					ejectMethod?.Invoke(null, null);
+				}
 			}
 		}
 		catch { }
