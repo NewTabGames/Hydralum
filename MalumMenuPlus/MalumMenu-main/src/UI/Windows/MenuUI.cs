@@ -85,11 +85,10 @@ public class MenuUI : MonoBehaviour
                 {
                     isGUIActive = true;
 
-                    if (MalumMenu.menuOpenOnMouse.Value)
-                    {
-                        Vector2 mousePosition = Input.mousePosition;
-                        _windowRect.position = new Vector2(mousePosition.x, Screen.height - mousePosition.y);
-                    }
+                    Vector2 mousePosition = Input.mousePosition;
+                    float x = Mathf.Clamp(mousePosition.x, 0, Mathf.Max(0, Screen.width - _windowRect.width));
+                    float y = Mathf.Clamp(Screen.height - mousePosition.y, 0, Mathf.Max(0, Screen.height - _windowRect.height));
+                    _windowRect.position = new Vector2(x, y);
                 }
             }
         }
@@ -305,11 +304,20 @@ public class MenuUI : MonoBehaviour
 
             if (hydraType != null)
             {
-                // Transfer window position so window doesn't jump
+                // Position Hydra window at mouse position
                 var posField = hydraType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                var sizeProp = hydraType.GetProperty("WindowSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 if (posField != null)
                 {
-                    posField.SetValue(null, new Vector2(_windowRect.x, _windowRect.y));
+                    Vector2 mousePosition = Input.mousePosition;
+                    Vector2 windowSize = new Vector2(500f, 470f);
+                    if (sizeProp != null)
+                    {
+                        windowSize = (Vector2)sizeProp.GetValue(null, null);
+                    }
+                    float x = Mathf.Clamp(mousePosition.x, 0, Mathf.Max(0, Screen.width - windowSize.x));
+                    float y = Mathf.Clamp(Screen.height - mousePosition.y, 0, Mathf.Max(0, Screen.height - windowSize.y));
+                    posField.SetValue(null, new Vector2(x, y));
                 }
 
                 var visField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);

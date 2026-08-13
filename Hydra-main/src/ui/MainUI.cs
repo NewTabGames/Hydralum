@@ -206,8 +206,11 @@ namespace HydraMenu.ui
 					if (rectField != null)
 					{
 						Rect r = (Rect)rectField.GetValue(null);
-						r.x = windowPosition.x;
-						r.y = windowPosition.y;
+						Vector3 mousePos = Input.mousePosition;
+						float x = Mathf.Clamp(mousePos.x, 0, Mathf.Max(0, Screen.width - r.width));
+						float y = Mathf.Clamp(Screen.height - mousePos.y, 0, Mathf.Max(0, Screen.height - r.height));
+						r.x = x;
+						r.y = y;
 						rectField.SetValue(null, r);
 					}
 
