@@ -27,6 +27,45 @@ public static class Constants_GetPlatformData
     }
 }
 
+[HarmonyPatch(typeof(AmongUs.InnerNet.GameDataMessages.RpcSetLevelMessage), nameof(AmongUs.InnerNet.GameDataMessages.RpcSetLevelMessage.SerializeRpcValues))]
+public static class RpcSetLevelMessage_SerializeRpcValues
+{
+    // Prefix patch of RpcSetLevelMessage.SerializeRpcValues to spoof player level from Malum config
+    public static bool Prefix(Hazel.MessageWriter msg)
+    {
+        if (uint.TryParse(MalumMenu.spoofLevel.Value, out uint level) && level >= 1 && level <= 100001)
+        {
+            msg.WritePacked(level - 1);
+            if (PlayerControl.LocalPlayer != null)
+            {
+                PlayerControl.LocalPlayer.SetLevel(level - 1);
+            }
+            return false;
+        }
+
+        return true;
+    }
+}
+
+[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.Start))]
+public static class PlayerControl_Start_LevelSpoof
+{
+    public static void Postfix(PlayerControl __instance)
+    {
+        if (__instance != null && __instance.AmOwner)
+        {
+            if (uint.TryParse(MalumMenu.spoofLevel.Value, out uint level) && level >= 1 && level <= 100001)
+            {
+                __instance.SetLevel(level - 1);
+                if (__instance.Data != null)
+                {
+                    __instance.Data.PlayerLevel = level - 1;
+                }
+            }
+        }
+    }
+}
+
 [HarmonyPatch(typeof(FreeChatInputField), nameof(FreeChatInputField.UpdateCharCount))]
 public static class FreeChatInputField_UpdateCharCount
 {
