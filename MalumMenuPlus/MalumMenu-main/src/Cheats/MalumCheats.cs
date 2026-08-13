@@ -460,15 +460,26 @@ public static class MalumCheats
         }
     }
 
+    private static float _lastRightClickTpTime = 0f;
+
     public static void TeleportCursorCheat()
     {
         if (PlayerControl.LocalPlayer?.NetTransform == null || Camera.main == null) return;
         if (!CheatToggles.teleportCursor) return;
 
-        // Teleport player to cursor's in-world position on right-click
+        // Prevent TPing when clicking over active menu GUI
+        if (MalumESP.IsMouseOverActiveMenuGUI()) return;
+
+        // Teleport player to cursor's in-world position on right-click with rate limit to prevent RPC spam kick
         if (Input.GetMouseButtonDown(1))
         {
-            PlayerControl.LocalPlayer.NetTransform.RpcSnapTo(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+            if (Time.time - _lastRightClickTpTime < 0.15f) return;
+            _lastRightClickTpTime = Time.time;
+
+            Vector3 mousePos = Input.mousePosition;
+            Vector2 worldPos = Camera.main.ScreenToWorldPoint(mousePos);
+
+            MalumTeleport.TeleportTo(worldPos);
         }
     }
 
