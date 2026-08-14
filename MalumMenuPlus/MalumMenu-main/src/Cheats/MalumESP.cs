@@ -117,17 +117,23 @@ public static class MalumESP
 
     public static void MeetingNametags(MeetingHud meetingHud)
     {
-        try
+        if (meetingHud == null || meetingHud.playerStates == null) return;
+
+        foreach (var playerState in meetingHud.playerStates)
         {
-            foreach (var playerState in meetingHud.playerStates)
+            if (playerState == null || playerState.NameText == null) continue;
+
+            try
             {
                 // Fetch the NetworkedPlayerInfo of each playerState
-                var data = GameData.Instance.GetPlayerById(playerState.TargetPlayerId);
+                var data = GameData.Instance != null ? GameData.Instance.GetPlayerById(playerState.TargetPlayerId) : null;
+                if (data == null || data.Disconnected) continue;
 
-                if (data.IsNull() || data.Disconnected || data.Outfits[PlayerOutfitType.Default].IsNull()) continue;
+                string playerName = data.PlayerName ?? (data.DefaultOutfit != null ? data.DefaultOutfit.PlayerName : "");
+                if (string.IsNullOrEmpty(playerName)) continue;
 
                 // Update the player's nametag appropriately
-                playerState.NameText.text = Utils.GetNameTag(data, data.DefaultOutfit.PlayerName);
+                playerState.NameText.text = Utils.GetNameTag(data, playerName);
 
                 // Move and resize the nametag to prevent it overlapping with colorblind text
                 if (CheatToggles.seeRoles && CheatToggles.seePlayerInfo)
@@ -142,31 +148,41 @@ public static class MalumESP
                 }
                 else
                 {
-                    // Reset the position and scale of the nametag to default values (they're kinda weird but whatever)
+                    // Reset the position and scale of the nametag to default values
                     playerState.NameText.transform.localPosition = new Vector3(0.3384f, 0.0311f, -0.1f);
                     playerState.NameText.transform.localScale = new Vector3(0.9f, 1f, 1f);
                 }
             }
-        } catch { }
+            catch { }
+        }
     }
 
     public static void PlayerNametags(PlayerPhysics playerPhysics)
     {
         try
         {
-            playerPhysics.myPlayer.cosmetics.SetName(Utils.GetNameTag(playerPhysics.myPlayer.Data, playerPhysics.myPlayer.CurrentOutfit.PlayerName));
+            if (playerPhysics == null || playerPhysics.myPlayer == null || playerPhysics.myPlayer.cosmetics == null || playerPhysics.myPlayer.Data == null) return;
+
+            string playerName = playerPhysics.myPlayer.CurrentOutfit != null ? playerPhysics.myPlayer.CurrentOutfit.PlayerName : playerPhysics.myPlayer.Data.PlayerName;
+            if (string.IsNullOrEmpty(playerName)) playerName = playerPhysics.myPlayer.Data.PlayerName ?? "";
+
+            playerPhysics.myPlayer.cosmetics.SetName(Utils.GetNameTag(playerPhysics.myPlayer.Data, playerName));
+
             // Move the nameText up to prevent it overlapping with colorblind text
-            if (CheatToggles.seeRoles && CheatToggles.seePlayerInfo)
+            if (playerPhysics.myPlayer.cosmetics.nameText != null)
             {
-                playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.186f, 0f);
-            }
-            else if (CheatToggles.seeRoles || CheatToggles.seePlayerInfo)
-            {
-                playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.093f, 0f);
-            }
-            else
-            {
-                playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0f, 0f);
+                if (CheatToggles.seeRoles && CheatToggles.seePlayerInfo)
+                {
+                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.186f, 0f);
+                }
+                else if (CheatToggles.seeRoles || CheatToggles.seePlayerInfo)
+                {
+                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.093f, 0f);
+                }
+                else
+                {
+                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0f, 0f);
+                }
             }
         } catch { }
     }

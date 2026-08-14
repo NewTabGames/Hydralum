@@ -444,14 +444,26 @@ public static class Utils
     }
 
     // Gets the name for a specified player's role as a string
+    // Gets the name for a specified player's role as a string
     // Strings are automatically translated
     public static string GetRoleName(NetworkedPlayerInfo playerData)
     {
-        var translatedRole = DestroyableSingleton<TranslationController>.Instance.GetString(playerData.Role.StringName, Il2CppSystem.Array.Empty<Il2CppSystem.Object>());
-        if (translatedRole != "STRMISS") return translatedRole;
+        if (playerData == null || playerData.Role == null) return "Unknown";
+        try
+        {
+            var tc = DestroyableSingleton<TranslationController>.Instance;
+            if (tc != null)
+            {
+                var translatedRole = tc.GetString(playerData.Role.StringName, Il2CppSystem.Array.Empty<Il2CppSystem.Object>());
+                if (translatedRole != "STRMISS" && !string.IsNullOrEmpty(translatedRole)) return translatedRole;
 
-        translatedRole = DestroyableSingleton<TranslationController>.Instance.GetString(GetBehaviourByTeamType(playerData.Role.TeamType).StringName, Il2CppSystem.Array.Empty<Il2CppSystem.Object>());
-        return translatedRole;
+                translatedRole = tc.GetString(GetBehaviourByTeamType(playerData.Role.TeamType).StringName, Il2CppSystem.Array.Empty<Il2CppSystem.Object>());
+                if (translatedRole != "STRMISS" && !string.IsNullOrEmpty(translatedRole)) return translatedRole;
+            }
+        }
+        catch { }
+
+        return playerData.Role.Role.ToString();
     }
 
     // Gets the appropriate nametag for a player
@@ -459,83 +471,91 @@ public static class Utils
     {
         var nameTag = playerName;
 
-        if (playerInfo.Role.IsNull() || playerInfo.IsNull() || playerInfo.Disconnected ||
-            playerInfo.Object.CurrentOutfit.IsNull()) return nameTag;
+        if (playerInfo == null || playerInfo.Disconnected) return nameTag;
 
-        var player = AmongUsClient.Instance.GetClientFromPlayerInfo(playerInfo);
-        var host = AmongUsClient.Instance.GetHost();
-        var level = playerInfo.PlayerLevel + 1;
-
-        var platform = "Unknown";
-        if (!isLocalGame) try { platform = PlatformTypeToString(player.PlatformData.Platform); } catch { }
-
-        //var puid = player.ProductUserId;
-        //var friendcode = player.FriendCode;
-
-        var roleColor = ColorUtility.ToHtmlStringRGB(playerInfo.Role.TeamColor);
-
-        var hostString = player == host ? "Host - " : "";
-
-        if (CheatToggles.seeRoles)
+        try
         {
+            var client = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetClientFromPlayerInfo(playerInfo) : null;
+            var host = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetHost() : null;
+            var level = playerInfo.PlayerLevel + 1;
 
-            if (CheatToggles.seePlayerInfo)
+            var platform = "Unknown";
+            if (!isLocalGame && client != null && client.PlatformData != null)
             {
-                if (isChat)
-                {
-                    nameTag = $"<color=#{roleColor}>{nameTag} <size=70%>{GetRoleName(playerInfo)}</size></color> <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
-                    return nameTag;
-                }
-
-                nameTag =
-                    $"<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{roleColor}><size=70%>{GetRoleName(playerInfo)}</size>\r\n{nameTag}</color>";
+                try { platform = PlatformTypeToString(client.PlatformData.Platform); } catch { }
             }
-            else
-            {
-                if (isChat)
-                {
-                    nameTag = $"<color=#{roleColor}>{nameTag} <size=70%>{GetRoleName(playerInfo)}</size></color>";
-                    return nameTag;
-                }
 
-                nameTag = $"<color=#{roleColor}><size=70%>{GetRoleName(playerInfo)}</size>\r\n{nameTag}</color>";
-            }
-        }
-        else
-        {
-            if (CheatToggles.seePlayerInfo)
+            var hostString = (client != null && host != null && client == host) ? "Host - " : "";
+
+            var role = playerInfo.Role;
+            var roleColor = "ffffff";
+            var roleName = "Unknown";
+
+            if (role != null)
             {
-                if (PlayerControl.LocalPlayer.Data.Role.NameColor == playerInfo.Role.NameColor)
+                roleColor = ColorUtility.ToHtmlStringRGB(role.TeamColor);
+                roleName = GetRoleName(playerInfo);
+            }
+
+            if (CheatToggles.seeRoles)
+            {
+                if (CheatToggles.seePlayerInfo)
                 {
                     if (isChat)
                     {
-                        nameTag =
-                            $"<color=#{ColorUtility.ToHtmlStringRGB(playerInfo.Role.NameColor)}>{nameTag}</color> <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
-                        return nameTag;
+                        return $"<color=#{roleColor}>{nameTag} <size=70%>{roleName}</size></color> <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
                     }
 
-                    nameTag =
-                        $"<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{ColorUtility.ToHtmlStringRGB(playerInfo.Role.NameColor)}>{nameTag}";
+                    return $"<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{roleColor}><size=70%>{roleName}</size>\r\n{nameTag}</color>";
                 }
                 else
                 {
                     if (isChat)
                     {
-                        nameTag = $"{nameTag} <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
-                        return nameTag;
+                        return $"<color=#{roleColor}>{nameTag} <size=70%>{roleName}</size></color>";
                     }
 
-                    nameTag = $"<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n{nameTag}";
+                    return $"<color=#{roleColor}><size=70%>{roleName}</size>\r\n{nameTag}</color>";
                 }
             }
             else
             {
-                if (PlayerControl.LocalPlayer.Data.Role.NameColor != playerInfo.Role.NameColor || isChat)
-                    return nameTag;
+                if (CheatToggles.seePlayerInfo)
+                {
+                    bool isSameTeam = PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.Role != null && role != null && PlayerControl.LocalPlayer.Data.Role.NameColor == role.NameColor;
 
-                nameTag = $"<color=#{ColorUtility.ToHtmlStringRGB(playerInfo.Role.NameColor)}>{nameTag}</color>";
+                    if (isSameTeam && role != null)
+                    {
+                        string nameColorHex = ColorUtility.ToHtmlStringRGB(role.NameColor);
+                        if (isChat)
+                        {
+                            return $"<color=#{nameColorHex}>{nameTag}</color> <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
+                        }
+
+                        return $"<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{nameColorHex}>{nameTag}</color>";
+                    }
+                    else
+                    {
+                        if (isChat)
+                        {
+                            return $"{nameTag} <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
+                        }
+
+                        return $"<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n{nameTag}";
+                    }
+                }
+                else
+                {
+                    bool isSameTeam = PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.Role != null && role != null && PlayerControl.LocalPlayer.Data.Role.NameColor == role.NameColor;
+
+                    if (isSameTeam && role != null && !isChat)
+                    {
+                        return $"<color=#{ColorUtility.ToHtmlStringRGB(role.NameColor)}>{nameTag}</color>";
+                    }
+                }
             }
         }
+        catch { }
 
         return nameTag;
     }

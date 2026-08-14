@@ -17,3 +17,5 @@ DLLs/
 # Custom user testing folder
 TESTING/
 **/TESTING/
+TEST/
+**/TEST/
