@@ -63,11 +63,9 @@ namespace HydraMenu.ui
 
 		public void Update()
 		{
-			// Tool to test the notifications system
 			if(Input.GetKeyDown(KeyCode.F6))
 			{
-				System.Random random = new System.Random();
-				Hydra.notifications.Send("Test", $"The quick brown fox jumps over the lazy dog. {random.Next(0, 100)}");
+				visible = !visible;
 			}
 
 			if(!visible) return;
