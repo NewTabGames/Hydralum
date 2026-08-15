@@ -58,9 +58,12 @@ public static class Vent_EnterVent
         var room = Utils.GetRoomFromPosition(__instance.transform.position); //- (Vector3) pc.Collider.offset);
         var roomName = room != null ? room.RoomId.ToString() : "an unknown location";
 
-        ConsoleUI.Log(isDisguised
+        var msg = isDisguised
             ? $"{realPlayerName} (as {displayPlayerName}) entered a vent in {roomName}"
-            : $"{realPlayerName} entered a vent in {roomName}");
+            : $"{realPlayerName} entered a vent in {roomName}";
+
+        ConsoleUI.Log(msg);
+        DebugUI.Log(msg);
     }
 }
 
@@ -78,8 +81,11 @@ public static class Vent_ExitVent
         var room = Utils.GetRoomFromPosition(__instance.transform.position); //- (Vector3) pc.Collider.offset);
         var roomName = room != null ? room.RoomId.ToString() : "an unknown location";
 
-        ConsoleUI.Log(isDisguised
+        var msg = isDisguised
             ? $"{realPlayerName} (as {displayPlayerName}) exited a vent in {roomName}"
-            : $"{realPlayerName} exited a vent in {roomName}");
+            : $"{realPlayerName} exited a vent in {roomName}";
+
+        ConsoleUI.Log(msg);
+        DebugUI.Log(msg);
     }
 }

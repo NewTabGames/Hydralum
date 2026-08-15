@@ -5,5 +5,6 @@ public enum WindowId
     DoorsUI = 2,
     TasksUI = 3,
     RolesUI = 4,
-    ProtectUI = 5
+    ProtectUI = 5,
+    DebugUI = 6
 }

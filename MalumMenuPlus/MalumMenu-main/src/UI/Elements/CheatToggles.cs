@@ -132,6 +132,11 @@ public struct CheatToggles
     public static bool logVents;
     public static bool logMeetings;
 
+    // Debug
+    public static bool showDebugConsole;
+    public static bool logIncomingRpcs;
+    public static bool logOutgoingRpcs;
+
     // Host-Only
     public static bool voteImmune;
     public static bool forceRole;

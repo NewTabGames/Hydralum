@@ -23,6 +23,7 @@ public partial class MalumMenu : BasePlugin
 
     public static MenuUI menuUI;
     public static ConsoleUI consoleUI;
+    public static DebugUI debugUI;
     public static RolesUI rolesUI;
     public static DoorsUI doorsUI;
     public static TasksUI tasksUI;
@@ -124,6 +125,7 @@ public partial class MalumMenu : BasePlugin
         // UI
         menuUI = AddComponent<MenuUI>();
         consoleUI = AddComponent<ConsoleUI>();
+        debugUI = AddComponent<DebugUI>();
         doorsUI = AddComponent<DoorsUI>();
         tasksUI = AddComponent<TasksUI>();
         protectUI = AddComponent<ProtectUI>();
