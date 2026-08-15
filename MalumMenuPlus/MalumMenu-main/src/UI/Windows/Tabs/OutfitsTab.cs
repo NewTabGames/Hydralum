@@ -45,24 +45,24 @@ public class OutfitsTab : ITab
 
         GUILayout.BeginHorizontal();
 
-        // Left column: Outfit Creator, Cloner & Quick Tools
-        GUILayout.BeginVertical(GUILayout.Width(MenuUI.windowWidth * 0.44f));
+        // Left column: Outfit Creator, Cloner & Quick Tools (fixed 235px)
+        GUILayout.BeginVertical(GUILayout.Width(235f));
 
         DrawSaveSection();
 
-        GUILayout.Space(12);
+        GUILayout.Space(10);
 
         DrawCloneSection();
 
-        GUILayout.Space(12);
+        GUILayout.Space(10);
 
         DrawToolsSection();
 
         GUILayout.EndVertical();
 
-        GUILayout.Space(15);
+        GUILayout.Space(10);
 
-        // Right column: Saved Outfits Library
+        // Right column: Saved Outfits Library (flexible remainder)
         GUILayout.BeginVertical();
 
         DrawLibrarySection();
@@ -79,18 +79,18 @@ public class OutfitsTab : ITab
         GUILayout.Label($"Preset Name: <b>{_customOutfitName}</b>", GUIStylePreset.Hint);
 
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("<", GUIStylePreset.NormalButton, GUILayout.Width(35), GUILayout.Height(24)))
+        if (GUILayout.Button("<", GUIStylePreset.NormalButton, GUILayout.Width(28), GUILayout.Height(24)))
         {
             _presetTemplateIndex = _presetTemplateIndex > 0 ? _presetTemplateIndex - 1 : PresetTemplates.Length - 1;
             _customOutfitName = PresetTemplates[_presetTemplateIndex];
         }
 
-        if (GUILayout.Button($"Select: {PresetTemplates[_presetTemplateIndex]}", GUIStylePreset.NormalButton, GUILayout.Height(24)))
+        if (GUILayout.Button(PresetTemplates[_presetTemplateIndex], GUIStylePreset.NormalButton, GUILayout.Height(24)))
         {
             _customOutfitName = PresetTemplates[_presetTemplateIndex];
         }
 
-        if (GUILayout.Button(">", GUIStylePreset.NormalButton, GUILayout.Width(35), GUILayout.Height(24)))
+        if (GUILayout.Button(">", GUIStylePreset.NormalButton, GUILayout.Width(28), GUILayout.Height(24)))
         {
             _presetTemplateIndex = _presetTemplateIndex < PresetTemplates.Length - 1 ? _presetTemplateIndex + 1 : 0;
             _customOutfitName = PresetTemplates[_presetTemplateIndex];
@@ -100,17 +100,17 @@ public class OutfitsTab : ITab
         GUILayout.Space(2);
 
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Paste Clipboard Name", GUIStylePreset.NormalButton, GUILayout.Height(22)))
+        if (GUILayout.Button("Paste Clipboard", GUIStylePreset.NormalButton, GUILayout.Height(22)))
         {
             string clipboard = GUIUtility.systemCopyBuffer;
             if (!string.IsNullOrWhiteSpace(clipboard))
             {
                 _customOutfitName = clipboard.Trim();
-                SetStatus($"<color=white>Pasted name: '{_customOutfitName}'</color>");
+                SetStatus($"<color=white>Pasted: '{_customOutfitName}'</color>");
             }
         }
 
-        if (GUILayout.Button("Use Color Name", GUIStylePreset.NormalButton, GUILayout.Height(22)))
+        if (GUILayout.Button("Use Color", GUIStylePreset.NormalButton, GUILayout.Height(22)))
         {
             if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null)
             {
@@ -123,11 +123,11 @@ public class OutfitsTab : ITab
 
         GUILayout.Space(4);
 
-        if (GUILayout.Button("Save as JSON Preset", GUIStylePreset.NormalButton, GUILayout.Height(28)))
+        if (GUILayout.Button("Save as JSON Preset", GUIStylePreset.NormalButton, GUILayout.Height(26)))
         {
             if (PlayerControl.LocalPlayer == null)
             {
-                SetStatus("<color=red>Join a lobby to save your outfit!</color>");
+                SetStatus("<color=red>Join a lobby to save outfit!</color>");
             }
             else
             {
@@ -135,11 +135,11 @@ public class OutfitsTab : ITab
                 if (outfit != null && OutfitManager.SaveOutfit(outfit))
                 {
                     RefreshOutfits();
-                    SetStatus($"<color=green>Saved '{outfit.Name}' to JSON!</color>");
+                    SetStatus($"<color=green>Saved '{outfit.Name}'!</color>");
                 }
                 else
                 {
-                    SetStatus("<color=red>Failed to save outfit preset.</color>");
+                    SetStatus("<color=red>Failed to save outfit.</color>");
                 }
             }
         }
@@ -172,9 +172,21 @@ public class OutfitsTab : ITab
         }
 
         GUILayout.Label("Select Player:", GUIStylePreset.Hint);
-        GUILayout.BeginHorizontal();
-        foreach (var p in availablePlayers)
+
+        // 2-Column Wrapped Player Grid
+        int col = 0;
+        PlayerControl targetPlayer = null;
+
+        for (int i = 0; i < availablePlayers.Count; i++)
         {
+            var p = availablePlayers[i];
+            if (p.Data.PlayerId == _selectedPlayerToClone)
+            {
+                targetPlayer = p;
+            }
+
+            if (col == 0) GUILayout.BeginHorizontal();
+
             bool isSelected = p.Data.PlayerId == _selectedPlayerToClone;
             var prevBg = GUI.backgroundColor;
             if (isSelected) GUI.backgroundColor = new Color(0.35f, 0.7f, 1f);
@@ -185,25 +197,22 @@ public class OutfitsTab : ITab
                 _selectedPlayerToClone = p.Data.PlayerId;
             }
             GUI.backgroundColor = prevBg;
-        }
-        GUILayout.EndHorizontal();
 
-        GUILayout.Space(4);
-
-        PlayerControl targetPlayer = null;
-        foreach (var p in availablePlayers)
-        {
-            if (p.Data.PlayerId == _selectedPlayerToClone)
+            col++;
+            if (col == 2)
             {
-                targetPlayer = p;
-                break;
+                GUILayout.EndHorizontal();
+                col = 0;
             }
         }
+        if (col != 0) GUILayout.EndHorizontal();
+
+        GUILayout.Space(4);
 
         if (targetPlayer != null)
         {
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Clone & Equip", GUIStylePreset.NormalButton, GUILayout.Height(26)))
+            if (GUILayout.Button("Clone & Equip", GUIStylePreset.NormalButton, GUILayout.Height(24)))
             {
                 var cloned = OutfitManager.ClonePlayerOutfit(targetPlayer, targetPlayer.Data.PlayerName);
                 if (cloned != null)
@@ -213,7 +222,7 @@ public class OutfitsTab : ITab
                 }
             }
 
-            if (GUILayout.Button("Save to JSON", GUIStylePreset.NormalButton, GUILayout.Height(26)))
+            if (GUILayout.Button("Save to JSON", GUIStylePreset.NormalButton, GUILayout.Height(24)))
             {
                 var cloned = OutfitManager.ClonePlayerOutfit(targetPlayer, targetPlayer.Data.PlayerName);
                 if (cloned != null && OutfitManager.SaveOutfit(cloned))
@@ -230,22 +239,22 @@ public class OutfitsTab : ITab
     {
         GUILayout.Label("Quick Actions", GUIStylePreset.TabSubtitle);
 
-        if (GUILayout.Button("Open Outfits Folder", GUIStylePreset.NormalButton, GUILayout.Height(24)))
+        if (GUILayout.Button("Open Outfits Folder", GUIStylePreset.NormalButton, GUILayout.Height(22)))
         {
             OutfitManager.OpenOutfitsFolder();
         }
 
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Randomize Avatar", GUIStylePreset.NormalButton, GUILayout.Height(24)))
+        if (GUILayout.Button("Randomize", GUIStylePreset.NormalButton, GUILayout.Height(22)))
         {
             MalumAvatar.RandomizeAvatar();
-            SetStatus("<color=yellow>Randomized cosmetics!</color>");
+            SetStatus("<color=yellow>Randomized!</color>");
         }
 
-        if (GUILayout.Button("Restore Default", GUIStylePreset.NormalButton, GUILayout.Height(24)))
+        if (GUILayout.Button("Restore", GUIStylePreset.NormalButton, GUILayout.Height(22)))
         {
             MalumAvatar.RestoreAvatar();
-            SetStatus("<color=white>Restored account cosmetics.</color>");
+            SetStatus("<color=white>Restored default.</color>");
         }
         GUILayout.EndHorizontal();
     }
@@ -254,7 +263,7 @@ public class OutfitsTab : ITab
     {
         GUILayout.BeginHorizontal();
         GUILayout.Label($"Saved Presets ({_cachedOutfits?.Count ?? 0})", GUIStylePreset.TabSubtitle);
-        if (GUILayout.Button("Refresh", GUIStylePreset.NormalButton, GUILayout.Width(70), GUILayout.Height(22)))
+        if (GUILayout.Button("Refresh", GUIStylePreset.NormalButton, GUILayout.Width(65), GUILayout.Height(22)))
         {
             RefreshOutfits();
         }
@@ -267,7 +276,7 @@ public class OutfitsTab : ITab
 
         if (_cachedOutfits == null || _cachedOutfits.Count == 0)
         {
-            GUILayout.Label("No saved outfits yet.\nCreate one on the left to save to JSON!", GUIStylePreset.Hint);
+            GUILayout.Label("No saved outfits yet.\nSave an outfit on the left to create a preset!", GUIStylePreset.Hint);
             return;
         }
 
@@ -280,14 +289,15 @@ public class OutfitsTab : ITab
 
             GUILayout.BeginVertical(GUI.skin.box);
 
-            GUILayout.BeginHorizontal();
+            // Header line: Name & Color
             string colorName = outfit.ColorId >= 0 && outfit.ColorId < ColorNames.Length 
                 ? ColorNames[outfit.ColorId] 
                 : $"Color {outfit.ColorId}";
-            
-            GUILayout.Label($"<b>{outfit.Name}</b> <color=#aaaaaa>({colorName})</color>", GUILayout.ExpandWidth(true));
+            GUILayout.Label($"<b>{outfit.Name}</b> <color=#aaaaaa>({colorName})</color>");
 
-            if (GUILayout.Button("Equip", GUIStylePreset.NormalButton, GUILayout.Width(65), GUILayout.Height(24)))
+            // Action Buttons
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Equip", GUIStylePreset.NormalButton, GUILayout.Height(22)))
             {
                 if (OutfitManager.ApplyOutfit(outfit))
                 {
@@ -299,7 +309,7 @@ public class OutfitsTab : ITab
                 }
             }
 
-            if (GUILayout.Button("Overwrite", GUIStylePreset.NormalButton, GUILayout.Width(75), GUILayout.Height(24)))
+            if (GUILayout.Button("Overwrite", GUIStylePreset.NormalButton, GUILayout.Height(22)))
             {
                 var updated = OutfitManager.CaptureCurrentOutfit(outfit.Name);
                 if (updated != null && OutfitManager.SaveOutfit(updated))
@@ -311,7 +321,7 @@ public class OutfitsTab : ITab
 
             var prevBg = GUI.backgroundColor;
             GUI.backgroundColor = new Color(0.9f, 0.3f, 0.3f);
-            if (GUILayout.Button("X", GUIStylePreset.NormalButton, GUILayout.Width(28), GUILayout.Height(24)))
+            if (GUILayout.Button("X", GUIStylePreset.NormalButton, GUILayout.Width(26), GUILayout.Height(22)))
             {
                 if (OutfitManager.DeleteOutfit(outfit.Name))
                 {
@@ -324,17 +334,17 @@ public class OutfitsTab : ITab
                 }
             }
             GUI.backgroundColor = prevBg;
-
             GUILayout.EndHorizontal();
 
-            string hatText = string.IsNullOrEmpty(outfit.HatId) ? "None" : outfit.HatId;
-            string skinText = string.IsNullOrEmpty(outfit.SkinId) ? "None" : outfit.SkinId;
-            string visorText = string.IsNullOrEmpty(outfit.VisorId) ? "None" : outfit.VisorId;
-            string petText = string.IsNullOrEmpty(outfit.PetId) ? "None" : outfit.PetId;
-            GUILayout.Label($"<size=11><color=#888888>Hat: {hatText} | Skin: {skinText} | Visor: {visorText} | Pet: {petText}</color></size>");
+            // Compact details
+            string hatText = string.IsNullOrEmpty(outfit.HatId) ? "-" : outfit.HatId;
+            string skinText = string.IsNullOrEmpty(outfit.SkinId) ? "-" : outfit.SkinId;
+            string visorText = string.IsNullOrEmpty(outfit.VisorId) ? "-" : outfit.VisorId;
+            string petText = string.IsNullOrEmpty(outfit.PetId) ? "-" : outfit.PetId;
+            GUILayout.Label($"<size=10><color=#888888>H:{hatText} | S:{skinText} | V:{visorText} | P:{petText}</color></size>");
 
             GUILayout.EndVertical();
-            GUILayout.Space(3);
+            GUILayout.Space(2);
         }
 
         GUILayout.EndScrollView();
