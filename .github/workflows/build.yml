@@ -34,16 +34,24 @@ jobs:
         path: DLLs/*.dll
         if-no-files-found: error
 
-    - name: Assemble Standalone 1-Click Package (BepInEx 6 + dotnet + Hydralum)
+    - name: Assemble Standalone 1-Click Package (BepInEx 6 x86 + dotnet + Hydralum)
       run: |
         mkdir -p standalone_build
-        curl -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.785%2B6abdba4.zip" -o bepinex.zip
+        curl -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785%2B6abdba4.zip" -o bepinex.zip
         unzip -q bepinex.zip -d standalone_build
         rm -f bepinex.zip
         mkdir -p standalone_build/BepInEx/plugins
+        mkdir -p standalone_build/BepInEx/config
         cp DLLs/HydraMenu.dll standalone_build/BepInEx/plugins/
         cp DLLs/MalumMenuPlus.dll standalone_build/BepInEx/plugins/
         echo "945360" > standalone_build/steam_appid.txt
+        cat << 'EOF' > standalone_build/BepInEx/config/BepInEx.cfg
+[Logging.Console]
+Enabled = true
+PreventClose = false
+StandardOutType = Auto
+LogLevels = Fatal, Error, Warning, Message, Info
+EOF
 
     - name: Upload Standalone 1-Click Package Artifact
       uses: actions/upload-artifact@v4
