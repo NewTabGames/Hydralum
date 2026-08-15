@@ -375,7 +375,7 @@ public class OutfitsTab : ITab
             }
             else
             {
-                // Standard Action Buttons
+                // Standard Action Buttons - Row 1: Primary actions
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Equip", GUIStylePreset.NormalButton, GUILayout.Height(22)))
                 {
@@ -398,8 +398,11 @@ public class OutfitsTab : ITab
                         SetStatus($"<color=green>Updated '{outfit.Name}'!</color>");
                     }
                 }
+                GUILayout.EndHorizontal();
 
-                if (GUILayout.Button("Rename", GUIStylePreset.NormalButton, GUILayout.Width(55), GUILayout.Height(22)))
+                // Standard Action Buttons - Row 2: Management
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Rename", GUIStylePreset.NormalButton, GUILayout.Height(22)))
                 {
                     _outfitPendingRename = outfit.Name;
                     _renameBuffer = outfit.Name;
@@ -407,7 +410,7 @@ public class OutfitsTab : ITab
 
                 var prevBg = GUI.backgroundColor;
                 GUI.backgroundColor = new Color(0.9f, 0.3f, 0.3f);
-                if (GUILayout.Button("X", GUIStylePreset.NormalButton, GUILayout.Width(26), GUILayout.Height(22)))
+                if (GUILayout.Button("Delete (X)", GUIStylePreset.NormalButton, GUILayout.Height(22)))
                 {
                     _outfitPendingDelete = outfit.Name;
                 }
@@ -416,17 +419,30 @@ public class OutfitsTab : ITab
             }
 
             // Compact details
-            string hatText = string.IsNullOrEmpty(outfit.HatId) ? "-" : outfit.HatId;
-            string skinText = string.IsNullOrEmpty(outfit.SkinId) ? "-" : outfit.SkinId;
-            string visorText = string.IsNullOrEmpty(outfit.VisorId) ? "-" : outfit.VisorId;
-            string petText = string.IsNullOrEmpty(outfit.PetId) ? "-" : outfit.PetId;
-            GUILayout.Label($"<size=10><color=#888888>H:{hatText} | S:{skinText} | V:{visorText} | P:{petText}</color></size>");
+            string hatText = FormatCosmetic(outfit.HatId, "hat_");
+            string skinText = FormatCosmetic(outfit.SkinId, "skin_");
+            string visorText = FormatCosmetic(outfit.VisorId, "visor_");
+            string petText = FormatCosmetic(outfit.PetId, "pet_");
+            GUILayout.Label($"<size=10><color=#888888>H: {hatText} | S: {skinText}\nV: {visorText} | P: {petText}</color></size>");
 
             GUILayout.EndVertical();
             GUILayout.Space(2);
         }
 
         GUILayout.EndScrollView();
+    }
+
+    private static string FormatCosmetic(string id, string prefix)
+    {
+        if (string.IsNullOrEmpty(id) || id.Contains("Empty", StringComparison.OrdinalIgnoreCase))
+        {
+            return "None";
+        }
+        if (!string.IsNullOrEmpty(prefix) && id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return id.Substring(prefix.Length);
+        }
+        return id;
     }
 
     private void RefreshOutfits()

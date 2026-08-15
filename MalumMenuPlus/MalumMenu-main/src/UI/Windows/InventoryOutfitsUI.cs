@@ -6,8 +6,8 @@ namespace MalumMenu;
 
 public class InventoryOutfitsUI : MonoBehaviour
 {
-    public static int windowWidth = 270;
-    public static int windowHeight = 490;
+    public static int windowWidth = 285;
+    public static int windowHeight = 510;
     private Rect _windowRect;
 
     private string _customOutfitName = "Outfit 1";
@@ -151,7 +151,7 @@ public class InventoryOutfitsUI : MonoBehaviour
             GUILayout.Label(_statusMessage, GUIStylePreset.Hint);
         }
 
-        _outfitsScroll = GUILayout.BeginScrollView(_outfitsScroll, GUILayout.Height(220));
+        _outfitsScroll = GUILayout.BeginScrollView(_outfitsScroll, GUILayout.Height(235));
 
         if (_cachedOutfits == null || _cachedOutfits.Count == 0)
         {
@@ -252,15 +252,15 @@ public class InventoryOutfitsUI : MonoBehaviour
                 }
                 else
                 {
-                    // Action Buttons
+                    // Action Buttons - Row 1: Primary actions
                     GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Equip", GUIStylePreset.NormalButton, GUILayout.Height(20)))
+                    if (GUILayout.Button("Equip", GUIStylePreset.NormalButton, GUILayout.Height(21)))
                     {
                         OutfitManager.ApplyOutfit(outfit);
                         SetStatus($"<color=green>Equipped '{outfit.Name}'!</color>");
                     }
 
-                    if (GUILayout.Button("Overwrite", GUIStylePreset.NormalButton, GUILayout.Height(20)))
+                    if (GUILayout.Button("Overwrite", GUIStylePreset.NormalButton, GUILayout.Height(21)))
                     {
                         var updated = OutfitManager.CaptureCurrentOutfit(outfit.Name);
                         if (updated != null && OutfitManager.SaveOutfit(updated))
@@ -269,8 +269,11 @@ public class InventoryOutfitsUI : MonoBehaviour
                             SetStatus($"<color=green>Updated '{outfit.Name}'!</color>");
                         }
                     }
+                    GUILayout.EndHorizontal();
 
-                    if (GUILayout.Button("Rename", GUIStylePreset.NormalButton, GUILayout.Width(52), GUILayout.Height(20)))
+                    // Action Buttons - Row 2: Management
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Rename", GUIStylePreset.NormalButton, GUILayout.Height(21)))
                     {
                         _outfitPendingRename = outfit.Name;
                         _renameBuffer = outfit.Name;
@@ -278,13 +281,20 @@ public class InventoryOutfitsUI : MonoBehaviour
 
                     var prevBg = GUI.backgroundColor;
                     GUI.backgroundColor = new Color(0.9f, 0.3f, 0.3f);
-                    if (GUILayout.Button("X", GUIStylePreset.NormalButton, GUILayout.Width(22), GUILayout.Height(20)))
+                    if (GUILayout.Button("Delete (X)", GUIStylePreset.NormalButton, GUILayout.Height(21)))
                     {
                         _outfitPendingDelete = outfit.Name;
                     }
                     GUI.backgroundColor = prevBg;
                     GUILayout.EndHorizontal();
                 }
+
+                // Clean Cosmetic Details
+                string hatText = FormatCosmetic(outfit.HatId, "hat_");
+                string skinText = FormatCosmetic(outfit.SkinId, "skin_");
+                string visorText = FormatCosmetic(outfit.VisorId, "visor_");
+                string petText = FormatCosmetic(outfit.PetId, "pet_");
+                GUILayout.Label($"<size=10><color=#888888>H: {hatText} | S: {skinText}\nV: {visorText} | P: {petText}</color></size>");
 
                 GUILayout.EndVertical();
                 GUILayout.Space(2);
@@ -311,6 +321,19 @@ public class InventoryOutfitsUI : MonoBehaviour
         GUILayout.EndVertical();
 
         GUI.DragWindow();
+    }
+
+    private static string FormatCosmetic(string id, string prefix)
+    {
+        if (string.IsNullOrEmpty(id) || id.Contains("Empty", StringComparison.OrdinalIgnoreCase))
+        {
+            return "None";
+        }
+        if (!string.IsNullOrEmpty(prefix) && id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return id.Substring(prefix.Length);
+        }
+        return id;
     }
 
     public void RefreshOutfits()
