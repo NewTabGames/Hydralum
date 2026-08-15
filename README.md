@@ -66,7 +66,8 @@ Among Us is an **IL2CPP** game, so it requires **BepInEx 6 (IL2CPP)** instead of
 
 | Action | Keybind / Control |
 | :--- | :--- |
-| **Toggle Menu** | `Delete` key |
+| **Toggle Menu (Malum)** | `Delete` key |
+| **Toggle Menu (Hydra)** | `F6` key |
 | **Switch Menu** | `[ Switch ]` header button in top-right of menu |
 
 ---
