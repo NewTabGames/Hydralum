@@ -69,24 +69,28 @@ public class MenuUI : MonoBehaviour
 
         if (Input.GetKeyDown(Utils.StringToKeycode(MalumMenu.menuKeybind.Value)))
         {
-            if (IsHydraOpen())
+            bool hydraOpen = IsHydraOpen();
+            if (isGUIActive || hydraOpen)
             {
+                lastOpenedWasHydra = hydraOpen;
+                isGUIActive = false;
                 CloseHydraMenu();
-                isGUIActive = false;
-            }
-            else if (isGUIActive)
-            {
-                isGUIActive = false;
             }
             else
             {
-                CloseHydraMenu();
-                isGUIActive = true;
+                if (lastOpenedWasHydra)
+                {
+                    SwitchToHydra();
+                }
+                else
+                {
+                    isGUIActive = true;
 
-                Vector2 mousePosition = Input.mousePosition;
-                float x = Mathf.Clamp(mousePosition.x, 0, Mathf.Max(0, Screen.width - _windowRect.width));
-                float y = Mathf.Clamp(Screen.height - mousePosition.y, 0, Mathf.Max(0, Screen.height - _windowRect.height));
-                _windowRect.position = new Vector2(x, y);
+                    Vector2 mousePosition = Input.mousePosition;
+                    float x = Mathf.Clamp(mousePosition.x, 0, Mathf.Max(0, Screen.width - _windowRect.width));
+                    float y = Mathf.Clamp(Screen.height - mousePosition.y, 0, Mathf.Max(0, Screen.height - _windowRect.height));
+                    _windowRect.position = new Vector2(x, y);
+                }
             }
         }
 

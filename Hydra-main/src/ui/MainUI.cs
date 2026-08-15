@@ -65,10 +65,19 @@ namespace HydraMenu.ui
 		{
 			if(Input.GetKeyDown(KeyCode.F6))
 			{
-				visible = !visible;
-				if(visible)
+				if (IsMalumOpen())
 				{
 					CloseMalumMenu();
+					visible = false;
+				}
+				else
+				{
+					visible = !visible;
+					if(visible)
+					{
+						CloseMalumMenu();
+						SetMalumLastOpened(true);
+					}
 				}
 			}
 
@@ -259,6 +268,41 @@ namespace HydraMenu.ui
 					if (field != null)
 					{
 						field.SetValue(null, false);
+					}
+				}
+			}
+			catch { }
+		}
+
+		public static bool IsMalumOpen()
+		{
+			try
+			{
+				Type malumUIType = GetMalumUIType();
+				if (malumUIType != null)
+				{
+					var field = malumUIType.GetField("isGUIActive", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+					if (field != null)
+					{
+						return (bool)field.GetValue(null);
+					}
+				}
+			}
+			catch { }
+			return false;
+		}
+
+		public static void SetMalumLastOpened(bool wasHydra)
+		{
+			try
+			{
+				Type malumUIType = GetMalumUIType();
+				if (malumUIType != null)
+				{
+					var field = malumUIType.GetField("lastOpenedWasHydra", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+					if (field != null)
+					{
+						field.SetValue(null, wasHydra);
 					}
 				}
 			}
