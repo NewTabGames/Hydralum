@@ -191,25 +191,19 @@ if not exist "%AU_DIR%\BepInEx\plugins" (
     mkdir "%AU_DIR%\BepInEx\plugins" 2>nul
 )
 
-:: 5. Guided First-Time Launch Instructions
+:: 5. First-Time Initialization
 echo ======================================================================
 echo                     STEP 2: FIRST-TIME INITIALIZATION
 echo ======================================================================
 echo.
-echo  BepInEx is now installed, but Among Us must be launched ONCE so that
-echo  BepInEx can generate the required IL2CPP game interop files.
+echo  BepInEx 6 (IL2CPP) has been extracted to your game folder.
+echo  When Among Us launches for the first time, BepInEx will automatically
+echo  generate the required IL2CPP game interop files at the Main Menu.
 echo.
-echo  ------------------------------------------------------------------
-echo  INSTRUCTIONS:
-echo  1. Launch Among Us (Steam / Epic).
-echo  2. Wait until you reach the Main Menu.
-echo     (A black console window may appear briefly - this is normal)
-echo  3. Exit / Quit Among Us completely.
-echo  ------------------------------------------------------------------
-echo.
-set /p "LAUNCH_NOW=Would you like to launch Among Us right now? (Y/n): "
+set /p "LAUNCH_NOW=Would you like to launch Among Us now to initialize BepInEx? (Y/n): "
 
 if /i "!LAUNCH_NOW!" NEQ "n" (
+    echo.
     echo [*] Launching Among Us for !PLATFORM!...
     if "!PLATFORM!"=="Steam" (
         start "" "steam://rungameid/945360" 2>nul || start "" "%AU_DIR%\Among Us.exe"
@@ -218,34 +212,19 @@ if /i "!LAUNCH_NOW!" NEQ "n" (
     ) else (
         start "" "%AU_DIR%\Among Us.exe"
     )
-    echo.
-    echo [*] Waiting for you to close Among Us after reaching the Main Menu...
-    echo     (Press any key below ONCE you have closed the game)
-    pause >nul
-) else (
-    echo.
-    echo [*] Please launch Among Us manually, wait for the Main Menu, and close it.
-    pause
+    echo [OK] Among Us launched!
 )
 
-:: 6. Verify BepInEx Initialization
 echo.
-echo [*] Verifying BepInEx file structure...
-set "INITIALIZED=0"
-
-if exist "%AU_DIR%\BepInEx\interop" set "INITIALIZED=1"
-if exist "%AU_DIR%\BepInEx\plugins" set "INITIALIZED=1"
-if exist "%AU_DIR%\BepInEx\LogOutput.log" set "INITIALIZED=1"
-
 echo ======================================================================
 echo                         SETUP COMPLETE!
 echo ======================================================================
 echo.
-echo  BepInEx 6 (IL2CPP) is now fully installed and ready!
+echo  BepInEx 6 (IL2CPP) is now installed in your game directory.
 echo.
-echo  NEXT STEPS:
-echo  Run "Install_Hydralum.bat" at any time to automatically build,
-echo  install, or update Hydralum (HydraMenu + MalumMenuPlus)!
+echo  NEXT STEP:
+echo  Run "Install_Hydralum.bat" to automatically download, build, and
+echo  install Hydralum (HydraMenu + MalumMenuPlus) into your plugins folder!
 echo ======================================================================
 echo.
 pause
