@@ -17,7 +17,7 @@ public class DebugTab : ITab
 
     private void DrawGeneral()
     {
-        CheatToggles.showDebugConsole = GUILayout.Toggle(CheatToggles.showDebugConsole, " Show Console");
+        CheatToggles.showDebugConsole = GUILayout.Toggle(CheatToggles.showDebugConsole, " Show Debug Console");
 
         CheatToggles.logIncomingRpcs = GUILayout.Toggle(CheatToggles.logIncomingRpcs, " Log Incoming RPCs");
 
