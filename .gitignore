@@ -22,6 +22,8 @@ DLLs/
 # Testing & scratch folders
 [Tt][Ee][Ss][Tt]*/
 **/[Tt][Ee][Ss][Tt]*/
+MalumMenu-*
+*Steam-Itch*
 
 # OS generated files
 .DS_Store

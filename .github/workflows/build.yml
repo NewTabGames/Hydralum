@@ -1,4 +1,4 @@
-name: Build Hydralum DLLs
+name: Build Hydralum
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Build & Artifact DLLs
+    name: Build & Package Hydralum
     runs-on: ubuntu-latest
 
     steps:
@@ -27,10 +27,27 @@ jobs:
     - name: Build HydraMenu
       run: dotnet build Hydra-main/src/HydraMenu.csproj -c Release
 
-    - name: Upload Hydralum DLLs Artifact
+    - name: Upload Raw DLLs Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Hydralum-DLLs
-        path: |
-          DLLs/*.dll
+        path: DLLs/*.dll
+        if-no-files-found: error
+
+    - name: Assemble Standalone 1-Click Package (BepInEx 6 + dotnet + Hydralum)
+      run: |
+        mkdir -p standalone_build
+        curl -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/755/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.755%2B9230554.zip" -o bepinex.zip
+        unzip -q bepinex.zip -d standalone_build
+        rm -f bepinex.zip
+        mkdir -p standalone_build/BepInEx/plugins
+        cp DLLs/HydraMenu.dll standalone_build/BepInEx/plugins/
+        cp DLLs/MalumMenuPlus.dll standalone_build/BepInEx/plugins/
+        echo "945360" > standalone_build/steam_appid.txt
+
+    - name: Upload Standalone 1-Click Package Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Hydralum-Standalone-Steam
+        path: standalone_build/
         if-no-files-found: error
