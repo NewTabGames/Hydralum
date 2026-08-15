@@ -214,8 +214,8 @@ if /i "!LAUNCH_NOW!" NEQ "n" (
     )
     echo [OK] Among Us launched!
     echo.
-    echo [*] Waiting 10 seconds for BepInEx to initialize game files...
-    timeout /t 10 /nobreak >nul 2>&1 || ping 127.0.0.1 -n 11 >nul 2>&1
+    echo [*] Waiting 20 seconds for BepInEx to initialize game files...
+    timeout /t 20 /nobreak >nul 2>&1 || ping 127.0.0.1 -n 21 >nul 2>&1
     echo [*] Closing Among Us automatically...
     taskkill /f /im "Among Us.exe" >nul 2>&1
     echo [OK] Among Us closed. BepInEx file structure initialized!
