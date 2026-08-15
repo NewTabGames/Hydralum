@@ -9,6 +9,9 @@ public class OutfitsTab : ITab
     public string name => "Outfits";
 
     private string _outfitPendingDelete = "";
+    private string _outfitPendingRename = "";
+    private string _renameBuffer = "";
+    private int _renameTemplateIndex = 0;
     private string _customOutfitName = "Outfit 1";
     private int _presetTemplateIndex = 0;
     private string _statusMessage = "";
@@ -113,12 +116,14 @@ public class OutfitsTab : ITab
 
         if (GUILayout.Button("Use Color", GUIStylePreset.NormalButton, GUILayout.Height(22)))
         {
+            int col = 0;
+            try { col = AmongUs.Data.DataManager.Player.Customization.Color; } catch { }
             if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null)
             {
-                int col = PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId;
-                string colName = col >= 0 && col < ColorNames.Length ? ColorNames[col] : $"Color {col}";
-                _customOutfitName = $"{colName} Look";
+                col = PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId;
             }
+            string colName = col >= 0 && col < ColorNames.Length ? ColorNames[col] : $"Color {col}";
+            _customOutfitName = $"{colName} Look";
         }
         GUILayout.EndHorizontal();
 
@@ -126,22 +131,15 @@ public class OutfitsTab : ITab
 
         if (GUILayout.Button("Save as JSON Preset", GUIStylePreset.NormalButton, GUILayout.Height(26)))
         {
-            if (PlayerControl.LocalPlayer == null)
+            var outfit = OutfitManager.CaptureCurrentOutfit(_customOutfitName);
+            if (outfit != null && OutfitManager.SaveOutfit(outfit))
             {
-                SetStatus("<color=red>Join a lobby to save outfit!</color>");
+                RefreshOutfits();
+                SetStatus($"<color=green>Saved '{outfit.Name}'!</color>");
             }
             else
             {
-                var outfit = OutfitManager.CaptureCurrentOutfit(_customOutfitName);
-                if (outfit != null && OutfitManager.SaveOutfit(outfit))
-                {
-                    RefreshOutfits();
-                    SetStatus($"<color=green>Saved '{outfit.Name}'!</color>");
-                }
-                else
-                {
-                    SetStatus("<color=red>Failed to save outfit.</color>");
-                }
+                SetStatus("<color=red>Failed to save outfit.</color>");
             }
         }
     }
@@ -296,8 +294,57 @@ public class OutfitsTab : ITab
                 : $"Color {outfit.ColorId}";
             GUILayout.Label($"<b>{outfit.Name}</b> <color=#aaaaaa>({colorName})</color>");
 
-            // Action / Confirmation Buttons
-            if (_outfitPendingDelete == outfit.Name)
+            // Pending Rename Mode
+            if (_outfitPendingRename == outfit.Name)
+            {
+                GUILayout.Label($"Rename to: <b>{_renameBuffer}</b>", GUIStylePreset.Hint);
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("<", GUIStylePreset.NormalButton, GUILayout.Width(24), GUILayout.Height(22)))
+                {
+                    _renameTemplateIndex = _renameTemplateIndex > 0 ? _renameTemplateIndex - 1 : PresetTemplates.Length - 1;
+                    _renameBuffer = PresetTemplates[_renameTemplateIndex];
+                }
+                if (GUILayout.Button(_renameBuffer, GUIStylePreset.NormalButton, GUILayout.Height(22)))
+                {
+                    _renameBuffer = PresetTemplates[_renameTemplateIndex];
+                }
+                if (GUILayout.Button(">", GUIStylePreset.NormalButton, GUILayout.Width(24), GUILayout.Height(22)))
+                {
+                    _renameTemplateIndex = _renameTemplateIndex < PresetTemplates.Length - 1 ? _renameTemplateIndex + 1 : 0;
+                    _renameBuffer = PresetTemplates[_renameTemplateIndex];
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Paste", GUIStylePreset.NormalButton, GUILayout.Height(22)))
+                {
+                    string clipboard = GUIUtility.systemCopyBuffer;
+                    if (!string.IsNullOrWhiteSpace(clipboard))
+                    {
+                        _renameBuffer = clipboard.Trim();
+                    }
+                }
+                if (GUILayout.Button("Confirm", GUIStylePreset.NormalButton, GUILayout.Height(22)))
+                {
+                    if (OutfitManager.RenameOutfit(outfit.Name, _renameBuffer))
+                    {
+                        _outfitPendingRename = "";
+                        RefreshOutfits();
+                        SetStatus($"<color=green>Renamed to '{_renameBuffer}'!</color>");
+                        GUILayout.EndHorizontal();
+                        GUILayout.EndVertical();
+                        break;
+                    }
+                }
+                if (GUILayout.Button("Cancel", GUIStylePreset.NormalButton, GUILayout.Width(60), GUILayout.Height(22)))
+                {
+                    _outfitPendingRename = "";
+                }
+                GUILayout.EndHorizontal();
+            }
+            // Pending Delete Mode
+            else if (_outfitPendingDelete == outfit.Name)
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("<color=#FF5555><b>Delete preset?</b></color>", GUILayout.ExpandWidth(true));
@@ -328,6 +375,7 @@ public class OutfitsTab : ITab
             }
             else
             {
+                // Standard Action Buttons
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Equip", GUIStylePreset.NormalButton, GUILayout.Height(22)))
                 {
@@ -349,6 +397,12 @@ public class OutfitsTab : ITab
                         RefreshOutfits();
                         SetStatus($"<color=green>Updated '{outfit.Name}'!</color>");
                     }
+                }
+
+                if (GUILayout.Button("Rename", GUIStylePreset.NormalButton, GUILayout.Width(55), GUILayout.Height(22)))
+                {
+                    _outfitPendingRename = outfit.Name;
+                    _renameBuffer = outfit.Name;
                 }
 
                 var prevBg = GUI.backgroundColor;
