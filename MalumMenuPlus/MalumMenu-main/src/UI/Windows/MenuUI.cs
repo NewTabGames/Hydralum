@@ -29,6 +29,7 @@ public class MenuUI : MonoBehaviour
         _tabs.Add(new ShipTab());
         _tabs.Add(new ChatTab());
         _tabs.Add(new PlayersTab());
+        _tabs.Add(new OutfitsTab());
         _tabs.Add(new ConsoleTab());
         _tabs.Add(new HostOnlyTab());
         _tabs.Add(new ConfigTab());
