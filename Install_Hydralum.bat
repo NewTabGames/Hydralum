@@ -144,18 +144,20 @@ for /f "tokens=*" %%v in ('dotnet --version') do set "DOTNET_VER=%%v"
 echo [OK] Found .NET SDK version: %DOTNET_VER%
 echo.
 
-:: 3. Setup Temp Work Directory
-set "TEMP_WORK_DIR=%TEMP%\__hydralum_temp_build"
-set "ZIP_FILE=%TEMP%\hydralum_source.zip"
+:: 3. Setup Downloads Work Directory
+set "DOWNLOADS_DIR=%USERPROFILE%\Downloads"
+set "WORK_DIR=%DOWNLOADS_DIR%\Hydralum_Source"
+set "ZIP_FILE=%DOWNLOADS_DIR%\hydralum_source.zip"
 
-if exist "%TEMP_WORK_DIR%" (
-    powershell -NoProfile -Command "Remove-Item -LiteralPath '%TEMP_WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
+if exist "%WORK_DIR%" (
+    powershell -NoProfile -Command "Remove-Item -LiteralPath '%WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
 )
-mkdir "%TEMP_WORK_DIR%" 2>nul
+mkdir "%WORK_DIR%" 2>nul
 
-:: 4. Download Source Code Zip
+:: 4. Download Source Code Zip into Downloads
 echo [*] Downloading latest Hydralum source from GitHub...
-echo     URL: %REPO_ZIP_URL%
+echo     URL:  %REPO_ZIP_URL%
+echo     Dest: "%ZIP_FILE%"
 
 curl.exe -L -f -s -S -o "%ZIP_FILE%" "%REPO_ZIP_URL%"
 if %ERRORLEVEL% NEQ 0 (
@@ -167,20 +169,20 @@ if not exist "%ZIP_FILE%" (
     echo.
     echo [ERROR] Failed to download source zip file from GitHub!
     echo         Please check your internet connection.
-    rmdir /s /q "%TEMP_WORK_DIR%" 2>nul
+    rmdir /s /q "%WORK_DIR%" 2>nul
     pause
     exit /b 1
 )
-echo [OK] Source zip downloaded successfully.
+echo [OK] Source zip downloaded to Downloads folder.
 echo.
 
 :: 5. Extract Source Code
-echo [*] Extracting source code...
-powershell -NoProfile -Command "Expand-Archive -Path '%ZIP_FILE%' -DestinationPath '%TEMP_WORK_DIR%' -Force"
+echo [*] Extracting source code to "%WORK_DIR%"...
+powershell -NoProfile -Command "Expand-Archive -Path '%ZIP_FILE%' -DestinationPath '%WORK_DIR%' -Force"
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Failed to extract source archive.
     del /f /q "%ZIP_FILE%" 2>nul
-    rmdir /s /q "%TEMP_WORK_DIR%" 2>nul
+    rmdir /s /q "%WORK_DIR%" 2>nul
     pause
     exit /b 1
 )
@@ -188,12 +190,12 @@ echo [OK] Extracted successfully.
 echo.
 
 :: Find root extracted folder (usually Hydralum-main)
-for /d %%D in ("%TEMP_WORK_DIR%\*") do (
+for /d %%D in ("%WORK_DIR%\*") do (
     set "SOURCE_ROOT=%%D"
 )
 
 if not exist "!SOURCE_ROOT!\Hydra-main" (
-    set "SOURCE_ROOT=%TEMP_WORK_DIR%"
+    set "SOURCE_ROOT=%WORK_DIR%"
 )
 
 :: 6. Build Both DLL Projects
@@ -359,15 +361,36 @@ if "!CONFIG_ACTION!"=="DELETE" (
 )
 echo.
 
-:: 11. Cleanup Temporary Files
-echo [*] Cleaning up temporary build artifacts and downloaded zip...
+:: 11. Source Code Management (Keep or Delete)
+echo ======================================================================
+echo                     SOURCE CODE MANAGEMENT
+echo ======================================================================
+echo  The source code was downloaded to your Downloads folder:
+echo  "%WORK_DIR%"
+echo.
+echo  Would you like to keep or delete the source code folder?
+echo.
+echo  [1] Delete source code (Recommended - Clean up Downloads)
+echo  [2] Keep source code in Downloads
+echo.
+set /p "SRC_CHOICE=Select an option [1-2] (Default is 1): "
+if "!SRC_CHOICE!"=="" set "SRC_CHOICE=1"
+
 cd /d "%AU_DIR%"
 dotnet build-server shutdown >nul 2>&1
 if exist "%ZIP_FILE%" del /f /q "%ZIP_FILE%" 2>nul
-if exist "%TEMP_WORK_DIR%" (
-    rmdir /s /q "%TEMP_WORK_DIR%" 2>nul
-    powershell -NoProfile -Command "Remove-Item -LiteralPath '%TEMP_WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
+
+if "!SRC_CHOICE!"=="1" (
+    echo [*] Cleaning up downloaded source code from Downloads...
+    if exist "%WORK_DIR%" (
+        rmdir /s /q "%WORK_DIR%" 2>nul
+        powershell -NoProfile -Command "Remove-Item -LiteralPath '%WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
+    )
+    echo [OK] Downloads folder cleaned.
+) else (
+    echo [OK] Source code preserved in: "%WORK_DIR%"
 )
+echo.
 
 echo ======================================================================
 echo                     INSTALLATION COMPLETE!
@@ -388,9 +411,9 @@ echo [!] Cleaning up temporary build files...
 cd /d "%AU_DIR%"
 dotnet build-server shutdown >nul 2>&1
 if exist "%ZIP_FILE%" del /f /q "%ZIP_FILE%" 2>nul
-if exist "%TEMP_WORK_DIR%" (
-    rmdir /s /q "%TEMP_WORK_DIR%" 2>nul
-    powershell -NoProfile -Command "Remove-Item -LiteralPath '%TEMP_WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
+if exist "%WORK_DIR%" (
+    rmdir /s /q "%WORK_DIR%" 2>nul
+    powershell -NoProfile -Command "Remove-Item -LiteralPath '%WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
 )
 echo.
 echo [FAIL] Installation failed. Please check the error messages above.
