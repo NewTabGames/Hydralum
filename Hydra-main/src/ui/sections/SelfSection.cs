@@ -25,6 +25,26 @@ namespace HydraMenu.ui.sections
 			Self.UnlimitedMeetings.enabled = GUILayout.Toggle(Self.UnlimitedMeetings.enabled, "Unlimited Meetings");
 
 			GUILayout.Space(5);
+			GUILayout.Label("Color Sniper:");
+			bool sniperToggle = GUILayout.Toggle(Self.ColorSniper.Enabled, "Enable Color Sniper");
+			if(sniperToggle != Self.ColorSniper.Enabled)
+			{
+				Self.ColorSniper.Enabled = sniperToggle;
+				HydraConfig.Save();
+			}
+
+			if(Self.ColorSniper.Enabled)
+			{
+				GUILayout.Label($"Target Color: {Self.ColorSniper.TargetColor}");
+				Controls.PlayerColors newColor = Controls.HorizontalColorSlider(Self.ColorSniper.TargetColor);
+				if(newColor != Self.ColorSniper.TargetColor)
+				{
+					Self.ColorSniper.TargetColor = newColor;
+					HydraConfig.Save();
+				}
+			}
+
+			GUILayout.Space(5);
 			GUILayout.Label("Avatar Controls:");
 			if(GUILayout.Button("Randomize Avatar"))
 			{

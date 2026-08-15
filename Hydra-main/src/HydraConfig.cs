@@ -12,6 +12,8 @@ namespace HydraMenu
         public static ConfigEntry<bool> DisableNotifications;
         public static ConfigEntry<float> WindowPosX;
         public static ConfigEntry<float> WindowPosY;
+        public static ConfigEntry<bool> ColorSniperEnabled;
+        public static ConfigEntry<int> ColorSniperTargetColor;
 
         public static void Init(ConfigFile config)
         {
@@ -21,12 +23,16 @@ namespace HydraMenu
             DisableNotifications = config.Bind("GUI", "DisableNotifications", false, "Disable in-game Hydra notifications");
             WindowPosX = config.Bind("GUI", "WindowPosX", 250f, "Saved window X position");
             WindowPosY = config.Bind("GUI", "WindowPosY", 100f, "Saved window Y position");
+            ColorSniperEnabled = config.Bind("Self", "ColorSniperEnabled", false, "Automatically grab your chosen color when available in lobby");
+            ColorSniperTargetColor = config.Bind("Self", "ColorSniperTargetColor", 0, "Target color index for Color Sniper");
 
             // Apply loaded config values
             MainUI.scale = Mathf.Clamp(MenuScale.Value, 0.5f, 2.0f);
             Styles.menuOpacity = Mathf.Clamp(MenuOpacity.Value, 0f, 1f);
             Styles.primaryColor = (Styles.UIColors)Mathf.Clamp(PrimaryColor.Value, 0, Styles.ColorValues.Count - 1);
             MainUI.windowPosition = new Vector2(WindowPosX.Value, WindowPosY.Value);
+            features.Self.ColorSniper.Enabled = ColorSniperEnabled.Value;
+            features.Self.ColorSniper.TargetColor = (ui.Controls.PlayerColors)Mathf.Clamp(ColorSniperTargetColor.Value, 0, (int)ui.Controls.PlayerColors.Fortegreen);
         }
 
         public static void Save()
@@ -38,6 +44,8 @@ namespace HydraMenu
                 DisableNotifications.Value = Hydra.notifications.DisableNotifications;
             if (WindowPosX != null) WindowPosX.Value = MainUI.windowPosition.x;
             if (WindowPosY != null) WindowPosY.Value = MainUI.windowPosition.y;
+            if (ColorSniperEnabled != null) ColorSniperEnabled.Value = features.Self.ColorSniper.Enabled;
+            if (ColorSniperTargetColor != null) ColorSniperTargetColor.Value = (int)features.Self.ColorSniper.TargetColor;
         }
     }
 }
