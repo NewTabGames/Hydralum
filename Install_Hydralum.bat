@@ -144,11 +144,13 @@ for /f "tokens=*" %%v in ('dotnet --version') do set "DOTNET_VER=%%v"
 echo [OK] Found .NET SDK version: %DOTNET_VER%
 echo.
 
-:: 3. Setup Temp Work Directory inside Plugins folder
-set "TEMP_WORK_DIR=%PLUGINS_DIR%\__hydralum_temp_build"
-set "ZIP_FILE=%PLUGINS_DIR%\hydralum_source.zip"
+:: 3. Setup Temp Work Directory
+set "TEMP_WORK_DIR=%TEMP%\__hydralum_temp_build"
+set "ZIP_FILE=%TEMP%\hydralum_source.zip"
 
-if exist "%TEMP_WORK_DIR%" rmdir /s /q "%TEMP_WORK_DIR%" 2>nul
+if exist "%TEMP_WORK_DIR%" (
+    powershell -NoProfile -Command "Remove-Item -LiteralPath '%TEMP_WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
+)
 mkdir "%TEMP_WORK_DIR%" 2>nul
 
 :: 4. Download Source Code Zip
@@ -202,7 +204,7 @@ echo.
 
 echo [*] Building HydraMenu (Release)...
 cd /d "!SOURCE_ROOT!\Hydra-main"
-dotnet build src/HydraMenu.csproj -c Release --no-incremental
+dotnet build src/HydraMenu.csproj -c Release --no-incremental -p:UseSharedCompilation=false
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo [ERROR] Failed to build HydraMenu.dll!
@@ -213,7 +215,7 @@ echo.
 
 echo [*] Building MalumMenuPlus (Release)...
 cd /d "!SOURCE_ROOT!\MalumMenuPlus\MalumMenu-main"
-dotnet build src/MalumMenu.csproj -c Release --no-incremental
+dotnet build src/MalumMenu.csproj -c Release --no-incremental -p:UseSharedCompilation=false
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo [ERROR] Failed to build MalumMenuPlus.dll!
@@ -221,6 +223,10 @@ if %ERRORLEVEL% NEQ 0 (
 )
 echo [OK] MalumMenuPlus.dll built successfully.
 echo.
+
+:: Shutdown MSBuild background workers to release file locks
+cd /d "%AU_DIR%"
+dotnet build-server shutdown >nul 2>&1
 
 :: 7. Locate Built DLLs dynamically
 set "BUILT_HYDRA="
@@ -281,6 +287,10 @@ del /f /q "%PLUGINS_DIR%\Hydra.dll" 2>nul
 del /f /q "%PLUGINS_DIR%\MalumMenuPlus.dll" 2>nul
 del /f /q "%PLUGINS_DIR%\MalumMenu.dll" 2>nul
 del /f /q "%PLUGINS_DIR%\Hydralum*.dll" 2>nul
+del /f /q "%PLUGINS_DIR%\hydralum_source.zip" 2>nul
+if exist "%PLUGINS_DIR%\__hydralum_temp_build" (
+    powershell -NoProfile -Command "Remove-Item -LiteralPath '%PLUGINS_DIR%\__hydralum_temp_build' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
+)
 
 :: 9. Copy Newly Built DLLs to Plugins Folder
 echo [*] Installing fresh DLLs into "%PLUGINS_DIR%"...
@@ -352,8 +362,12 @@ echo.
 :: 11. Cleanup Temporary Files
 echo [*] Cleaning up temporary build artifacts and downloaded zip...
 cd /d "%AU_DIR%"
+dotnet build-server shutdown >nul 2>&1
 if exist "%ZIP_FILE%" del /f /q "%ZIP_FILE%" 2>nul
-if exist "%TEMP_WORK_DIR%" rmdir /s /q "%TEMP_WORK_DIR%" 2>nul
+if exist "%TEMP_WORK_DIR%" (
+    rmdir /s /q "%TEMP_WORK_DIR%" 2>nul
+    powershell -NoProfile -Command "Remove-Item -LiteralPath '%TEMP_WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
+)
 
 echo ======================================================================
 echo                     INSTALLATION COMPLETE!
@@ -372,8 +386,12 @@ exit /b 0
 echo.
 echo [!] Cleaning up temporary build files...
 cd /d "%AU_DIR%"
+dotnet build-server shutdown >nul 2>&1
 if exist "%ZIP_FILE%" del /f /q "%ZIP_FILE%" 2>nul
-if exist "%TEMP_WORK_DIR%" rmdir /s /q "%TEMP_WORK_DIR%" 2>nul
+if exist "%TEMP_WORK_DIR%" (
+    rmdir /s /q "%TEMP_WORK_DIR%" 2>nul
+    powershell -NoProfile -Command "Remove-Item -LiteralPath '%TEMP_WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
+)
 echo.
 echo [FAIL] Installation failed. Please check the error messages above.
 echo.
