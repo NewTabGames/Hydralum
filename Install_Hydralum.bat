@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Hydralum - Auto Downloader, Builder & Installer
+title Hydralum - Auto Downloader, Builder and Installer
 
 :: ============================================================
 :: Configuration & Directories
@@ -9,7 +9,7 @@ set "DEFAULT_AU_DIR=C:\Program Files (x86)\Steam\steamapps\common\Among Us"
 set "REPO_ZIP_URL=https://github.com/NewTabGames/Hydralum/archive/refs/heads/main.zip"
 
 echo ======================================================================
-echo                 HYDRALUM AUTO-BUILDER ^& INSTALLER
+echo                 HYDRALUM AUTO-BUILDER AND INSTALLER
 echo ======================================================================
 echo.
 
@@ -161,7 +161,7 @@ echo     Dest: "%ZIP_FILE%"
 
 curl.exe -L -f -s -S -o "%ZIP_FILE%" "%REPO_ZIP_URL%"
 if %ERRORLEVEL% NEQ 0 (
-    echo [*] curl failed, trying PowerShell download...
+    echo [*] curl failed, trying PowerShell download fallback...
     powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '%REPO_ZIP_URL%' -OutFile '%ZIP_FILE%'"
 )
 
@@ -173,7 +173,7 @@ if not exist "%ZIP_FILE%" (
     pause
     exit /b 1
 )
-echo [OK] Source zip downloaded to Downloads folder.
+echo [OK] Source zip downloaded successfully.
 echo.
 
 :: 5. Extract Source Code
@@ -181,12 +181,18 @@ echo [*] Extracting source code to "%WORK_DIR%"...
 powershell -NoProfile -Command "Expand-Archive -Path '%ZIP_FILE%' -DestinationPath '%WORK_DIR%' -Force"
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Failed to extract source archive.
-    del /f /q "%ZIP_FILE%" 2>nul
+    if exist "%ZIP_FILE%" del /f /q "%ZIP_FILE%" 2>nul
     rmdir /s /q "%WORK_DIR%" 2>nul
     pause
     exit /b 1
 )
 echo [OK] Extracted successfully.
+
+:: Always delete zip file immediately after extracting
+if exist "%ZIP_FILE%" (
+    del /f /q "%ZIP_FILE%" 2>nul
+    echo [*] Cleaned up temporary zip archive.
+)
 echo.
 
 :: Find root extracted folder (usually Hydralum-main)
@@ -234,11 +240,11 @@ dotnet build-server shutdown >nul 2>&1
 set "BUILT_HYDRA="
 set "BUILT_MALUM="
 
-:: 1. Check DLLs folder first (auto-copied by PostBuild target)
+:: Check DLLs folder first (auto-copied by PostBuild target)
 if exist "!SOURCE_ROOT!\DLLs\HydraMenu.dll" set "BUILT_HYDRA=!SOURCE_ROOT!\DLLs\HydraMenu.dll"
 if exist "!SOURCE_ROOT!\DLLs\MalumMenuPlus.dll" set "BUILT_MALUM=!SOURCE_ROOT!\DLLs\MalumMenuPlus.dll"
 
-:: 2. Check standard Steam Release path
+:: Check Steam Release path
 if not defined BUILT_HYDRA (
     if exist "!SOURCE_ROOT!\Hydra-main\src\bin\Steam\Release\net6.0\HydraMenu.dll" set "BUILT_HYDRA=!SOURCE_ROOT!\Hydra-main\src\bin\Steam\Release\net6.0\HydraMenu.dll"
 )
@@ -246,7 +252,7 @@ if not defined BUILT_MALUM (
     if exist "!SOURCE_ROOT!\MalumMenuPlus\MalumMenu-main\src\bin\Steam\Release\net6.0\MalumMenuPlus.dll" set "BUILT_MALUM=!SOURCE_ROOT!\MalumMenuPlus\MalumMenu-main\src\bin\Steam\Release\net6.0\MalumMenuPlus.dll"
 )
 
-:: 3. Check standard Release path
+:: Check standard Release path
 if not defined BUILT_HYDRA (
     if exist "!SOURCE_ROOT!\Hydra-main\src\bin\Release\net6.0\HydraMenu.dll" set "BUILT_HYDRA=!SOURCE_ROOT!\Hydra-main\src\bin\Release\net6.0\HydraMenu.dll"
 )
@@ -254,7 +260,7 @@ if not defined BUILT_MALUM (
     if exist "!SOURCE_ROOT!\MalumMenuPlus\MalumMenu-main\src\bin\Release\net6.0\MalumMenuPlus.dll" set "BUILT_MALUM=!SOURCE_ROOT!\MalumMenuPlus\MalumMenu-main\src\bin\Release\net6.0\MalumMenuPlus.dll"
 )
 
-:: 4. Search recursively as fallback
+:: Search recursively as fallback
 if not defined BUILT_HYDRA (
     for /r "!SOURCE_ROOT!\Hydra-main" %%F in (HydraMenu.dll) do (
         if exist "%%F" set "BUILT_HYDRA=%%F"
@@ -307,91 +313,84 @@ if exist "%PLUGINS_DIR%\HydraMenu.dll" (
 echo.
 
 :: 10. Handle Configs (Prompt with saved preference option)
-set "CONFIG_ACTION="
+if exist "%PREFS_FILE%" goto check_saved_config_pref
+goto prompt_config_action
 
-if exist "%PREFS_FILE%" (
-    set /p SAVED_PREF=<"%PREFS_FILE%"
-    if "!SAVED_PREF!"=="KEEP" (
-        echo [*] Auto-keeping existing configs (preference saved).
-        set "CONFIG_ACTION=KEEP"
-    ) else if "!SAVED_PREF!"=="DELETE" (
-        echo [*] Auto-deleting old configs (preference saved).
-        set "CONFIG_ACTION=DELETE"
-    )
+:check_saved_config_pref
+set /p SAVED_PREF=<"%PREFS_FILE%"
+if "!SAVED_PREF!"=="KEEP" (
+    echo [*] Preserving existing config files - preference saved.
+    goto handle_source_code
+)
+if "!SAVED_PREF!"=="DELETE" (
+    echo [*] Auto-deleting old configs - preference saved.
+    goto do_delete_configs
 )
 
-if "!CONFIG_ACTION!"=="" (
-    echo ======================================================================
-    echo                        CONFIG MANAGEMENT
-    echo ======================================================================
-    echo  This build can generate fresh, default configuration files.
-    echo  Would you like to delete your old config files?
-    echo.
-    echo  [1] Yes - Delete old configs (Fresh reset)
-    echo  [2] No  - Keep existing configs (Recommended)
-    echo  [3] No  - Keep existing configs and DO NOT ask again
-    echo  [4] Yes - Delete old configs and DO NOT ask again
-    echo.
-    set /p "CHOICE=Select an option [1-4] (Default is 2): "
-    if "!CHOICE!"=="1" (
-        set "CONFIG_ACTION=DELETE"
-    ) else if "!CHOICE!"=="2" (
-        set "CONFIG_ACTION=KEEP"
-    ) else if "!CHOICE!"=="3" (
-        set "CONFIG_ACTION=KEEP"
-        echo KEEP>"%PREFS_FILE%"
-        echo [*] Preference saved: Will keep configs without asking in future.
-    ) else if "!CHOICE!"=="4" (
-        set "CONFIG_ACTION=DELETE"
-        echo DELETE>"%PREFS_FILE%"
-        echo [*] Preference saved: Will delete configs without asking in future.
-    ) else (
-        set "CONFIG_ACTION=KEEP"
-    )
-)
+:prompt_config_action
+echo ======================================================================
+echo                        CONFIG MANAGEMENT
+echo ======================================================================
+echo  This build can generate fresh, default configuration files.
+echo  Would you like to delete your old config files?
+echo.
+echo  [1] Yes - Delete old configs for a fresh reset
+echo  [2] No  - Keep existing configs (Recommended)
+echo  [3] No  - Keep existing configs and DO NOT ask again
+echo  [4] Yes - Delete old configs and DO NOT ask again
+echo.
+set /p "CFG_CHOICE=Select an option [1-4] (Default is 2): "
+if "!CFG_CHOICE!"=="1" goto do_delete_configs
+if "!CFG_CHOICE!"=="3" goto save_keep_pref
+if "!CFG_CHOICE!"=="4" goto save_delete_pref
+goto handle_source_code
 
-if "!CONFIG_ACTION!"=="DELETE" (
-    echo [*] Deleting old mod configuration files...
-    del /f /q "%CONFIG_DIR%\com.mrd.hydramenu.cfg" 2>nul
-    del /f /q "%CONFIG_DIR%\com.scp222thj.malummenu.cfg" 2>nul
-    del /f /q "%CONFIG_DIR%\MalumProfile.txt" 2>nul
-    echo [OK] Old config files deleted. Fresh configs will be generated in-game.
-) else (
-    echo [OK] Existing configurations preserved.
-)
+:save_keep_pref
+echo KEEP>"%PREFS_FILE%"
+echo [*] Preference saved: Will keep configs without asking in future.
+goto handle_source_code
+
+:save_delete_pref
+echo DELETE>"%PREFS_FILE%"
+echo [*] Preference saved: Will delete configs without asking in future.
+goto do_delete_configs
+
+:do_delete_configs
+echo [*] Deleting old mod configuration files...
+del /f /q "%CONFIG_DIR%\com.mrd.hydramenu.cfg" 2>nul
+del /f /q "%CONFIG_DIR%\com.scp222thj.malummenu.cfg" 2>nul
+del /f /q "%CONFIG_DIR%\MalumProfile.txt" 2>nul
+echo [OK] Old config files deleted. Fresh configs will be generated in-game.
 echo.
 
-:: 11. Source Code Management (Keep or Delete)
+:handle_source_code
+:: 11. Source Code Management (Keep or Delete Folder)
 echo ======================================================================
 echo                     SOURCE CODE MANAGEMENT
 echo ======================================================================
-echo  The source code was downloaded to your Downloads folder:
-echo  "%WORK_DIR%"
+echo  The source code was extracted to:
+echo  "!WORK_DIR!"
 echo.
-echo  Would you like to keep or delete the source code folder?
+echo  Would you like to keep or delete this source code folder?
 echo.
-echo  [1] Delete source code (Recommended - Clean up Downloads)
-echo  [2] Keep source code in Downloads
+echo  [1] Delete source code folder (Clean up Downloads)
+echo  [2] Keep source code folder in Downloads
 echo.
 set /p "SRC_CHOICE=Select an option [1-2] (Default is 1): "
-if "!SRC_CHOICE!"=="" set "SRC_CHOICE=1"
+if "!SRC_CHOICE!"=="2" goto keep_source_folder
 
-cd /d "%AU_DIR%"
-dotnet build-server shutdown >nul 2>&1
-if exist "%ZIP_FILE%" del /f /q "%ZIP_FILE%" 2>nul
-
-if "!SRC_CHOICE!"=="1" (
-    echo [*] Cleaning up downloaded source code from Downloads...
-    if exist "%WORK_DIR%" (
-        rmdir /s /q "%WORK_DIR%" 2>nul
-        powershell -NoProfile -Command "Remove-Item -LiteralPath '%WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
-    )
-    echo [OK] Downloads folder cleaned.
-) else (
-    echo [OK] Source code preserved in: "%WORK_DIR%"
+echo [*] Cleaning up downloaded source code folder from Downloads...
+if exist "%WORK_DIR%" (
+    powershell -NoProfile -Command "Remove-Item -LiteralPath '%WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
 )
-echo.
+echo [OK] Source code folder deleted.
+goto finish_install
 
+:keep_source_folder
+echo [OK] Source code folder preserved in: "!WORK_DIR!"
+
+:finish_install
+echo.
 echo ======================================================================
 echo                     INSTALLATION COMPLETE!
 echo ======================================================================
@@ -412,7 +411,6 @@ cd /d "%AU_DIR%"
 dotnet build-server shutdown >nul 2>&1
 if exist "%ZIP_FILE%" del /f /q "%ZIP_FILE%" 2>nul
 if exist "%WORK_DIR%" (
-    rmdir /s /q "%WORK_DIR%" 2>nul
     powershell -NoProfile -Command "Remove-Item -LiteralPath '%WORK_DIR%' -Recurse -Force -ErrorAction SilentlyContinue" 2>nul
 )
 echo.
