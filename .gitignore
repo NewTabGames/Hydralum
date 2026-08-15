@@ -1,21 +1,28 @@
-# Built DLLs output folder (built by GitHub Actions)
+# Build output & compiled binaries
+[Bb]in/
+**/[Bb]in/
+[Oo]bj/
+**/[Oo]bj/
 DLLs/
 **/DLLs/
 
-# Build output directories
-**/bin/
-**/obj/
-
-# Visual Studio & IDE files
+# Visual Studio, Rider & IDE files
 .vs/
+**/.vs/
 .idea/
+**/.idea/
+.vscode/
+**/.vscode/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
+*.DotSettings.user
 
-# Custom user testing folder
-TESTING/
-**/TESTING/
-TEST/
-**/TEST/
+# Testing & scratch folders
+[Tt][Ee][Ss][Tt]*/
+**/[Tt][Ee][Ss][Tt]*/
+
+# OS generated files
+.DS_Store
+Thumbs.db
