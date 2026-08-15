@@ -21,91 +21,94 @@ set "EPIC_PATH="
 for /f "tokens=2* delims=	 " %%A in ('reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 945360" /v InstallLocation 2^>nul') do (
     if exist "%%B\Among Us.exe" set "STEAM_PATH=%%B"
 )
-if "!STEAM_PATH!"=="" (
-    if exist "C:\Program Files (x86)\Steam\steamapps\common\Among Us\Among Us.exe" (
-        set "STEAM_PATH=C:\Program Files (x86)\Steam\steamapps\common\Among Us"
-    ) else if exist "C:\Program Files\Steam\steamapps\common\Among Us\Among Us.exe" (
-        set "STEAM_PATH=C:\Program Files\Steam\steamapps\common\Among Us"
-    ) else if exist "D:\SteamLibrary\steamapps\common\Among Us\Among Us.exe" (
-        set "STEAM_PATH=D:\SteamLibrary\steamapps\common\Among Us"
-    ) else if exist "E:\SteamLibrary\steamapps\common\Among Us\Among Us.exe" (
-        set "STEAM_PATH=E:\SteamLibrary\steamapps\common\Among Us"
-    )
+if not defined STEAM_PATH (
+    if exist "C:\Program Files (x86)\Steam\steamapps\common\Among Us\Among Us.exe" set "STEAM_PATH=C:\Program Files (x86)\Steam\steamapps\common\Among Us"
+)
+if not defined STEAM_PATH (
+    if exist "C:\Program Files\Steam\steamapps\common\Among Us\Among Us.exe" set "STEAM_PATH=C:\Program Files\Steam\steamapps\common\Among Us"
+)
+if not defined STEAM_PATH (
+    if exist "D:\SteamLibrary\steamapps\common\Among Us\Among Us.exe" set "STEAM_PATH=D:\SteamLibrary\steamapps\common\Among Us"
+)
+if not defined STEAM_PATH (
+    if exist "E:\SteamLibrary\steamapps\common\Among Us\Among Us.exe" set "STEAM_PATH=E:\SteamLibrary\steamapps\common\Among Us"
 )
 
 :: Check Epic Games Common Directories
-if exist "C:\Program Files\Epic Games\AmongUs\Among Us.exe" (
-    set "EPIC_PATH=C:\Program Files\Epic Games\AmongUs"
-) else if exist "C:\Program Files (x86)\Epic Games\AmongUs\Among Us.exe" (
-    set "EPIC_PATH=C:\Program Files (x86)\Epic Games\AmongUs"
-) else if exist "D:\Epic Games\AmongUs\Among Us.exe" (
-    set "EPIC_PATH=D:\Epic Games\AmongUs"
-) else if exist "E:\Epic Games\AmongUs\Among Us.exe" (
-    set "EPIC_PATH=E:\Epic Games\AmongUs"
+if exist "C:\Program Files\Epic Games\AmongUs\Among Us.exe" set "EPIC_PATH=C:\Program Files\Epic Games\AmongUs"
+if not defined EPIC_PATH (
+    if exist "C:\Program Files (x86)\Epic Games\AmongUs\Among Us.exe" set "EPIC_PATH=C:\Program Files (x86)\Epic Games\AmongUs"
+)
+if not defined EPIC_PATH (
+    if exist "D:\Epic Games\AmongUs\Among Us.exe" set "EPIC_PATH=D:\Epic Games\AmongUs"
+)
+if not defined EPIC_PATH (
+    if exist "E:\Epic Games\AmongUs\Among Us.exe" set "EPIC_PATH=E:\Epic Games\AmongUs"
 )
 
-:: Search Epic Games Launcher Manifests if not found in default paths
-if "!EPIC_PATH!"=="" (
-    if exist "%ProgramData%\Epic\EpicGamesLauncher\Data\Manifests" (
-        for %%F in ("%ProgramData%\Epic\EpicGamesLauncher\Data\Manifests\*.item") do (
-            for /f "tokens=2 delims=:, " %%I in ('findstr /i "InstallLocation" "%%F" 2^>nul') do (
-                set "TEMP_EPIC=%%~I"
-                set "TEMP_EPIC=!TEMP_EPIC:\\=\!"
-                if exist "!TEMP_EPIC!\Among Us.exe" set "EPIC_PATH=!TEMP_EPIC!"
-            )
-        )
-    )
-)
+:: Branch based on discovered paths
+if defined STEAM_PATH if defined EPIC_PATH goto select_multi_platform
+if defined STEAM_PATH goto select_steam_platform
+if defined EPIC_PATH goto select_epic_platform
+goto select_custom_platform
 
-set "AU_DIR="
-set "PLATFORM="
-
-if defined STEAM_PATH if defined EPIC_PATH (
-    echo [?] Multiple Among Us installations detected:
-    echo     [1] Steam:       !STEAM_PATH!
-    echo     [2] Epic Games:  !EPIC_PATH!
-    echo     [3] Custom Path
-    echo.
-    set /p "PLAT_CHOICE=Select platform [1-3] (Default is 1): "
-    if "!PLAT_CHOICE!"=="2" (
-        set "AU_DIR=!EPIC_PATH!"
-        set "PLATFORM=Epic Games"
-    ) else if "!PLAT_CHOICE!"=="3" (
-        set /p "AU_DIR=Enter custom Among Us folder path: "
-        set "PLATFORM=Custom"
-    ) else (
-        set "AU_DIR=!STEAM_PATH!"
-        set "PLATFORM=Steam"
-    )
-) else if defined STEAM_PATH (
-    set "AU_DIR=!STEAM_PATH!"
-    set "PLATFORM=Steam"
-    echo [OK] Detected Platform: Steam
-    echo      Location: !AU_DIR!
-) else if defined EPIC_PATH (
+:select_multi_platform
+echo [?] Multiple Among Us installations detected:
+echo     [1] Steam:       !STEAM_PATH!
+echo     [2] Epic Games:  !EPIC_PATH!
+echo     [3] Custom Path
+echo.
+set /p "PLAT_CHOICE=Select platform [1-3] (Default is 1): "
+if "!PLAT_CHOICE!"=="2" (
     set "AU_DIR=!EPIC_PATH!"
     set "PLATFORM=Epic Games"
-    echo [OK] Detected Platform: Epic Games
-    echo      Location: !AU_DIR!
-) else (
-    echo [!] Could not auto-detect Among Us installation.
-    echo     [1] Steam default:      C:\Program Files (x86)\Steam\steamapps\common\Among Us
-    echo     [2] Epic Games default: C:\Program Files\Epic Games\AmongUs
-    echo     [3] Enter custom folder path
-    echo.
-    set /p "PLAT_CHOICE=Select an option [1-3] (Default is 1): "
-    if "!PLAT_CHOICE!"=="2" (
-        set "AU_DIR=C:\Program Files\Epic Games\AmongUs"
-        set "PLATFORM=Epic Games"
-    ) else if "!PLAT_CHOICE!"=="3" (
-        set /p "AU_DIR=Enter custom Among Us folder path: "
-        set "PLATFORM=Custom"
-    ) else (
-        set "AU_DIR=C:\Program Files (x86)\Steam\steamapps\common\Among Us"
-        set "PLATFORM=Steam"
-    )
+    goto platform_done
 )
+if "!PLAT_CHOICE!"=="3" (
+    set /p "AU_DIR=Enter custom Among Us folder path: "
+    set "PLATFORM=Custom"
+    goto platform_done
+)
+set "AU_DIR=!STEAM_PATH!"
+set "PLATFORM=Steam"
+goto platform_done
 
+:select_steam_platform
+set "AU_DIR=!STEAM_PATH!"
+set "PLATFORM=Steam"
+echo [OK] Detected Platform: Steam
+echo      Location: "!AU_DIR!"
+goto platform_done
+
+:select_epic_platform
+set "AU_DIR=!EPIC_PATH!"
+set "PLATFORM=Epic Games"
+echo [OK] Detected Platform: Epic Games
+echo      Location: "!AU_DIR!"
+goto platform_done
+
+:select_custom_platform
+echo [!] Could not auto-detect Among Us installation.
+echo     [1] Steam default:      C:\Program Files (x86)\Steam\steamapps\common\Among Us
+echo     [2] Epic Games default: C:\Program Files\Epic Games\AmongUs
+echo     [3] Enter custom folder path
+echo.
+set /p "PLAT_CHOICE=Select an option [1-3] (Default is 1): "
+if "!PLAT_CHOICE!"=="2" (
+    set "AU_DIR=C:\Program Files\Epic Games\AmongUs"
+    set "PLATFORM=Epic Games"
+    goto platform_done
+)
+if "!PLAT_CHOICE!"=="3" (
+    set /p "AU_DIR=Enter custom Among Us folder path: "
+    set "PLATFORM=Custom"
+    goto platform_done
+)
+set "AU_DIR=C:\Program Files (x86)\Steam\steamapps\common\Among Us"
+set "PLATFORM=Steam"
+goto platform_done
+
+:platform_done
 set "PLUGINS_DIR=%AU_DIR%\BepInEx\plugins"
 set "CONFIG_DIR=%AU_DIR%\BepInEx\config"
 set "PREFS_FILE=%CONFIG_DIR%\.hydralum_installer_prefs"
@@ -279,8 +282,6 @@ if "!CONFIG_ACTION!"=="" (
     echo  [4] Yes - Delete old configs and DO NOT ask again
     echo.
     set /p "CHOICE=Select an option [1-4] (Default is 2): "
-    if "!CHOICE!"=="" set "CHOICE=2"
-
     if "!CHOICE!"=="1" (
         set "CONFIG_ACTION=DELETE"
     ) else if "!CHOICE!"=="2" (
