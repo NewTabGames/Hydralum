@@ -1,4 +1,4 @@
-name: Build Hydralum
+name: Build
 
 on:
   push:
@@ -9,32 +9,32 @@ on:
 
 jobs:
   build:
-    name: Build & Package Hydralum
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Setup .NET 6.0
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '6.0.x'
 
-    - name: Build MalumMenu
+    - name: Build Malum
       run: dotnet build MalumMenuPlus/MalumMenu-main/src/MalumMenu.csproj -c Release
 
-    - name: Build HydraMenu
+    - name: Build Hydra
       run: dotnet build Hydra-main/src/HydraMenu.csproj -c Release
 
-    - name: Upload Raw DLLs Artifact
+    - name: Upload DLLs
       uses: actions/upload-artifact@v4
       with:
         name: Hydralum-DLLs
         path: DLLs/*.dll
         if-no-files-found: error
 
-    - name: Assemble Standalone 1-Click Package (BepInEx 6 x86 + dotnet + Hydralum)
+    - name: Package Standalone
       run: |
         mkdir -p standalone_build
         curl -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785%2B6abdba4.zip" -o bepinex.zip
@@ -47,7 +47,7 @@ jobs:
         echo "945360" > standalone_build/steam_appid.txt
         printf "[Logging.Console]\nEnabled = true\nPreventClose = false\nStandardOutType = Auto\nLogLevels = Fatal, Error, Warning, Message, Info\n" > standalone_build/BepInEx/config/BepInEx.cfg
 
-    - name: Upload Standalone 1-Click Package Artifact
+    - name: Upload Standalone
       uses: actions/upload-artifact@v4
       with:
         name: Hydralum-Standalone-Steam
