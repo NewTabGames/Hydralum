@@ -19,12 +19,6 @@ public class DebugTab : ITab
     {
         CheatToggles.showDebugConsole = GUILayout.Toggle(CheatToggles.showDebugConsole, " Show Console");
 
-        CheatToggles.logDeaths = GUILayout.Toggle(CheatToggles.logDeaths, " Log Deaths");
-
-        CheatToggles.logShapeshifts = GUILayout.Toggle(CheatToggles.logShapeshifts, " Log Shapeshifts");
-
-        CheatToggles.logVents = GUILayout.Toggle(CheatToggles.logVents, " Log Vents");
-
         CheatToggles.logIncomingRpcs = GUILayout.Toggle(CheatToggles.logIncomingRpcs, " Log Incoming RPCs");
 
         CheatToggles.logOutgoingRpcs = GUILayout.Toggle(CheatToggles.logOutgoingRpcs, " Log Outgoing RPCs");
