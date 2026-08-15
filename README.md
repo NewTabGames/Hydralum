@@ -15,8 +15,7 @@
 ## Features
 
 - **Dual-Menu Integration**: Seamlessly switch between **MalumMenu** and **HydraMenu** in real time with synchronized toggles and state sharing.
-- **Custom Enhancements**: Includes custom features like **Color Sniper** in Hydra (auto-claims your chosen color in lobby), visual improvements, and optimizations.
-- **Persistent Hydra Config System**: Original Hydra never had a configuration system and would reset all settings whenever the game was closed. Hydralum introduces a full persistent configuration system (`BepInEx/config/com.mrd.hydramenu.cfg`) that automatically saves and restores your UI scale, custom theme colors, notification preferences, Color Sniper choices, and window positions across restarts.
+- **Persistent Hydra Config System**: Original Hydra never had a configuration system and would reset all settings whenever the game was closed. Hydralum introduces a full persistent configuration system (`BepInEx/config/com.mrd.hydramenu.cfg`) that automatically saves and restores your UI scale, custom theme colors, notification preferences, and window positions across restarts.
 
 ---
 
