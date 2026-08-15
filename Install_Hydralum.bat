@@ -222,18 +222,54 @@ if %ERRORLEVEL% NEQ 0 (
 echo [OK] MalumMenuPlus.dll built successfully.
 echo.
 
-:: 7. Locate Built DLLs
-set "BUILT_HYDRA=!SOURCE_ROOT!\Hydra-main\src\bin\Release\net6.0\HydraMenu.dll"
-set "BUILT_MALUM=!SOURCE_ROOT!\MalumMenuPlus\MalumMenu-main\src\bin\Release\net6.0\MalumMenuPlus.dll"
+:: 7. Locate Built DLLs dynamically
+set "BUILT_HYDRA="
+set "BUILT_MALUM="
 
-if not exist "!BUILT_HYDRA!" (
-    echo [ERROR] Compiled HydraMenu.dll not found at expected path!
+:: 1. Check DLLs folder first (auto-copied by PostBuild target)
+if exist "!SOURCE_ROOT!\DLLs\HydraMenu.dll" set "BUILT_HYDRA=!SOURCE_ROOT!\DLLs\HydraMenu.dll"
+if exist "!SOURCE_ROOT!\DLLs\MalumMenuPlus.dll" set "BUILT_MALUM=!SOURCE_ROOT!\DLLs\MalumMenuPlus.dll"
+
+:: 2. Check standard Steam Release path
+if not defined BUILT_HYDRA (
+    if exist "!SOURCE_ROOT!\Hydra-main\src\bin\Steam\Release\net6.0\HydraMenu.dll" set "BUILT_HYDRA=!SOURCE_ROOT!\Hydra-main\src\bin\Steam\Release\net6.0\HydraMenu.dll"
+)
+if not defined BUILT_MALUM (
+    if exist "!SOURCE_ROOT!\MalumMenuPlus\MalumMenu-main\src\bin\Steam\Release\net6.0\MalumMenuPlus.dll" set "BUILT_MALUM=!SOURCE_ROOT!\MalumMenuPlus\MalumMenu-main\src\bin\Steam\Release\net6.0\MalumMenuPlus.dll"
+)
+
+:: 3. Check standard Release path
+if not defined BUILT_HYDRA (
+    if exist "!SOURCE_ROOT!\Hydra-main\src\bin\Release\net6.0\HydraMenu.dll" set "BUILT_HYDRA=!SOURCE_ROOT!\Hydra-main\src\bin\Release\net6.0\HydraMenu.dll"
+)
+if not defined BUILT_MALUM (
+    if exist "!SOURCE_ROOT!\MalumMenuPlus\MalumMenu-main\src\bin\Release\net6.0\MalumMenuPlus.dll" set "BUILT_MALUM=!SOURCE_ROOT!\MalumMenuPlus\MalumMenu-main\src\bin\Release\net6.0\MalumMenuPlus.dll"
+)
+
+:: 4. Search recursively as fallback
+if not defined BUILT_HYDRA (
+    for /r "!SOURCE_ROOT!\Hydra-main" %%F in (HydraMenu.dll) do (
+        if exist "%%F" set "BUILT_HYDRA=%%F"
+    )
+)
+if not defined BUILT_MALUM (
+    for /r "!SOURCE_ROOT!\MalumMenuPlus" %%F in (MalumMenuPlus.dll) do (
+        if exist "%%F" set "BUILT_MALUM=%%F"
+    )
+)
+
+if not defined BUILT_HYDRA (
+    echo [ERROR] Compiled HydraMenu.dll not found in build outputs!
     goto cleanup_fail
 )
-if not exist "!BUILT_MALUM!" (
-    echo [ERROR] Compiled MalumMenuPlus.dll not found at expected path!
+if not defined BUILT_MALUM (
+    echo [ERROR] Compiled MalumMenuPlus.dll not found in build outputs!
     goto cleanup_fail
 )
+
+echo [*] Located HydraMenu DLL:     "!BUILT_HYDRA!"
+echo [*] Located MalumMenuPlus DLL: "!BUILT_MALUM!"
+echo.
 
 :: 8. Smart-Delete Old DLLs from Plugins folder
 echo [*] Ensuring Among Us is closed before updating plugins...
