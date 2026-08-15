@@ -45,13 +45,7 @@ jobs:
         cp DLLs/HydraMenu.dll standalone_build/BepInEx/plugins/
         cp DLLs/MalumMenuPlus.dll standalone_build/BepInEx/plugins/
         echo "945360" > standalone_build/steam_appid.txt
-        cat << 'EOF' > standalone_build/BepInEx/config/BepInEx.cfg
-[Logging.Console]
-Enabled = true
-PreventClose = false
-StandardOutType = Auto
-LogLevels = Fatal, Error, Warning, Message, Info
-EOF
+        printf "[Logging.Console]\nEnabled = true\nPreventClose = false\nStandardOutType = Auto\nLogLevels = Fatal, Error, Warning, Message, Info\n" > standalone_build/BepInEx/config/BepInEx.cfg
 
     - name: Upload Standalone 1-Click Package Artifact
       uses: actions/upload-artifact@v4
