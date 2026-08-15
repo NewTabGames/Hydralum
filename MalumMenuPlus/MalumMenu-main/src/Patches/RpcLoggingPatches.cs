@@ -94,8 +94,8 @@ public static class ShipStatus_HandleRpc_Patch
     }
 }
 
-[HarmonyPatch(typeof(AmongUsClient), nameof(AmongUsClient.StartRpcImmediately))]
-public static class AmongUsClient_StartRpcImmediately_Patch
+[HarmonyPatch(typeof(InnerNetClient), nameof(InnerNetClient.StartRpcImmediately))]
+public static class InnerNetClient_StartRpcImmediately_Patch
 {
     public static void Prefix(uint targetNetId, byte callId, SendOption sendOption, int targetClientId)
     {
