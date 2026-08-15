@@ -238,19 +238,13 @@ public class OutfitsTab : ITab
     {
         GUILayout.Label("Quick Actions", GUIStylePreset.TabSubtitle);
 
+        GUILayout.BeginHorizontal();
         if (GUILayout.Button("Open Outfits Folder", GUIStylePreset.NormalButton, GUILayout.Height(22)))
         {
             OutfitManager.OpenOutfitsFolder();
         }
 
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Randomize", GUIStylePreset.NormalButton, GUILayout.Height(22)))
-        {
-            MalumAvatar.RandomizeAvatar();
-            SetStatus("<color=yellow>Randomized!</color>");
-        }
-
-        if (GUILayout.Button("Restore", GUIStylePreset.NormalButton, GUILayout.Height(22)))
+        if (GUILayout.Button("Restore Default", GUIStylePreset.NormalButton, GUILayout.Height(22)))
         {
             MalumAvatar.RestoreAvatar();
             SetStatus("<color=white>Restored default.</color>");

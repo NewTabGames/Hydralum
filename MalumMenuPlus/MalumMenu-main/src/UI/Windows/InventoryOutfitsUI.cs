@@ -307,14 +307,14 @@ public class InventoryOutfitsUI : MonoBehaviour
 
         // 3. Quick Actions
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Randomize", GUIStylePreset.NormalButton, GUILayout.Height(20)))
-        {
-            MalumAvatar.RandomizeAvatar();
-            SetStatus("<color=yellow>Randomized!</color>");
-        }
-        if (GUILayout.Button("Folder", GUIStylePreset.NormalButton, GUILayout.Width(60), GUILayout.Height(20)))
+        if (GUILayout.Button("Open Folder", GUIStylePreset.NormalButton, GUILayout.Height(20)))
         {
             OutfitManager.OpenOutfitsFolder();
+        }
+        if (GUILayout.Button("Restore Default", GUIStylePreset.NormalButton, GUILayout.Height(20)))
+        {
+            MalumAvatar.RestoreAvatar();
+            SetStatus("<color=white>Restored default.</color>");
         }
         GUILayout.EndHorizontal();
 
