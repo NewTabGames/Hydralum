@@ -66,6 +66,10 @@ namespace HydraMenu.ui
 			if(Input.GetKeyDown(KeyCode.F6))
 			{
 				visible = !visible;
+				if(visible)
+				{
+					CloseMalumMenu();
+				}
 			}
 
 			if(!visible) return;
