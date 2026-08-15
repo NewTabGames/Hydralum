@@ -1,4 +1,5 @@
 using HydraMenu.ui.sections;
+using Il2CppInterop.Runtime.Attributes;
 using System;
 using UnityEngine;
 
@@ -172,6 +173,7 @@ namespace HydraMenu.ui
 				mousePos.y <= (windowPosition.y + WindowSize.y);
 		}
 
+		[HideFromIl2Cpp]
 		private void RenderTab(byte position, ISection section)
 		{
 			Rect rect = new Rect(
