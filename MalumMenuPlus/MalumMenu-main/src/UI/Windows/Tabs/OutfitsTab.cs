@@ -8,6 +8,7 @@ public class OutfitsTab : ITab
 {
     public string name => "Outfits";
 
+    private string _outfitPendingDelete = "";
     private string _customOutfitName = "Outfit 1";
     private int _presetTemplateIndex = 0;
     private string _statusMessage = "";
@@ -295,46 +296,70 @@ public class OutfitsTab : ITab
                 : $"Color {outfit.ColorId}";
             GUILayout.Label($"<b>{outfit.Name}</b> <color=#aaaaaa>({colorName})</color>");
 
-            // Action Buttons
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Equip", GUIStylePreset.NormalButton, GUILayout.Height(22)))
+            // Action / Confirmation Buttons
+            if (_outfitPendingDelete == outfit.Name)
             {
-                if (OutfitManager.ApplyOutfit(outfit))
-                {
-                    SetStatus($"<color=green>Equipped '{outfit.Name}'!</color>");
-                }
-                else
-                {
-                    SetStatus("<color=red>Join a lobby to equip outfits.</color>");
-                }
-            }
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("<color=#FF5555><b>Delete preset?</b></color>", GUILayout.ExpandWidth(true));
 
-            if (GUILayout.Button("Overwrite", GUIStylePreset.NormalButton, GUILayout.Height(22)))
-            {
-                var updated = OutfitManager.CaptureCurrentOutfit(outfit.Name);
-                if (updated != null && OutfitManager.SaveOutfit(updated))
+                var prevBg = GUI.backgroundColor;
+                GUI.backgroundColor = new Color(0.9f, 0.2f, 0.2f);
+                if (GUILayout.Button("Yes, Delete", GUIStylePreset.NormalButton, GUILayout.Width(80), GUILayout.Height(22)))
                 {
-                    RefreshOutfits();
-                    SetStatus($"<color=green>Updated '{outfit.Name}'!</color>");
+                    if (OutfitManager.DeleteOutfit(outfit.Name))
+                    {
+                        _outfitPendingDelete = "";
+                        RefreshOutfits();
+                        SetStatus($"<color=yellow>Deleted '{outfit.Name}'.</color>");
+                        GUI.backgroundColor = prevBg;
+                        GUILayout.EndHorizontal();
+                        GUILayout.EndVertical();
+                        break;
+                    }
                 }
-            }
 
-            var prevBg = GUI.backgroundColor;
-            GUI.backgroundColor = new Color(0.9f, 0.3f, 0.3f);
-            if (GUILayout.Button("X", GUIStylePreset.NormalButton, GUILayout.Width(26), GUILayout.Height(22)))
-            {
-                if (OutfitManager.DeleteOutfit(outfit.Name))
+                GUI.backgroundColor = new Color(0.4f, 0.4f, 0.4f);
+                if (GUILayout.Button("Cancel", GUIStylePreset.NormalButton, GUILayout.Width(60), GUILayout.Height(22)))
                 {
-                    RefreshOutfits();
-                    SetStatus($"<color=yellow>Deleted '{outfit.Name}'.</color>");
-                    GUI.backgroundColor = prevBg;
-                    GUILayout.EndHorizontal();
-                    GUILayout.EndVertical();
-                    break;
+                    _outfitPendingDelete = "";
                 }
+                GUI.backgroundColor = prevBg;
+                GUILayout.EndHorizontal();
             }
-            GUI.backgroundColor = prevBg;
-            GUILayout.EndHorizontal();
+            else
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Equip", GUIStylePreset.NormalButton, GUILayout.Height(22)))
+                {
+                    if (OutfitManager.ApplyOutfit(outfit))
+                    {
+                        SetStatus($"<color=green>Equipped '{outfit.Name}'!</color>");
+                    }
+                    else
+                    {
+                        SetStatus("<color=red>Join a lobby to equip outfits.</color>");
+                    }
+                }
+
+                if (GUILayout.Button("Overwrite", GUIStylePreset.NormalButton, GUILayout.Height(22)))
+                {
+                    var updated = OutfitManager.CaptureCurrentOutfit(outfit.Name);
+                    if (updated != null && OutfitManager.SaveOutfit(updated))
+                    {
+                        RefreshOutfits();
+                        SetStatus($"<color=green>Updated '{outfit.Name}'!</color>");
+                    }
+                }
+
+                var prevBg = GUI.backgroundColor;
+                GUI.backgroundColor = new Color(0.9f, 0.3f, 0.3f);
+                if (GUILayout.Button("X", GUIStylePreset.NormalButton, GUILayout.Width(26), GUILayout.Height(22)))
+                {
+                    _outfitPendingDelete = outfit.Name;
+                }
+                GUI.backgroundColor = prevBg;
+                GUILayout.EndHorizontal();
+            }
 
             // Compact details
             string hatText = string.IsNullOrEmpty(outfit.HatId) ? "-" : outfit.HatId;
