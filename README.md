@@ -22,7 +22,6 @@
 ## Installation
 
 ### Option A: 1-Click Drag & Drop Standalone Package (Recommended)
-*No need to install BepInEx or .NET SDK separately — everything is pre-packaged and ready to go.*
 
 1. Go to the **[Actions tab](https://github.com/NewTabGames/Hydralum/actions)** on GitHub.
 2. Click the latest successful build run.
