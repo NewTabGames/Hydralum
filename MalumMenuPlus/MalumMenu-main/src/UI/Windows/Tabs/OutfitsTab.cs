@@ -8,12 +8,21 @@ public class OutfitsTab : ITab
 {
     public string name => "Outfits";
 
-    private string _newOutfitName = "My Outfit";
+    private string _customOutfitName = "Outfit 1";
+    private int _presetTemplateIndex = 0;
     private string _statusMessage = "";
     private float _statusTimer = 0f;
     private Vector2 _outfitsScroll = Vector2.zero;
     private byte _selectedPlayerToClone = byte.MaxValue;
     private List<MalumOutfit> _cachedOutfits = null;
+
+    private static readonly string[] PresetTemplates =
+    {
+        "Outfit 1", "Outfit 2", "Outfit 3", "Outfit 4", "Outfit 5",
+        "Outfit 6", "Outfit 7", "Outfit 8", "Outfit 9", "Outfit 10",
+        "Stealth", "Detective", "Captain", "Medic", "Astronaut",
+        "Impostor", "Neon", "Cyberpunk", "Casual", "Ghost"
+    };
 
     private static readonly string[] ColorNames =
     {
@@ -37,7 +46,7 @@ public class OutfitsTab : ITab
         GUILayout.BeginHorizontal();
 
         // Left column: Outfit Creator, Cloner & Quick Tools
-        GUILayout.BeginVertical(GUILayout.Width(MenuUI.windowWidth * 0.42f));
+        GUILayout.BeginVertical(GUILayout.Width(MenuUI.windowWidth * 0.44f));
 
         DrawSaveSection();
 
@@ -67,9 +76,49 @@ public class OutfitsTab : ITab
     {
         GUILayout.Label("Save Current Outfit", GUIStylePreset.TabSubtitle);
 
+        GUILayout.Label($"Preset Name: <b>{_customOutfitName}</b>", GUIStylePreset.Hint);
+
         GUILayout.BeginHorizontal();
-        GUILayout.Label("Name:", GUILayout.Width(50));
-        _newOutfitName = GUILayout.TextField(_newOutfitName, 30);
+        if (GUILayout.Button("<", GUIStylePreset.NormalButton, GUILayout.Width(35), GUILayout.Height(24)))
+        {
+            _presetTemplateIndex = _presetTemplateIndex > 0 ? _presetTemplateIndex - 1 : PresetTemplates.Length - 1;
+            _customOutfitName = PresetTemplates[_presetTemplateIndex];
+        }
+
+        if (GUILayout.Button($"Select: {PresetTemplates[_presetTemplateIndex]}", GUIStylePreset.NormalButton, GUILayout.Height(24)))
+        {
+            _customOutfitName = PresetTemplates[_presetTemplateIndex];
+        }
+
+        if (GUILayout.Button(">", GUIStylePreset.NormalButton, GUILayout.Width(35), GUILayout.Height(24)))
+        {
+            _presetTemplateIndex = _presetTemplateIndex < PresetTemplates.Length - 1 ? _presetTemplateIndex + 1 : 0;
+            _customOutfitName = PresetTemplates[_presetTemplateIndex];
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(2);
+
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Paste Clipboard Name", GUIStylePreset.NormalButton, GUILayout.Height(22)))
+        {
+            string clipboard = GUIUtility.systemCopyBuffer;
+            if (!string.IsNullOrWhiteSpace(clipboard))
+            {
+                _customOutfitName = clipboard.Trim();
+                SetStatus($"<color=white>Pasted name: '{_customOutfitName}'</color>");
+            }
+        }
+
+        if (GUILayout.Button("Use Color Name", GUIStylePreset.NormalButton, GUILayout.Height(22)))
+        {
+            if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null)
+            {
+                int col = PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId;
+                string colName = col >= 0 && col < ColorNames.Length ? ColorNames[col] : $"Color {col}";
+                _customOutfitName = $"{colName} Look";
+            }
+        }
         GUILayout.EndHorizontal();
 
         GUILayout.Space(4);
@@ -82,7 +131,7 @@ public class OutfitsTab : ITab
             }
             else
             {
-                var outfit = OutfitManager.CaptureCurrentOutfit(_newOutfitName);
+                var outfit = OutfitManager.CaptureCurrentOutfit(_customOutfitName);
                 if (outfit != null && OutfitManager.SaveOutfit(outfit))
                 {
                     RefreshOutfits();
@@ -122,7 +171,6 @@ public class OutfitsTab : ITab
             return;
         }
 
-        // Selection buttons for lobby players
         GUILayout.Label("Select Player:", GUIStylePreset.Hint);
         GUILayout.BeginHorizontal();
         foreach (var p in availablePlayers)
@@ -279,7 +327,6 @@ public class OutfitsTab : ITab
 
             GUILayout.EndHorizontal();
 
-            // Compact cosmetic preview string
             string hatText = string.IsNullOrEmpty(outfit.HatId) ? "None" : outfit.HatId;
             string skinText = string.IsNullOrEmpty(outfit.SkinId) ? "None" : outfit.SkinId;
             string visorText = string.IsNullOrEmpty(outfit.VisorId) ? "None" : outfit.VisorId;
