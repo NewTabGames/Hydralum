@@ -97,7 +97,7 @@ public static class ShipStatus_HandleRpc_Patch
 [HarmonyPatch(typeof(InnerNetClient), nameof(InnerNetClient.StartRpcImmediately))]
 public static class InnerNetClient_StartRpcImmediately_Patch
 {
-    public static void Prefix(uint targetNetId, byte callId, SendOption sendOption, int targetClientId)
+    public static void Prefix(uint targetNetId, byte callId, SendOption option, int targetClientId)
     {
         if (!CheatToggles.logOutgoingRpcs) return;
         try
@@ -106,7 +106,7 @@ public static class InnerNetClient_StartRpcImmediately_Patch
                 ? ((RpcCalls)callId).ToString()
                 : $"UnknownRpc_{callId}";
 
-            DebugUI.Log($"Starting RPC: {callId} ({rpcName}) as {targetNetId} with SendOption {sendOption} to {targetClientId}");
+            DebugUI.Log($"Starting RPC: {callId} ({rpcName}) as {targetNetId} with SendOption {option} to {targetClientId}");
         }
         catch { }
     }
