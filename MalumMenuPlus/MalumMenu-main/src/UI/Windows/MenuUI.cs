@@ -69,7 +69,12 @@ public class MenuUI : MonoBehaviour
 
         if (Input.GetKeyDown(Utils.StringToKeycode(MalumMenu.menuKeybind.Value)))
         {
-            if (isGUIActive)
+            if (IsHydraOpen())
+            {
+                CloseHydraMenu();
+                isGUIActive = false;
+            }
+            else if (isGUIActive)
             {
                 isGUIActive = false;
             }
