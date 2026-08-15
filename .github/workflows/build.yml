@@ -37,7 +37,7 @@ jobs:
     - name: Assemble Standalone 1-Click Package (BepInEx 6 + dotnet + Hydralum)
       run: |
         mkdir -p standalone_build
-        curl -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/755/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.755%2B9230554.zip" -o bepinex.zip
+        curl -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.785%2B6abdba4.zip" -o bepinex.zip
         unzip -q bepinex.zip -d standalone_build
         rm -f bepinex.zip
         mkdir -p standalone_build/BepInEx/plugins
