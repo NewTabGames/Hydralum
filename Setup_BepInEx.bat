@@ -1,0 +1,164 @@
+@echo off
+setlocal EnableDelayedExpansion
+title Hydralum - BepInEx 6 IL2CPP Auto-Setup Assistant
+
+:: ============================================================
+:: Configuration & URLs
+:: ============================================================
+set "DEFAULT_AU_DIR=C:\Program Files (x86)\Steam\steamapps\common\Among Us"
+set "BEPINEX_ZIP_URL=https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.785%%2B6abdba4.zip"
+
+echo ======================================================================
+echo             BEPINEX 6 (IL2CPP) AUTOMATED SETUP ASSISTANT
+echo ======================================================================
+echo.
+echo  Among Us is an IL2CPP game and requires BepInEx 6 (IL2CPP x64).
+echo  This tool will automatically download, extract, and configure BepInEx
+echo  for your Among Us installation.
+echo ======================================================================
+echo.
+
+:: 1. Locate Among Us Directory
+if exist "%DEFAULT_AU_DIR%\Among Us.exe" (
+    set "AU_DIR=%DEFAULT_AU_DIR%"
+) else (
+    echo [!] Among Us was not found at the default Steam directory:
+    echo     "%DEFAULT_AU_DIR%"
+    echo.
+    set /p "AU_DIR=Please enter your Among Us folder path (or press Enter for default): "
+    if "!AU_DIR!"=="" set "AU_DIR=%DEFAULT_AU_DIR%"
+)
+
+if not exist "%AU_DIR%\Among Us.exe" (
+    echo.
+    echo [WARNING] "Among Us.exe" was not found in:
+    echo           "%AU_DIR%"
+    echo           Please make sure this is your real game directory.
+    echo.
+)
+
+echo [*] Target Game Folder: "%AU_DIR%"
+echo.
+
+:: 2. Check for conflicting BepInEx 5 installations
+if exist "%AU_DIR%\BepInEx\core\BepInEx.dll" (
+    if not exist "%AU_DIR%\BepInEx\core\BepInEx.Unity.IL2CPP.dll" (
+        echo [!] WARNING: Found an old Mono version of BepInEx 5!
+        echo     BepInEx 5 is incompatible with Among Us and will cause crashes.
+        echo.
+        set /p "DEL_OLD=Would you like to remove the old BepInEx 5 files? (Y/n): "
+        if /i "!DEL_OLD!" NEQ "n" (
+            echo [*] Cleaning old BepInEx 5 files...
+            rmdir /s /q "%AU_DIR%\BepInEx" 2>nul
+            del /f /q "%AU_DIR%\winhttp.dll" 2>nul
+            del /f /q "%AU_DIR%\doorstop_config.ini" 2>nul
+            echo [OK] Old version removed.
+        )
+    )
+)
+
+:: 3. Download BepInEx 6 IL2CPP x64 Build 785
+set "BEP_ZIP=%AU_DIR%\BepInEx_IL2CPP_setup.zip"
+
+echo [*] Downloading BepInEx 6 IL2CPP (Build 785)...
+echo     From: %BEPINEX_ZIP_URL%
+
+curl.exe -L -f -s -S -o "%BEP_ZIP%" "%BEPINEX_ZIP_URL%"
+if %ERRORLEVEL% NEQ 0 (
+    echo [*] curl failed, using PowerShell download fallback...
+    powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '%BEPINEX_ZIP_URL%' -OutFile '%BEP_ZIP%'"
+)
+
+if not exist "%BEP_ZIP%" (
+    echo.
+    echo [ERROR] Failed to download BepInEx zip file!
+    echo         Please check your internet connection or download it manually from:
+    echo         %BEPINEX_ZIP_URL%
+    echo.
+    pause
+    exit /b 1
+)
+echo [OK] BepInEx 6 archive downloaded successfully.
+echo.
+
+:: 4. Extract BepInEx into Game Folder
+echo [*] Extracting BepInEx directly into game folder...
+powershell -NoProfile -Command "Expand-Archive -Path '%BEP_ZIP%' -DestinationPath '%AU_DIR%' -Force"
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Failed to extract BepInEx archive.
+    del /f /q "%BEP_ZIP%" 2>nul
+    pause
+    exit /b 1
+)
+
+:: Delete downloaded zip archive
+if exist "%BEP_ZIP%" del /f /q "%BEP_ZIP%" 2>nul
+
+echo [OK] Files extracted:
+echo      - winhttp.dll
+echo      - doorstop_config.ini
+echo      - BepInEx/ folder
+echo.
+
+:: Ensure plugins directory exists
+if not exist "%AU_DIR%\BepInEx\plugins" (
+    mkdir "%AU_DIR%\BepInEx\plugins" 2>nul
+)
+
+:: 5. Guided First-Time Launch Instructions
+echo ======================================================================
+echo                     STEP 2: FIRST-TIME INITIALIZATION
+echo ======================================================================
+echo.
+echo  BepInEx is now installed, but Among Us must be launched ONCE so that
+echo  BepInEx can generate the required IL2CPP game interop files.
+echo.
+echo  ------------------------------------------------------------------
+echo  INSTRUCTIONS:
+echo  1. Launch Among Us (Steam / Epic).
+echo  2. Wait until you reach the Main Menu.
+echo     (A black console window may appear briefly - this is normal)
+echo  3. Exit / Quit Among Us completely.
+echo  ------------------------------------------------------------------
+echo.
+set /p "LAUNCH_NOW=Would you like to launch Among Us right now? (Y/n): "
+
+if /i "!LAUNCH_NOW!" NEQ "n" (
+    echo [*] Launching Among Us...
+    if exist "%AU_DIR%\Among Us.exe" (
+        start "" "%AU_DIR%\Among Us.exe"
+    ) else (
+        start "" "steam://rungameid/945360"
+    )
+    echo.
+    echo [*] Waiting for you to close Among Us after reaching the Main Menu...
+    echo     (Press any key below ONCE you have closed the game)
+    pause >nul
+) else (
+    echo.
+    echo [*] Please launch Among Us manually, wait for the Main Menu, and close it.
+    pause
+)
+
+:: 6. Verify BepInEx Initialization
+echo.
+echo [*] Verifying BepInEx file structure...
+set "INITIALIZED=0"
+
+if exist "%AU_DIR%\BepInEx\interop" set "INITIALIZED=1"
+if exist "%AU_DIR%\BepInEx\plugins" set "INITIALIZED=1"
+if exist "%AU_DIR%\BepInEx\LogOutput.log" set "INITIALIZED=1"
+
+echo ======================================================================
+echo                         SETUP COMPLETE!
+echo ======================================================================
+echo.
+echo  BepInEx 6 (IL2CPP) is now fully installed and ready!
+echo.
+echo  NEXT STEPS:
+echo  Run "Install_Hydralum.bat" at any time to automatically build,
+echo  install, or update Hydralum (HydraMenu + MalumMenuPlus)!
+echo ======================================================================
+echo.
+pause
+exit /b 0

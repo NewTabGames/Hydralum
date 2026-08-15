@@ -19,8 +19,12 @@
 
 ---
 
-## How to Install BepInEx (Easy 3-Step Guide)
+## How to Install BepInEx
 
+### Option A: Automated Assistant (Recommended)
+Double-click **`Setup_BepInEx.bat`** to automatically download BepInEx 6 IL2CPP, clean any old BepInEx 5 files, extract everything into your Among Us folder, and guide you through the first-time initialization!
+
+### Option B: Manual Setup
 Among Us is an **IL2CPP** game, so it requires **BepInEx 6 (IL2CPP)** instead of standard BepInEx 5.
 
 > ⚠️ **Important**: Do **NOT** download BepInEx 5 (`BepInEx_win_x64_5.4.x.zip`). That version is for Mono games and will not load in Among Us.
