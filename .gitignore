@@ -22,7 +22,7 @@ DLLs/
 # Testing & scratch folders
 [Tt][Ee][Ss][Tt]*/
 **/[Tt][Ee][Ss][Tt]*/
-MalumMenu-*
+/MalumMenu-*
 *Steam-Itch*
 Antigravity.md
 
