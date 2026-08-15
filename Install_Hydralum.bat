@@ -236,6 +236,9 @@ if not exist "!BUILT_MALUM!" (
 )
 
 :: 8. Smart-Delete Old DLLs from Plugins folder
+echo [*] Ensuring Among Us is closed before updating plugins...
+taskkill /f /im "Among Us.exe" >nul 2>&1
+
 echo [*] Cleaning up old Malum / Hydra DLLs from plugins folder...
 del /f /q "%PLUGINS_DIR%\HydraMenu.dll" 2>nul
 del /f /q "%PLUGINS_DIR%\Hydra.dll" 2>nul
