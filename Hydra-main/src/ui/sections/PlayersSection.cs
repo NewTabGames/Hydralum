@@ -220,15 +220,29 @@ namespace HydraMenu.ui.sections
 				Teleporter.TeleportTo(target.transform.position);
 			}
 
-			if(!hasAnticheat && GUILayout.Button("Teleport to Me"))
+			if(GUILayout.Button("Teleport to Me"))
 			{
-				Teleporter.TeleportPlayerTo(target, PlayerControl.LocalPlayer.transform.position);
+				if(AmongUsClient.Instance.AmHost || !hasAnticheat)
+				{
+					Teleporter.TeleportPlayerTo(target, PlayerControl.LocalPlayer.transform.position);
+				}
+				else
+				{
+					Hydra.notifications.Send("Teleport", "Teleporting other players requires Host authority on official servers.");
+				}
 			}
 			GUILayout.EndHorizontal();
 
-			if(!hasAnticheat && GUILayout.Button("Teleport All To"))
+			if(GUILayout.Button("Teleport All To"))
 			{
-				Teleporter.TeleportAllTo(target.transform.position);
+				if(AmongUsClient.Instance.AmHost || !hasAnticheat)
+				{
+					Teleporter.TeleportAllTo(target.transform.position);
+				}
+				else
+				{
+					Hydra.notifications.Send("Teleport", "Teleporting all players requires Host authority on official servers.");
+				}
 			}
 
 			if(GUILayout.Button("Murder"))
@@ -430,11 +444,18 @@ namespace HydraMenu.ui.sections
 				}
 			}
 
-			if(!hasAnticheat && GUILayout.Button("Teleport All to Me"))
+			if(GUILayout.Button("Teleport All to Me"))
 			{
-				foreach(var target in targets)
+				if(AmongUsClient.Instance.AmHost || !hasAnticheat)
 				{
-					Teleporter.TeleportPlayerTo(target, PlayerControl.LocalPlayer.transform.position);
+					foreach(var target in targets)
+					{
+						Teleporter.TeleportPlayerTo(target, PlayerControl.LocalPlayer.transform.position);
+					}
+				}
+				else
+				{
+					Hydra.notifications.Send("Teleport", "Teleporting other players requires Host authority on official servers.");
 				}
 			}
 			GUILayout.EndHorizontal();
