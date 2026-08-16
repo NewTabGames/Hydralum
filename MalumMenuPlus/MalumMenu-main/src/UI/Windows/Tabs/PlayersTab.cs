@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace MalumMenu;
@@ -6,8 +9,8 @@ public class PlayersTab : ITab
 {
     public string name => "Players";
 
-    // Which player's details are shown on the right. byte.MaxValue = none picked yet (defaults to first).
-    private static byte _selectedPlayerId = byte.MaxValue;
+    // Set of selected player IDs for multi-selection via Ctrl-click
+    private static readonly HashSet<byte> _selectedPlayerIds = new();
 
     public void Draw()
     {
@@ -21,28 +24,46 @@ public class PlayersTab : ITab
 
         GUILayout.BeginHorizontal();
 
-        // Left: compact clickable list of names; click one to load its info on the right
-        GUILayout.BeginVertical(GUILayout.Width(MenuUI.windowWidth * 0.24f));
+        // Left: compact clickable list of names (Hold Ctrl to multi-select)
+        GUILayout.BeginVertical(GUILayout.Width(MenuUI.windowWidth * 0.26f));
 
-        PlayerControl selected = null;
-        PlayerControl first = null;
+        GUILayout.Label("<size=10><color=#888888>Hold Ctrl to multi-select</color></size>");
+
+        bool isCtrlHeld = Event.current.control || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+
+        List<PlayerControl> selectedList = new();
+        PlayerControl firstAvailable = null;
 
         foreach (var player in players)
         {
             if (player == null || player.Data == null) continue;
-            first ??= player;
+            firstAvailable ??= player;
 
-            var isSelected = player.Data.PlayerId == _selectedPlayerId;
-            if (isSelected) selected = player;
+            bool isSelected = _selectedPlayerIds.Contains(player.Data.PlayerId);
+            if (isSelected) selectedList.Add(player);
 
             var previous = GUI.backgroundColor;
-            if (isSelected) GUI.backgroundColor = new Color(0.32f, 0.32f, 0.32f);
+            if (isSelected) GUI.backgroundColor = new Color(0.35f, 0.7f, 1f);
 
             var colorHex = ColorUtility.ToHtmlStringRGB(player.Data.Color);
             if (GUILayout.Button($"<color=#{colorHex}>{player.Data.PlayerName}</color>", GUIStylePreset.NormalButton, GUILayout.Height(24)))
             {
-                _selectedPlayerId = player.Data.PlayerId;
-                selected = player;
+                if (isCtrlHeld)
+                {
+                    if (_selectedPlayerIds.Contains(player.Data.PlayerId))
+                    {
+                        _selectedPlayerIds.Remove(player.Data.PlayerId);
+                    }
+                    else
+                    {
+                        _selectedPlayerIds.Add(player.Data.PlayerId);
+                    }
+                }
+                else
+                {
+                    _selectedPlayerIds.Clear();
+                    _selectedPlayerIds.Add(player.Data.PlayerId);
+                }
             }
 
             GUI.backgroundColor = previous;
@@ -52,9 +73,29 @@ public class PlayersTab : ITab
 
         GUILayout.Space(10);
 
-        // Right: details for the selected player (fall back to the first if nothing is picked yet)
+        // Right: details or multi-player controls
         GUILayout.BeginVertical();
-        DrawDetails(selected ?? first);
+
+        // Auto-select first if none picked
+        if (_selectedPlayerIds.Count == 0 && firstAvailable != null)
+        {
+            _selectedPlayerIds.Add(firstAvailable.Data.PlayerId);
+            selectedList.Add(firstAvailable);
+        }
+
+        if (selectedList.Count > 1)
+        {
+            DrawMultiDetails(selectedList);
+        }
+        else if (selectedList.Count == 1)
+        {
+            DrawDetails(selectedList[0]);
+        }
+        else
+        {
+            GUILayout.Label("Select a player on the left.\n<color=#888888>(Hold Ctrl to select multiple)</color>", GUIStylePreset.Hint);
+        }
+
         GUILayout.EndVertical();
 
         GUILayout.EndHorizontal();
@@ -101,11 +142,6 @@ public class PlayersTab : ITab
 
             GUILayout.Space(8);
 
-            // Per-player actions. Each button is always drawn and enabled/disabled via GUI.enabled so
-            // the control count stays constant between IMGUI's Layout and Repaint passes as the
-            // selection changes. GUI.enabled is reset right after each button, before any risky call,
-            // so a disabled state can't leak and grey out the rest of the menu.
-
             // Teleport onto the player.
             var canTeleport = Utils.isPlayer && !player.AmOwner && !data.Disconnected;
             GUI.enabled = canTeleport;
@@ -139,8 +175,7 @@ public class PlayersTab : ITab
                 MalumTroll.RestoreOriginalOutfit();
             }
 
-            // Murder the player. Routed through CmdCheckMurder so the existing patch picks the right
-            // path: a direct kill as host, or a check-murder request as a non-host impostor.
+            // Murder the player.
             var canMurder = Utils.isShip && !player.AmOwner && !data.IsDead && !data.Disconnected;
             GUI.enabled = canMurder;
             var murderClicked = GUILayout.Button("Murder", GUIStylePreset.NormalButton);
@@ -150,6 +185,73 @@ public class PlayersTab : ITab
             {
                 PlayerControl.LocalPlayer.CmdCheckMurder(player);
             }
+        }
+        catch { }
+    }
+
+    private static void DrawMultiDetails(List<PlayerControl> targets)
+    {
+        try
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"<b>{targets.Count} Players Selected</b>", GUIStylePreset.TabSubtitle);
+            if (GUILayout.Button("Deselect All", GUIStylePreset.NormalButton, GUILayout.Width(90), GUILayout.Height(22)))
+            {
+                _selectedPlayerIds.Clear();
+                return;
+            }
+            GUILayout.EndHorizontal();
+
+            // Render compact player chips
+            string playerChips = string.Join(", ", targets.Select(p => $"<color=#{ColorUtility.ToHtmlStringRGB(p.Data.Color)}>{p.Data.PlayerName}</color>"));
+            GUILayout.Label($"Targets: {playerChips}", GUIStylePreset.Hint);
+
+            GUILayout.Space(8);
+            GUILayout.Label("Multi-Target Actions", GUIStylePreset.TabSubtitle);
+
+            // Teleport to first target
+            var firstTarget = targets.FirstOrDefault(p => !p.AmOwner && !p.Data.Disconnected);
+            var canTeleport = Utils.isPlayer && firstTarget != null;
+            GUI.enabled = canTeleport;
+            if (GUILayout.Button($"Teleport to First Selected ({firstTarget?.Data?.PlayerName ?? "None"})", GUIStylePreset.NormalButton) && canTeleport)
+            {
+                MalumTeleport.TeleportTo(firstTarget.GetTruePosition());
+            }
+            GUI.enabled = true;
+
+            // Copy avatar from first
+            var canCopy = Utils.isPlayer && firstTarget != null;
+            GUI.enabled = canCopy;
+            if (GUILayout.Button($"Copy Avatar ({firstTarget?.Data?.PlayerName ?? "None"})", GUIStylePreset.NormalButton) && canCopy)
+            {
+                MalumTroll.CopyPlayerOutfit(firstTarget);
+            }
+            GUI.enabled = true;
+
+            // Restore avatar
+            var canRestore = Utils.isPlayer;
+            GUI.enabled = canRestore;
+            if (GUILayout.Button("Restore Original Avatar", GUIStylePreset.NormalButton) && canRestore)
+            {
+                MalumTroll.RestoreOriginalOutfit();
+            }
+            GUI.enabled = true;
+
+            // Murder all valid selected targets
+            var murderableTargets = targets.Where(p => !p.AmOwner && !p.Data.IsDead && !p.Data.Disconnected).ToList();
+            var canMurder = Utils.isShip && murderableTargets.Count > 0;
+            GUI.enabled = canMurder;
+            var prevBg = GUI.backgroundColor;
+            GUI.backgroundColor = new Color(0.9f, 0.3f, 0.3f);
+            if (GUILayout.Button($"Murder Selected ({murderableTargets.Count} Players)", GUIStylePreset.NormalButton) && canMurder)
+            {
+                foreach (var target in murderableTargets)
+                {
+                    PlayerControl.LocalPlayer.CmdCheckMurder(target);
+                }
+            }
+            GUI.backgroundColor = prevBg;
+            GUI.enabled = true;
         }
         catch { }
     }

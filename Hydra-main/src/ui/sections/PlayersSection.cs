@@ -1,4 +1,4 @@
-﻿using AmongUs.Data;
+using AmongUs.Data;
 using AmongUs.GameOptions;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using HydraMenu.features;
@@ -6,6 +6,8 @@ using HydraMenu.network;
 using InnerNet;
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace HydraMenu.ui.sections
@@ -45,6 +47,7 @@ namespace HydraMenu.ui.sections
 		}
 
 		public static PlayerControl selectedPlayer;
+		public static readonly HashSet<byte> selectedPlayerIds = new();
 		private Vector2 subsectionScrollVector;
 
 		private Controls.PlayerColors selectedColor = Controls.PlayerColors.Red;
@@ -58,6 +61,11 @@ namespace HydraMenu.ui.sections
 			int newPosition = Math.Clamp(currentPlayer + offset, 0, PlayerControl.AllPlayerControls.Count - 1);
 
 			selectedPlayer = PlayerControl.AllPlayerControls[newPosition];
+			selectedPlayerIds.Clear();
+			if(selectedPlayer != null)
+			{
+				selectedPlayerIds.Add(selectedPlayer.PlayerId);
+			}
 		}
 
 		public override void Render()
@@ -70,25 +78,53 @@ namespace HydraMenu.ui.sections
 
 			GUI.Box(new Rect(0, 0, PlayerPaneSize.x, PlayerPaneSize.y), "", Styles.MainBox);
 
+			List<PlayerControl> selectedList = new();
+
 			for(byte i = 0; i < PlayerControl.AllPlayerControls.Count; i++)
 			{
 				PlayerControl player = PlayerControl.AllPlayerControls[i];
 				// Wait for player data to fully load
 				if(player.Data == null) continue;
 
-				RenderPlayerSelection(i, player);
-
-				if(player == selectedPlayer)
+				if(selectedPlayerIds.Contains(player.PlayerId))
 				{
-					GUILayout.BeginArea(new Rect(PlayerPaneSize.x, 0, PlayerOptionsSize.x, PlayerOptionsSize.y));
-					subsectionScrollVector = GUILayout.BeginScrollView(subsectionScrollVector);
+					selectedList.Add(player);
+				}
 
-					RenderPlayerControls(player);
+				RenderPlayerSelection(i, player);
+			}
 
-					GUILayout.EndScrollView();
-					GUILayout.EndArea();
+			// Auto-select first player if nothing is picked
+			if(selectedList.Count == 0 && PlayerControl.AllPlayerControls.Count > 0)
+			{
+				var first = PlayerControl.AllPlayerControls[0];
+				if(first?.Data != null)
+				{
+					selectedPlayerIds.Add(first.PlayerId);
+					selectedPlayer = first;
+					selectedList.Add(first);
 				}
 			}
+
+			GUILayout.BeginArea(new Rect(PlayerPaneSize.x, 0, PlayerOptionsSize.x, PlayerOptionsSize.y));
+			subsectionScrollVector = GUILayout.BeginScrollView(subsectionScrollVector);
+
+			if(selectedList.Count > 1)
+			{
+				RenderMultiPlayerControls(selectedList);
+			}
+			else if(selectedList.Count == 1)
+			{
+				selectedPlayer = selectedList[0];
+				RenderPlayerControls(selectedList[0]);
+			}
+			else
+			{
+				GUILayout.Label("Select a player on the left.\n<color=#888888>(Hold Ctrl to select multiple)</color>");
+			}
+
+			GUILayout.EndScrollView();
+			GUILayout.EndArea();
 		}
 
 		private void RenderPlayerSelection(byte position, PlayerControl player)
@@ -98,7 +134,8 @@ namespace HydraMenu.ui.sections
 			string playerName = player.Data.PlayerName;
 			playerName += $"\n<color=\"{GetRoleColor(player.Data.RoleType)}\">{player.Data.RoleType}</color>";
 
-			GUIStyle style = player == selectedPlayer ? Styles.PlayerBoxActive : Styles.PlayerBox;
+			bool isSelected = selectedPlayerIds.Contains(player.PlayerId);
+			GUIStyle style = isSelected ? Styles.PlayerBoxActive : Styles.PlayerBox;
 
 			if(player.OwnerId == AmongUsClient.Instance.HostId)
 			{
@@ -107,7 +144,29 @@ namespace HydraMenu.ui.sections
 
 			if(GUI.Button(playerInfo, playerName, style))
 			{
-				selectedPlayer = player;
+				bool isCtrl = Event.current.control || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+				if(isCtrl)
+				{
+					if(selectedPlayerIds.Contains(player.PlayerId))
+					{
+						selectedPlayerIds.Remove(player.PlayerId);
+						if(selectedPlayer == player)
+						{
+							selectedPlayer = PlayerControl.AllPlayerControls.ToArray().FirstOrDefault(p => p?.Data != null && selectedPlayerIds.Contains(p.PlayerId));
+						}
+					}
+					else
+					{
+						selectedPlayerIds.Add(player.PlayerId);
+						selectedPlayer = player;
+					}
+				}
+				else
+				{
+					selectedPlayerIds.Clear();
+					selectedPlayerIds.Add(player.PlayerId);
+					selectedPlayer = player;
+				}
 			}
 
 			Rect playerColor = new Rect(0, position * PlayerButtonSize.y, PlayerColorBoxSize.x, PlayerColorBoxSize.y);
@@ -129,8 +188,6 @@ namespace HydraMenu.ui.sections
 
 			bool hasAnticheat = Utilities.IsAnticheatPresent();
 
-			// If we want to get a player's name, we have to use NetworkedPlayerInfo::PlayerName instead of PlayerControl::name to avoid
-			// getting the incorrect name if the player is shapeshifted to another player
 			string playerInfo =
 				$"Name: {target.Data.PlayerName} ({Utilities.GetPlayerColor(target.Data)})" +
 				$"\nRole: {target.Data.RoleType}" +
@@ -139,15 +196,14 @@ namespace HydraMenu.ui.sections
 			ClientData clientData = AmongUsClient.Instance.GetClientFromCharacter(target);
 			if(clientData != null)
 			{
-				PlatformSpecificData platform = clientData.PlatformData;
-
+				var platform = clientData.PlatformData;
 				bool streamerMode = DataManager.Settings.Gameplay.StreamerMode;
 
 				playerInfo +=
 					$"\nFriendcode: " + (streamerMode ? "REDACTED" : target.Data.FriendCode) +
 					$"\nPUID: " + (streamerMode ? "REDACTED" : target.Data.Puid) +
 					$"\nLevel: {target.Data.PlayerLevel + 1}" +
-					$"\nDevice: {platform.Platform}" +
+					$"\nDevice: {platform?.Platform}" +
 					(target.OwnerId == AmongUsClient.Instance.HostId ? "\nHost: true" : "");
 			}
 
@@ -161,7 +217,6 @@ namespace HydraMenu.ui.sections
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Teleport"))
 			{
-				// We do not want to use PlayerControl::GetTruePosition() here as it would teleport us to the player's feet
 				Teleporter.TeleportTo(target.transform.position);
 			}
 
@@ -248,13 +303,11 @@ namespace HydraMenu.ui.sections
 				if(MeetingHud.Instance == null)
 				{
 					MeetingHud.Instance = UnityEngine.Object.Instantiate<MeetingHud>(HudManager.Instance.MeetingPrefab);
-					batch.QueueSpawn(MeetingHud.Instance, -2, SpawnFlags.None);
 				}
 
 				MeetingHud.VoterState[] votes = Array.Empty<MeetingHud.VoterState>();
 
 				batch.QueueVotingComplete(votes, target.Data, false);
-				// If we created a MeetingHud object then it will be destroyed by the RpcClose function
 				batch.QueueCloseMeeting();
 				batch.FinishBatch();
 			}
@@ -324,7 +377,6 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Super Speed"))
 			{
-				// The vanilla anticheat prevents us from being able to exceed speeds greater than 3.0f
 				float maxSpeed = Utilities.IsAnticheatPresent() ? 3.0f : 5.0f;
 
 				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
@@ -333,27 +385,6 @@ namespace HydraMenu.ui.sections
 				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
 			}
 			GUILayout.EndHorizontal();
-
-			/*
-			// The problem with changing the TaskBarMode is that if we remove the task bar, we are not able to bring it back
-			GUILayout.BeginHorizontal();
-			if(GUILayout.Button("Hide Task Bar"))
-			{
-				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-				gameOptions.SetInt(Int32OptionNames.TaskBarMode, (int)TaskBarMode.Invisible);
-
-				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-			}
-
-			if(GUILayout.Button("Show Task Bar"))
-			{
-				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-				gameOptions.SetInt(Int32OptionNames.TaskBarMode, (int)TaskBarMode.Normal);
-
-				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-			}
-			GUILayout.EndHorizontal();
-			*/
 
 			if(GUILayout.Button("Reset to Defaults"))
 			{
@@ -368,6 +399,203 @@ namespace HydraMenu.ui.sections
 			if(GUILayout.Button("Set Color"))
 			{
 				target.RpcSetColor((byte)selectedColor);
+			}
+		}
+
+		private void RenderMultiPlayerControls(List<PlayerControl> targets)
+		{
+			bool hasAnticheat = Utilities.IsAnticheatPresent();
+
+			GUILayout.BeginHorizontal();
+			GUILayout.Label($"<b>{targets.Count} Players Selected</b>");
+			if(GUILayout.Button("Deselect All", GUILayout.Width(90)))
+			{
+				selectedPlayerIds.Clear();
+				return;
+			}
+			GUILayout.EndHorizontal();
+
+			string chips = string.Join(", ", targets.Select(p => $"<color=\"{GetRoleColor(p.Data.RoleType)}\">{p.Data.PlayerName}</color>"));
+			GUILayout.Label($"Targets: {chips}");
+
+			GUILayout.Space(5);
+			GUILayout.Label("General Multi-Target Actions:");
+
+			GUILayout.BeginHorizontal();
+			if(GUILayout.Button($"Murder Selected ({targets.Count})"))
+			{
+				foreach(var target in targets)
+				{
+					AttemptMurder(target);
+				}
+			}
+
+			if(!hasAnticheat && GUILayout.Button("Teleport All to Me"))
+			{
+				foreach(var target in targets)
+				{
+					Teleporter.TeleportPlayerTo(target, PlayerControl.LocalPlayer.transform.position);
+				}
+			}
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
+			bool allJailed = targets.All(t => Hydra.routines.jailPlayer.targets.Contains(t.GetHashCode()));
+			if(GUILayout.Button(allJailed ? "Release All from Jail" : "Place All in Jail"))
+			{
+				if(allJailed)
+				{
+					foreach(var t in targets) Hydra.routines.jailPlayer.targets.Remove(t.GetHashCode());
+				}
+				else
+				{
+					foreach(var t in targets) Hydra.routines.jailPlayer.targets.Add(t.GetHashCode());
+				}
+				Hydra.routines.jailPlayer.Enabled = Hydra.routines.jailPlayer.targets.Count > 0;
+			}
+
+			if(GUILayout.Button("Kick Selected"))
+			{
+				foreach(var target in targets)
+				{
+					Utilities.KickPlayer(target);
+				}
+			}
+			GUILayout.EndHorizontal();
+
+			GUILayout.Label($"Teleport all selected to vent: {selectedVent}");
+			selectedVent = (int)GUILayout.HorizontalSlider(selectedVent, 0, ShipStatus.Instance != null ? ShipStatus.Instance.AllVents.Count - 1 : 10);
+			if(GUILayout.Button("Teleport to Vent"))
+			{
+				foreach(var target in targets)
+				{
+					Teleporter.TeleportToVent(target, selectedVent);
+				}
+			}
+
+			GUILayout.Space(8);
+			GUILayout.Label("Host Only Features:" + (AmongUsClient.Instance.AmHost ? "" : "\n(Using these will get you kicked!)"));
+
+			bool allDisco = targets.All(t => Hydra.routines.discoHost.targets.Contains(t.GetHashCode()));
+			if(GUILayout.Button(allDisco ? "Disable Disco Mode" : "Enable Disco Mode on Selected"))
+			{
+				if(allDisco)
+				{
+					foreach(var t in targets) Hydra.routines.discoHost.targets.Remove(t.GetHashCode());
+				}
+				else
+				{
+					foreach(var t in targets) Hydra.routines.discoHost.targets.Add(t.GetHashCode());
+				}
+				Hydra.routines.discoHost.Enabled = Hydra.routines.discoHost.targets.Count > 0;
+			}
+
+			if(GUILayout.Button("Eject Selected"))
+			{
+				BatchedMessage batch = new BatchedMessage();
+				if(MeetingHud.Instance == null)
+				{
+					MeetingHud.Instance = UnityEngine.Object.Instantiate<MeetingHud>(HudManager.Instance.MeetingPrefab);
+				}
+
+				foreach(var target in targets)
+				{
+					batch.QueueVotingComplete(Array.Empty<MeetingHud.VoterState>(), target.Data, false);
+				}
+				batch.QueueCloseMeeting();
+				batch.FinishBatch();
+			}
+
+			GUILayout.BeginHorizontal();
+			if(GUILayout.Button("Flood Tasks"))
+			{
+				byte[] taskIds = new byte[255];
+				for(byte i = 0; i < 255; i++) taskIds[i] = i;
+
+				foreach(var target in targets)
+				{
+					target.Data.RpcSetTasks(taskIds);
+				}
+			}
+
+			if(GUILayout.Button("Clear Tasks"))
+			{
+				foreach(var target in targets)
+				{
+					target.Data.RpcSetTasks(Array.Empty<byte>());
+				}
+			}
+			GUILayout.EndHorizontal();
+
+			GUILayout.Space(4);
+			GUILayout.Label("Host Options Modifier (Selected):");
+
+			GUILayout.BeginHorizontal();
+			if(GUILayout.Button("Blind"))
+			{
+				foreach(var target in targets)
+				{
+					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+					gameOptions.SetFloat(FloatOptionNames.CrewLightMod, -1.0f);
+					gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, -1.0f);
+					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				}
+			}
+
+			if(GUILayout.Button("Fullbright"))
+			{
+				foreach(var target in targets)
+				{
+					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+					gameOptions.SetFloat(FloatOptionNames.CrewLightMod, 1000f);
+					gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, 1000f);
+					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				}
+			}
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
+			if(GUILayout.Button("Slow Speed"))
+			{
+				foreach(var target in targets)
+				{
+					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+					gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, 0.1f);
+					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				}
+			}
+
+			if(GUILayout.Button("Super Speed"))
+			{
+				float maxSpeed = Utilities.IsAnticheatPresent() ? 3.0f : 5.0f;
+				foreach(var target in targets)
+				{
+					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+					gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, maxSpeed);
+					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				}
+			}
+			GUILayout.EndHorizontal();
+
+			if(GUILayout.Button("Reset Options to Defaults"))
+			{
+				foreach(var target in targets)
+				{
+					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				}
+			}
+
+			GUILayout.Space(4);
+			GUILayout.Label($"Change color of all selected to: {selectedColor}");
+			selectedColor = Controls.HorizontalColorSlider(selectedColor);
+
+			if(GUILayout.Button("Set Color"))
+			{
+				foreach(var target in targets)
+				{
+					target.RpcSetColor((byte)selectedColor);
+				}
 			}
 		}
 
@@ -399,8 +627,6 @@ namespace HydraMenu.ui.sections
 
 			Hydra.Log.LogInfo($"Attempting to kill {target.Data.PlayerName}, we are not the host so we have to use the CheckMurder RPC");
 
-			// The CheckMurder RPC handler will not authorize kills if you are not the imposter or you are inside a meeting
-			// There are more checks, but I do not think it is worth adding them all here
 			if(!RoleManager.IsImpostorRole(PlayerControl.LocalPlayer.Data.RoleType))
 			{
 				Hydra.notifications.Send("Murder Player", "You can only murder players when you are an Impostor, unless you are the host of the lobby.");
@@ -438,8 +664,6 @@ namespace HydraMenu.ui.sections
 
 			if(target != PlayerControl.LocalPlayer)
 			{
-				// On official servers, we are not able to send MurderPlayer RPCs with other player net IDs
-				// so we need to shapeshift into our desired player and kill everyone ourselves
 				Utilities.ShapeshiftPlayer(PlayerControl.LocalPlayer, target, false);
 			}
 
@@ -450,7 +674,6 @@ namespace HydraMenu.ui.sections
 				PlayerControl.LocalPlayer.RpcMurderPlayer(player, true);
 			}
 
-			// Wait three seconds so all players can see which player we are framing
 			yield return Effects.Wait(3.0f);
 
 			Host.DisableGameEnd.Enabled = false;
