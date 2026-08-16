@@ -18,7 +18,6 @@
 - **JSON Outfit Presets & Wardrobe Manager**: Save, name, load, apply, overwrite, and rename unlimited cosmetic loadouts (colors, hats, visors, skins, pets, and nameplates) stored as `.json` files in `BepInEx/config/Outfits/`.
   - **In-Game Wardrobe Overlay**: Automatically pops up a draggable preset manager when opening the wardrobe/inventory laptop to save or apply outfits on the fly.
   - **1-Click Outfit Cloner**: Instantly clone, equip, or save the cosmetic loadout of any player in your lobby with a single click.
-  - **In-Game Renaming & Deletion Safety**: Rename presets directly in-game and delete with two-step confirmation prompts.
 - **Persistent Hydra Config System**: Original Hydra never had a configuration system and would reset all settings whenever the game was closed. Hydralum introduces a full persistent configuration system (`BepInEx/config/com.mrd.hydramenu.cfg`) that automatically saves and restores your UI scale, custom theme colors, notification preferences, and window positions across restarts.
 
 ---
