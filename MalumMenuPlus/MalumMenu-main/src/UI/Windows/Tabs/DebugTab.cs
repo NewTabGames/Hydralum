@@ -4,7 +4,7 @@ namespace MalumMenu;
 
 public class DebugTab : ITab
 {
-    public string name => "Debug";
+    public string name => "RPC";
 
     public void Draw()
     {
@@ -17,7 +17,7 @@ public class DebugTab : ITab
 
     private void DrawGeneral()
     {
-        CheatToggles.showDebugConsole = GUILayout.Toggle(CheatToggles.showDebugConsole, " Show Debug Console");
+        CheatToggles.showDebugConsole = GUILayout.Toggle(CheatToggles.showDebugConsole, " Show RPC Console");
 
         CheatToggles.logIncomingRpcs = GUILayout.Toggle(CheatToggles.logIncomingRpcs, " Log Incoming RPCs");
 

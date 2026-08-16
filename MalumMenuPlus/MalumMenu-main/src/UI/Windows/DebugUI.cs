@@ -37,7 +37,7 @@ public class DebugUI : MonoBehaviour
 
         UIHelpers.ApplyUIColor();
 
-        _windowRect = GUI.Window((int)WindowId.DebugUI, _windowRect, (GUI.WindowFunction)DebugWindow, "Debug Console");
+        _windowRect = GUI.Window((int)WindowId.DebugUI, _windowRect, (GUI.WindowFunction)DebugWindow, "RPC Console");
     }
 
     private void DebugWindow(int windowID)
