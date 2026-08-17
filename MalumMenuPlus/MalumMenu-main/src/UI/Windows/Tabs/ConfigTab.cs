@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace MalumMenu;
@@ -9,6 +10,7 @@ public class ConfigTab : ITab
     private const float ButtonWidth = 105f;
     private const float ButtonGap = 6f;
     private Vector2 _themesScroll = Vector2.zero;
+    private static bool _isListeningForKey = false;
 
     // Preset accent colors. Empty hex = restore the default (unset) color. Applied through the same
     // menuHtmlColor config that UIHelpers.ApplyUIColor reads, so a picked theme persists across
@@ -67,6 +69,8 @@ public class ConfigTab : ITab
         DrawModes();
         GUILayout.EndVertical();
 
+        GUILayout.Space(10);
+
         GUILayout.BeginVertical();
         _themesScroll = GUILayout.BeginScrollView(_themesScroll);
         DrawThemes();
@@ -99,10 +103,27 @@ public class ConfigTab : ITab
     {
         GUILayout.Label("Menu", GUIStylePreset.TabSubtitle);
 
-        GUILayout.Label("Keybind:");
+        // Keybind selector without stripped GUI.DoTextField
+        GUILayout.Label("Menu Keybind:");
 
-        MalumMenu.menuKeybind.Value = GUILayout.TextField(MalumMenu.menuKeybind.Value, 1);
+        string currentKey = string.IsNullOrEmpty(MalumMenu.menuKeybind.Value) ? "Delete" : MalumMenu.menuKeybind.Value;
+        string btnText = _isListeningForKey ? "<color=yellow>Press any key...</color>" : $"Key: <b>{currentKey}</b>";
 
+        if (GUILayout.Button(btnText, GUIStylePreset.NormalButton, GUILayout.Height(24)))
+        {
+            _isListeningForKey = !_isListeningForKey;
+        }
+
+        if (_isListeningForKey)
+        {
+            if (Event.current.isKey && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None)
+            {
+                MalumMenu.menuKeybind.Value = Event.current.keyCode.ToString();
+                _isListeningForKey = false;
+            }
+        }
+
+        GUILayout.Space(4);
         GUILayout.Label("Scale:");
 
         MenuUI.uiScale = GUILayout.HorizontalSlider(MenuUI.uiScale, 0.5f, 2f);
