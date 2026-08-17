@@ -245,15 +245,13 @@ namespace HydraMenu.ui
 
 				if (malumUIType != null)
 				{
+					// Seamless in-place switch: match HydraMenu's current window position
 					var rectField = malumUIType.GetField("_windowRect", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-					if (rectField != null && HydraConfig.OpenOnCursor != null && HydraConfig.OpenOnCursor.Value)
+					if (rectField != null)
 					{
 						Rect r = (Rect)rectField.GetValue(null);
-						Vector3 mousePos = Input.mousePosition;
-						float x = Mathf.Clamp(mousePos.x, 0, Mathf.Max(0, Screen.width - r.width));
-						float y = Mathf.Clamp(Screen.height - mousePos.y, 0, Mathf.Max(0, Screen.height - r.height));
-						r.x = x;
-						r.y = y;
+						r.x = windowPosition.x;
+						r.y = windowPosition.y;
 						rectField.SetValue(null, r);
 					}
 

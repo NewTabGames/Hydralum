@@ -327,20 +327,11 @@ public class MenuUI : MonoBehaviour
 
             if (hydraType != null)
             {
-                // Position Hydra window at mouse position
+                // Seamless in-place switch: match MalumMenu's current window position
                 var posField = hydraType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                var sizeProp = hydraType.GetProperty("WindowSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (posField != null && MalumMenu.menuOpenOnMouse.Value)
+                if (posField != null)
                 {
-                    Vector2 mousePosition = Input.mousePosition;
-                    Vector2 windowSize = new Vector2(500f, 470f);
-                    if (sizeProp != null)
-                    {
-                        windowSize = (Vector2)sizeProp.GetValue(null, null);
-                    }
-                    float x = Mathf.Clamp(mousePosition.x, 0, Mathf.Max(0, Screen.width - windowSize.x));
-                    float y = Mathf.Clamp(Screen.height - mousePosition.y, 0, Mathf.Max(0, Screen.height - windowSize.y));
-                    posField.SetValue(null, new Vector2(x, y));
+                    posField.SetValue(null, new Vector2(_windowRect.x, _windowRect.y));
                 }
 
                 var visField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
