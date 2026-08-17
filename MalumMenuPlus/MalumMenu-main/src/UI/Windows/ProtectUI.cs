@@ -61,8 +61,10 @@ public class ProtectUI : MonoBehaviour
             }
             else
             {
-                NetworkedPlayerInfo guardianInfo = GameData.Instance.GetPlayerById((byte)player.protectedByGuardianId);
-                GUILayout.Label($"<color=#00FF00>Protected</color> by <color=#{ColorUtility.ToHtmlStringRGB(guardianInfo.Color)}>{guardianInfo._object.Data.PlayerName}</color>", GUILayout.Width(135));
+                NetworkedPlayerInfo guardianInfo = GameData.Instance?.GetPlayerById((byte)player.protectedByGuardianId);
+                string guardianName = guardianInfo?._object?.Data?.PlayerName ?? $"ID {player.protectedByGuardianId}";
+                string guardianColor = guardianInfo != null ? ColorUtility.ToHtmlStringRGB(guardianInfo.Color) : "00FF00";
+                GUILayout.Label($"<color=#00FF00>Protected</color> by <color=#{guardianColor}>{guardianName}</color>", GUILayout.Width(135));
             }
 
             if (GUILayout.Button("Protect", GUIStylePreset.NormalButton) && Utils.isHost && !Utils.isLobby)

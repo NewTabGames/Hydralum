@@ -133,7 +133,14 @@ namespace HydraMenu.ui
 					GUILayout.BeginArea(new Rect(FeaturePanePosition.x, FeaturePanePosition.y, FeaturePaneSize.x, FeaturePaneSize.y));
 					section.scrollVector = GUILayout.BeginScrollView(section.scrollVector);
 
-					section.Render();
+					try
+					{
+						section.Render();
+					}
+					catch (Exception ex)
+					{
+						GUILayout.Label($"<color=red>Error rendering {section.name} section:</color>\n<size=11>{ex.Message}</size>");
+					}
 
 					GUILayout.EndScrollView();
 					GUILayout.EndArea();

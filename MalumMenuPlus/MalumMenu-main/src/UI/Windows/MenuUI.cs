@@ -283,7 +283,14 @@ public class MenuUI : MonoBehaviour
             // automatically when needed, and the flexible content reflows to keep width in-bounds.
             _contentScroll = GUILayout.BeginScrollView(_contentScroll, false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUILayout.ExpandHeight(true));
 
-            _tabs[_selectedTab].Draw();
+            try
+            {
+                _tabs[_selectedTab].Draw();
+            }
+            catch (System.Exception ex)
+            {
+                GUILayout.Label($"<color=red>Error rendering {_tabs[_selectedTab].name} tab:</color>\n<size=11>{ex.Message}</size>", GUIStylePreset.Hint);
+            }
 
             GUILayout.EndScrollView();
         }
