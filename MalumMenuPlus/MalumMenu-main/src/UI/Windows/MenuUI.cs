@@ -242,12 +242,15 @@ public class MenuUI : MonoBehaviour
             {
                 GUI.backgroundColor = new Color(0.2f, 0.2f, 0.2f);
             }
+            else
+            {
+                GUI.backgroundColor = UIHelpers.GetGradientColor(i * 35f);
+            }
 
             if (GUILayout.Button(_tabs[i].name, GUIStylePreset.TabButton, GUILayout.Height(30)))
                 _selectedTab = i;
 
             GUI.backgroundColor = standardColor;
-
         }
         GUILayout.EndScrollView();
         GUILayout.EndVertical();

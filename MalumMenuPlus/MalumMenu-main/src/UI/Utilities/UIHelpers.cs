@@ -4,18 +4,23 @@ namespace MalumMenu;
 
 public static class UIHelpers
 {
-    public static void ApplyUIColor()
+    public static void ApplyUIColor(float offset = 0f)
     {
-        // RGB mode cycles the full hue spectrum and overrides any theme
+        GUI.backgroundColor = GetGradientColor(offset);
+    }
+
+    public static Color GetGradientColor(float spatialOffset = 0f, float speed = 2.2f, float frequency = 0.02f)
+    {
+        // RGB mode cycles the full hue spectrum in a continuous wave
         if (CheatToggles.rgbMode)
         {
-            GUI.backgroundColor = Color.HSVToRGB(MenuUI.hue, 1f, 1f);
-            return;
+            float hue = Mathf.Repeat((Time.time * 0.35f) + (spatialOffset * 0.004f), 1f);
+            return Color.HSVToRGB(hue, 1f, 1f);
         }
 
         var configHtmlColor = MalumMenu.menuHtmlColor.Value;
 
-        // Gradient theme: "grad:#AAAAAA,#BBBBBB" — smoothly pulses between the two colors
+        // Gradient theme: "grad:#AAAAAA,#BBBBBB" — smooth continuous traveling wave
         if (configHtmlColor.StartsWith("grad:"))
         {
             var parts = configHtmlColor.Substring(5).Split(',');
@@ -23,25 +28,22 @@ public static class UIHelpers
                 && ColorUtility.TryParseHtmlString(parts[0], out var a)
                 && ColorUtility.TryParseHtmlString(parts[1], out var b))
             {
-                GUI.backgroundColor = Color.Lerp(a, b, Mathf.PingPong(Time.time * 0.5f, 1f));
+                // Smooth traveling wave: (sin(time * speed + spatialOffset * frequency) + 1) / 2
+                float wave = (Mathf.Sin((Time.time * speed) + (spatialOffset * frequency)) + 1f) * 0.5f;
+                return Color.Lerp(a, b, wave);
             }
-            return;
         }
 
         // Solid theme / custom color (html code, with or without a leading '#')
-        if (!ColorUtility.TryParseHtmlString(configHtmlColor, out var uiColor))
+        if (ColorUtility.TryParseHtmlString(configHtmlColor, out var uiColor))
         {
-            if (!configHtmlColor.StartsWith("#"))
-            {
-                if (ColorUtility.TryParseHtmlString("#" + configHtmlColor, out uiColor))
-                {
-                    GUI.backgroundColor = uiColor;
-                }
-            }
+            return uiColor;
         }
-        else
+        if (!configHtmlColor.StartsWith("#") && ColorUtility.TryParseHtmlString("#" + configHtmlColor, out uiColor))
         {
-            GUI.backgroundColor = uiColor;
+            return uiColor;
         }
+
+        return new Color(0.54f, 0.17f, 0.89f); // Default Malum purple
     }
 }

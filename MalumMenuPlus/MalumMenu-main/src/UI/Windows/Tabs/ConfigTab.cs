@@ -198,19 +198,19 @@ public class ConfigTab : ITab
         GUILayout.Space(10);
         CenteredLabel($"Gradients ({Gradients.Length})");
 
-        // Same pulse the menu uses, so each button previews its gradient in motion
-        var t = Mathf.PingPong(Time.time * 0.5f, 1f);
-
+        // Live traveling wave preview across the grid
         for (var i = 0; i < Gradients.Length; i += 2)
         {
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
 
-            GradientButton(Gradients[i], t);
+            float tLeft = (Mathf.Sin(Time.time * 2.2f + (i * 0.4f)) + 1f) * 0.5f;
+            GradientButton(Gradients[i], tLeft);
             if (i + 1 < Gradients.Length)
             {
                 GUILayout.Space(ButtonGap);
-                GradientButton(Gradients[i + 1], t);
+                float tRight = (Mathf.Sin(Time.time * 2.2f + ((i + 1) * 0.4f)) + 1f) * 0.5f;
+                GradientButton(Gradients[i + 1], tRight);
             }
 
             GUILayout.FlexibleSpace();
