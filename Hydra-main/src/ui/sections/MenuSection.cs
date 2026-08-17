@@ -11,6 +11,11 @@ namespace HydraMenu.ui.sections
 		{
 			Hydra.notifications.DisableNotifications = GUILayout.Toggle(Hydra.notifications.DisableNotifications, "Disable Notifications");
 
+			if (HydraConfig.OpenOnCursor != null)
+			{
+				HydraConfig.OpenOnCursor.Value = GUILayout.Toggle(HydraConfig.OpenOnCursor.Value, " Open on Cursor");
+			}
+
 			GUILayout.Space(6);
 			GUILayout.Label("<b>Theme Mode:</b>");
 

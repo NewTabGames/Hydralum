@@ -330,7 +330,7 @@ public class MenuUI : MonoBehaviour
                 // Position Hydra window at mouse position
                 var posField = hydraType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 var sizeProp = hydraType.GetProperty("WindowSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (posField != null)
+                if (posField != null && MalumMenu.menuOpenOnMouse.Value)
                 {
                     Vector2 mousePosition = Input.mousePosition;
                     Vector2 windowSize = new Vector2(500f, 470f);

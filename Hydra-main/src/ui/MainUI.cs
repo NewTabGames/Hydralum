@@ -77,6 +77,14 @@ namespace HydraMenu.ui
 					{
 						CloseMalumMenu();
 						SetMalumLastOpened(true);
+
+						if(HydraConfig.OpenOnCursor != null && HydraConfig.OpenOnCursor.Value)
+						{
+							Vector2 mousePos = Input.mousePosition;
+							float x = Mathf.Clamp(mousePos.x, 0, Mathf.Max(0, Screen.width - WindowSize.x));
+							float y = Mathf.Clamp(Screen.height - mousePos.y, 0, Mathf.Max(0, Screen.height - WindowSize.y));
+							windowPosition = new Vector2(x, y);
+						}
 					}
 				}
 			}
@@ -238,7 +246,7 @@ namespace HydraMenu.ui
 				if (malumUIType != null)
 				{
 					var rectField = malumUIType.GetField("_windowRect", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-					if (rectField != null)
+					if (rectField != null && HydraConfig.OpenOnCursor != null && HydraConfig.OpenOnCursor.Value)
 					{
 						Rect r = (Rect)rectField.GetValue(null);
 						Vector3 mousePos = Input.mousePosition;

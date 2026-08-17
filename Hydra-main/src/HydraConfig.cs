@@ -11,6 +11,7 @@ namespace HydraMenu
         public static ConfigEntry<int> PrimaryColor;
         public static ConfigEntry<int> ThemeMode;
         public static ConfigEntry<int> GradientIndex;
+        public static ConfigEntry<bool> OpenOnCursor;
         public static ConfigEntry<bool> DisableNotifications;
         public static ConfigEntry<float> WindowPosX;
         public static ConfigEntry<float> WindowPosY;
@@ -24,6 +25,7 @@ namespace HydraMenu
             PrimaryColor = config.Bind("GUI", "PrimaryColor", 0, "Primary UI color scheme index");
             ThemeMode = config.Bind("GUI", "ThemeMode", 0, "Theme mode: 0 = Solid, 1 = RGB Wave, 2 = Wave Gradient");
             GradientIndex = config.Bind("GUI", "GradientIndex", 0, "Selected wave gradient preset index (0 to 23)");
+            OpenOnCursor = config.Bind("GUI", "OpenOnCursor", true, "Open menu centered on mouse cursor position");
             DisableNotifications = config.Bind("GUI", "DisableNotifications", false, "Disable in-game Hydra notifications");
             WindowPosX = config.Bind("GUI", "WindowPosX", 250f, "Saved window X position");
             WindowPosY = config.Bind("GUI", "WindowPosY", 100f, "Saved window Y position");
@@ -48,6 +50,7 @@ namespace HydraMenu
             if (PrimaryColor != null) PrimaryColor.Value = (int)Styles.primaryColor;
             if (ThemeMode != null) ThemeMode.Value = (int)Styles.activeThemeMode;
             if (GradientIndex != null) GradientIndex.Value = Styles.selectedGradientIndex;
+            if (OpenOnCursor != null) OpenOnCursor.Value = OpenOnCursor.Value;
             if (DisableNotifications != null && Hydra.notifications != null)
                 DisableNotifications.Value = Hydra.notifications.DisableNotifications;
             if (WindowPosX != null) WindowPosX.Value = MainUI.windowPosition.x;
