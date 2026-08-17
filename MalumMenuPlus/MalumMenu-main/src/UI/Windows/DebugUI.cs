@@ -27,7 +27,7 @@ public class DebugUI : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!CheatToggles.showDebugConsole || MalumMenu.isPanicked) return;
+        if (!CheatToggles.showDebugConsole || !(MenuUI.isGUIActive || MalumMenu.menuKeepSubwindowsOpen.Value) || MalumMenu.isPanicked) return;
 
         _logStyle ??= new GUIStyle(GUI.skin.label)
         {
