@@ -87,10 +87,13 @@ public class MenuUI : MonoBehaviour
                 {
                     isGUIActive = true;
 
-                    Vector2 mousePosition = Input.mousePosition;
-                    float x = Mathf.Clamp(mousePosition.x, 0, Mathf.Max(0, Screen.width - _windowRect.width));
-                    float y = Mathf.Clamp(Screen.height - mousePosition.y, 0, Mathf.Max(0, Screen.height - _windowRect.height));
-                    _windowRect.position = new Vector2(x, y);
+                    if (MalumMenu.menuOpenOnMouse.Value)
+                    {
+                        Vector2 mousePosition = Input.mousePosition;
+                        float x = Mathf.Clamp(mousePosition.x, 0, Mathf.Max(0, Screen.width - _windowRect.width));
+                        float y = Mathf.Clamp(Screen.height - mousePosition.y, 0, Mathf.Max(0, Screen.height - _windowRect.height));
+                        _windowRect.position = new Vector2(x, y);
+                    }
                 }
             }
         }
