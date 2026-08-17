@@ -8,6 +8,7 @@ public class ConfigTab : ITab
 
     private const float ButtonWidth = 105f;
     private const float ButtonGap = 6f;
+    private Vector2 _themesScroll = Vector2.zero;
 
     // Preset accent colors. Empty hex = restore the default (unset) color. Applied through the same
     // menuHtmlColor config that UIHelpers.ApplyUIColor reads, so a picked theme persists across
@@ -32,6 +33,24 @@ public class ConfigTab : ITab
         ("Ocean", "#2E3192", "#1BFFFF"),
         ("Sunset", "#FF5F6D", "#FFC371"),
         ("Mint", "#11998E", "#38EF7D"),
+        ("Cyberpunk", "#FF007F", "#00F0FF"),
+        ("Vaporwave", "#FF71CE", "#01CDFE"),
+        ("Solar Flare", "#FF0844", "#FFB199"),
+        ("Matrix", "#00FF87", "#60EFFF"),
+        ("Midnight", "#0F2027", "#2C5364"),
+        ("Amethyst", "#8E2DE2", "#4A00E0"),
+        ("Blood Orange", "#F12711", "#F5AF19"),
+        ("Neon Lime", "#F9D423", "#A8FF78"),
+        ("Lavender", "#A18CD1", "#FBC2EB"),
+        ("Iceberg", "#56CCF2", "#2F80ED"),
+        ("Sakura", "#EE9CA7", "#FFDDE1"),
+        ("Synthwave", "#833AB4", "#FD1D1D"),
+        ("Cosmic", "#3A1C71", "#D76D77"),
+        ("Emerald Forest", "#0BA360", "#3CBA92"),
+        ("Electric Rose", "#F857A6", "#FF5858"),
+        ("Gold Mirage", "#FFE259", "#FFA751"),
+        ("Abyss", "#000428", "#004E92"),
+        ("Tropical", "#00F260", "#0575E6"),
     };
 
     public void Draw()
@@ -49,7 +68,9 @@ public class ConfigTab : ITab
         GUILayout.EndVertical();
 
         GUILayout.BeginVertical();
+        _themesScroll = GUILayout.BeginScrollView(_themesScroll);
         DrawThemes();
+        GUILayout.EndScrollView();
         GUILayout.EndVertical();
 
         GUILayout.EndHorizontal();
@@ -78,11 +99,23 @@ public class ConfigTab : ITab
     {
         GUILayout.Label("Menu", GUIStylePreset.TabSubtitle);
 
-        GUILayout.Label($"Scale: {MenuUI.uiScale:F2}x");
-        MenuUI.uiScale = GUILayout.HorizontalSlider(MenuUI.uiScale, 0.8f, 1.5f, GUILayout.Width(250f));
+        GUILayout.Label("Keybind:");
 
-        GUILayout.Label($"Opacity: {Mathf.RoundToInt(MenuUI.uiOpacity * 100f)}%");
-        MenuUI.uiOpacity = GUILayout.HorizontalSlider(MenuUI.uiOpacity, 0.3f, 1f, GUILayout.Width(250f));
+        MalumMenu.menuKeybind.Value = GUILayout.TextField(MalumMenu.menuKeybind.Value, 1);
+
+        GUILayout.Label("Scale:");
+
+        MenuUI.uiScale = GUILayout.HorizontalSlider(MenuUI.uiScale, 0.5f, 2f);
+
+        GUILayout.Label("Opacity:");
+
+        MenuUI.uiOpacity = GUILayout.HorizontalSlider(MenuUI.uiOpacity, 0.1f, 1f);
+
+        MalumMenu.menuOpenOnMouse.Value =
+            GUILayout.Toggle(MalumMenu.menuOpenOnMouse.Value, " Open on Cursor");
+
+        MalumMenu.menuKeepSubwindowsOpen.Value =
+            GUILayout.Toggle(MalumMenu.menuKeepSubwindowsOpen.Value, " Keep Subwindows Open");
     }
 
     private void DrawAccount()
@@ -142,7 +175,7 @@ public class ConfigTab : ITab
         }
 
         GUILayout.Space(10);
-        CenteredLabel("Gradients");
+        CenteredLabel($"Gradients ({Gradients.Length})");
 
         // Same pulse the menu uses, so each button previews its gradient in motion
         var t = Mathf.PingPong(Time.time * 0.5f, 1f);
