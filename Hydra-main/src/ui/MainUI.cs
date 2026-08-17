@@ -105,8 +105,6 @@ namespace HydraMenu.ui
 
 				sections[activeTab].HandleSubsectionMove(offset);
 			}
-
-			HandleBoxMovement();
 		}
 
 		public void OnGUI()
@@ -154,6 +152,8 @@ namespace HydraMenu.ui
 					GUILayout.EndArea();
 				}
 			}
+
+			HandleBoxMovement();
 		}
 
 		private void HandleBoxMovement()
