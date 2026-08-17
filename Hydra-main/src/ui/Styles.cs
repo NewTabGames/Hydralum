@@ -5,6 +5,13 @@ namespace HydraMenu.ui
 {
 	internal class Styles
 	{
+		public enum ThemeMode
+		{
+			Solid = 0,
+			RGB = 1,
+			Gradient = 2
+		}
+
 		public enum UIColors
 		{
 			Azure,
@@ -53,10 +60,57 @@ namespace HydraMenu.ui
 			{ UIColors.Synthwave, new Color(1.0f, 0.0f, 0.50f) }     // #FF007F (Synthwave Magenta)
 		};
 
+		public static readonly (string name, Color a, Color b)[] Gradients =
+		{
+			("Fire", new Color(1.0f, 0.31f, 0.0f), new Color(1.0f, 0.77f, 0.0f)),
+			("Aurora", new Color(0.0f, 0.79f, 1.0f), new Color(0.57f, 1.0f, 0.62f)),
+			("Galaxy", new Color(0.50f, 0.0f, 1.0f), new Color(0.88f, 0.0f, 1.0f)),
+			("Ocean", new Color(0.18f, 0.19f, 0.57f), new Color(0.11f, 1.0f, 1.0f)),
+			("Sunset", new Color(1.0f, 0.37f, 0.43f), new Color(1.0f, 0.76f, 0.44f)),
+			("Mint", new Color(0.07f, 0.60f, 0.56f), new Color(0.22f, 0.94f, 0.49f)),
+			("Cyberpunk", new Color(1.0f, 0.0f, 0.50f), new Color(0.0f, 0.94f, 1.0f)),
+			("Vaporwave", new Color(1.0f, 0.44f, 0.81f), new Color(0.0f, 0.80f, 1.0f)),
+			("Solar Flare", new Color(1.0f, 0.03f, 0.27f), new Color(1.0f, 0.69f, 0.60f)),
+			("Matrix", new Color(0.0f, 1.0f, 0.53f), new Color(0.38f, 0.94f, 1.0f)),
+			("Midnight", new Color(0.06f, 0.13f, 0.15f), new Color(0.17f, 0.33f, 0.39f)),
+			("Amethyst", new Color(0.56f, 0.18f, 0.89f), new Color(0.29f, 0.0f, 0.88f)),
+			("Blood Orange", new Color(0.95f, 0.15f, 0.07f), new Color(0.96f, 0.69f, 0.10f)),
+			("Neon Lime", new Color(0.98f, 0.83f, 0.14f), new Color(0.66f, 1.0f, 0.47f)),
+			("Lavender", new Color(0.63f, 0.55f, 0.82f), new Color(0.98f, 0.76f, 0.92f)),
+			("Iceberg", new Color(0.34f, 0.80f, 0.95f), new Color(0.18f, 0.50f, 0.93f)),
+			("Sakura", new Color(0.93f, 0.61f, 0.65f), new Color(1.0f, 0.87f, 0.88f)),
+			("Synthwave", new Color(0.51f, 0.23f, 0.71f), new Color(0.99f, 0.11f, 0.11f)),
+			("Cosmic", new Color(0.23f, 0.11f, 0.44f), new Color(0.84f, 0.43f, 0.47f)),
+			("Emerald Forest", new Color(0.04f, 0.64f, 0.38f), new Color(0.24f, 0.73f, 0.57f)),
+			("Electric Rose", new Color(0.97f, 0.34f, 0.65f), new Color(1.0f, 0.35f, 0.35f)),
+			("Gold Mirage", new Color(1.0f, 0.89f, 0.35f), new Color(1.0f, 0.65f, 0.32f)),
+			("Abyss", new Color(0.0f, 0.02f, 0.16f), new Color(0.0f, 0.31f, 0.57f)),
+			("Tropical", new Color(0.0f, 0.95f, 0.38f), new Color(0.02f, 0.46f, 0.90f))
+		};
+
 		public static float menuOpacity = 0.85f;
 		public static UIColors primaryColor = UIColors.Azure;
+		public static ThemeMode activeThemeMode = ThemeMode.Solid;
+		public static int selectedGradientIndex = 0;
 
 		private static Dictionary<string, Texture2D> CachedTextures = new Dictionary<string, Texture2D>();
+
+		public static Color GetActiveColor(float spatialOffset = 0f)
+		{
+			if (activeThemeMode == ThemeMode.RGB)
+			{
+				float hue = Mathf.Repeat((Time.time * 0.35f) + (spatialOffset * 0.004f), 1f);
+				return Color.HSVToRGB(hue, 1f, 1f);
+			}
+			if (activeThemeMode == ThemeMode.Gradient)
+			{
+				int idx = Mathf.Clamp(selectedGradientIndex, 0, Gradients.Length - 1);
+				var grad = Gradients[idx];
+				float wave = (Mathf.Sin((Time.time * 2.2f) + (spatialOffset * 0.02f)) + 1f) * 0.5f;
+				return Color.Lerp(grad.a, grad.b, wave);
+			}
+			return ColorValues.TryGetValue(primaryColor, out var col) ? col : ColorValues[UIColors.Azure];
+		}
 
 		public static GUIStyle MainBox
 		{
@@ -70,9 +124,6 @@ namespace HydraMenu.ui
 				style.normal.textColor = Color.white;
 				style.alignment = TextAnchor.UpperCenter;
 				style.padding.top = 5;
-				// The product of the font size and the UI scale will result in a float value with decimal values
-				// which would get truncated if we cast this into an int
-				// however this is rather insignificant as the font size would be at most one unit off
 				style.fontSize = (int)(13 * MainUI.scale);
 
 				return style;
@@ -101,7 +152,7 @@ namespace HydraMenu.ui
 			{
 				GUIStyle style = new GUIStyle();
 
-				Texture2D background = CreateColoredTexture($"SectionBoxActive_{primaryColor}", ColorValues[primaryColor]);
+				Texture2D background = CreateColoredTexture("BoxActive_Base", Color.white);
 				style.normal.background = background;
 
 				style.normal.textColor = ColorValues[UIColors.White];
@@ -137,7 +188,7 @@ namespace HydraMenu.ui
 			{
 				GUIStyle style = new GUIStyle();
 
-				Texture2D background = CreateColoredTexture($"PlayerBoxActive_{primaryColor}", ColorValues[primaryColor]);
+				Texture2D background = CreateColoredTexture("BoxActive_Base", Color.white);
 				style.normal.background = background;
 
 				style.normal.textColor = ColorValues[UIColors.White];
@@ -165,8 +216,6 @@ namespace HydraMenu.ui
 		{
 			CachedTextures.TryGetValue(textureName, out Texture2D background);
 			if(background != null) return background;
-
-			Hydra.Log.LogInfo($"Cache lookup for texture {textureName} returned a miss, creating the required texture...");
 
 			background = new Texture2D(1, 1);
 			background.SetPixel(0, 0, color.SetAlpha(opacity));

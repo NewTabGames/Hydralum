@@ -194,11 +194,19 @@ namespace HydraMenu.ui
 				SectionButtonSize.y
 			);
 
+			Color prevBg = GUI.backgroundColor;
+			if(activeTab == position)
+			{
+				GUI.backgroundColor = Styles.GetActiveColor(position * 35f);
+			}
+
 			GUIStyle style = activeTab == position ? Styles.SectionBoxActive : Styles.SectionBox;
 			if(GUI.Button(rect, section.name, style))
 			{
 				activeTab = position;
 			}
+
+			GUI.backgroundColor = prevBg;
 		}
 
 		private static Type _cachedMalumUIType;
