@@ -6,11 +6,13 @@ public sealed class NetPlayerInfoCidComparer : IEqualityComparer<NetworkedPlayer
 {
     public bool Equals(NetworkedPlayerInfo data1, NetworkedPlayerInfo data2)
     {
+        if (ReferenceEquals(data1, data2)) return true;
+        if (data1 == null || data2 == null) return false;
         return data1.ClientId == data2.ClientId;
     }
 
     public int GetHashCode(NetworkedPlayerInfo data)
     {
-        return data.ClientId;
+        return data != null ? data.ClientId.GetHashCode() : 0;
     }
 }

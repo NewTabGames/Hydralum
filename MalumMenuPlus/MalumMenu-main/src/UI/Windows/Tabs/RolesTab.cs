@@ -138,7 +138,7 @@ public class RolesTab : ITab
 
         var index = System.Array.IndexOf(MalumHost.AssignableRoles, selectedRole);
         if (index < 0) index = 0;
-        index = Mathf.RoundToInt(GUILayout.HorizontalSlider(index, 0, MalumHost.AssignableRoles.Length - 1));
+        index = Mathf.Clamp(Mathf.RoundToInt(GUILayout.HorizontalSlider(index, 0, MalumHost.AssignableRoles.Length - 1)), 0, MalumHost.AssignableRoles.Length - 1);
         selectedRole = MalumHost.AssignableRoles[index];
 
         if (GUILayout.Button("Apply Role" + (Utils.isHost ? "" : " (Local)"), GUIStylePreset.NormalButton))

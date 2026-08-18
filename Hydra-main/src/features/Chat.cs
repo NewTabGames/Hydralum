@@ -11,9 +11,9 @@ namespace HydraMenu.features
 
 			static void Postfix(ChatController __instance, PlayerControl sourcePlayer, string chatText)
 			{
-				if(sourcePlayer == null) return;
+				if(sourcePlayer == null || sourcePlayer.Data == null) return;
 
-				if(LogChatMessages) Hydra.Log.LogMessage($"[ChatLogger] {sourcePlayer.Data.PlayerName}: {chatText}");
+				if(LogChatMessages) Hydra.Log?.LogMessage($"[ChatLogger] {sourcePlayer.Data.PlayerName}: {chatText}");
 			}
 		}
 	}

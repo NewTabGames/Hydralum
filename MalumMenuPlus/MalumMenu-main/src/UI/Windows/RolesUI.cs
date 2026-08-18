@@ -32,37 +32,46 @@ public class RolesUI : MonoBehaviour
 
     private void RolesWindow(int windowID)
     {
-        GUILayout.BeginVertical();
-
-        _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, true);
-
-        foreach (var player in PlayerControl.AllPlayerControls)
+        try
         {
-            if (!player.Data || !player.Data.Role || string.IsNullOrEmpty(player.Data.PlayerName) || player != PlayerControl.LocalPlayer) continue;
+            GUILayout.BeginVertical();
 
-            GUILayout.BeginHorizontal();
+            _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, true);
 
-            GUILayout.Label($"<color=#{ColorUtility.ToHtmlStringRGB(player.Data.Color)}>{player.Data.PlayerName}</color>", GUILayout.Width(140f));
-            GUILayout.BeginHorizontal();
-            GUILayout.Label($"{CheatToggles.forcedRole}");
-            GUILayout.FlexibleSpace();
-
-            if (GUILayout.Button("Reset", GUILayout.Width(80f)))
+            var allControls = PlayerControl.AllPlayerControls;
+            if (allControls != null)
             {
-                CheatToggles.forcedRole = null;
-            }
-            if (GUILayout.Button("Assign", GUILayout.Width(80f)))
-            {
-                CheatToggles.forceRole = true;
+                foreach (var player in allControls)
+                {
+                    if (!player || player.Data == null || player.Data.Role == null || string.IsNullOrEmpty(player.Data.PlayerName) || player != PlayerControl.LocalPlayer) continue;
+
+                    GUILayout.BeginHorizontal();
+
+                    GUILayout.Label($"<color=#{ColorUtility.ToHtmlStringRGB(player.Data.Color)}>{player.Data.PlayerName}</color>", GUILayout.Width(140f));
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"{CheatToggles.forcedRole}");
+                    GUILayout.FlexibleSpace();
+
+                    if (GUILayout.Button("Reset", GUILayout.Width(80f)))
+                    {
+                        CheatToggles.forcedRole = null;
+                    }
+                    if (GUILayout.Button("Assign", GUILayout.Width(80f)))
+                    {
+                        CheatToggles.forceRole = true;
+                    }
+
+                    GUILayout.EndHorizontal();
+                    GUILayout.EndHorizontal();
+                }
             }
 
-            GUILayout.EndHorizontal();
-            GUILayout.EndHorizontal();
+            GUILayout.EndScrollView();
+            GUILayout.EndVertical();
+            GUILayout.Label("Roles will be assigned on next game start");
         }
+        catch { }
 
-        GUILayout.EndScrollView();
-        GUILayout.EndVertical();
-        GUILayout.Label("Roles will be assigned on next game start");
         GUI.DragWindow();
     }
 }

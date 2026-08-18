@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace HydraMenu.routines
@@ -39,15 +39,22 @@ namespace HydraMenu.routines
 		// however it will throw an error if you are not the detective and the player not inside a room but rather near it
 		private SystemTypes GetRoomForPlayer(PlayerControl player)
 		{
+			if (ShipStatus.Instance == null || ShipStatus.Instance.AllRooms == null || player == null) return (SystemTypes)255;
+			if (HudManager.Instance == null || HudManager.Instance.roomTracker == null) return (SystemTypes)255;
+
 			foreach(PlainShipRoom room in ShipStatus.Instance.AllRooms)
 			{
-				if(room.roomArea == null) continue;
+				if(room == null || room.roomArea == null) continue;
 
-				int collisions = room.roomArea.OverlapCollider(HudManager.Instance.roomTracker.filter, HudManager.Instance.roomTracker.detectiveBuffer);
-				if(RoomTracker.CheckHitsForPlayer(HudManager.Instance.roomTracker.detectiveBuffer, collisions, player))
+				try
 				{
-					return room.RoomId;
+					int collisions = room.roomArea.OverlapCollider(HudManager.Instance.roomTracker.filter, HudManager.Instance.roomTracker.detectiveBuffer);
+					if(RoomTracker.CheckHitsForPlayer(HudManager.Instance.roomTracker.detectiveBuffer, collisions, player))
+					{
+						return room.RoomId;
+					}
 				}
+				catch { }
 			}
 
 			return (SystemTypes)255;

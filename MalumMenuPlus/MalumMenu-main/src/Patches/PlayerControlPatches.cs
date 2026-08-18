@@ -137,27 +137,35 @@ public static class PlayerControl_Shapeshift
     // and who they shapeshifted into. Also logs when a shapeshift gets reverted.
     public static void Postfix(PlayerControl __instance, PlayerControl targetPlayer, bool animate)
     {
-        if (!CheatToggles.logShapeshifts) return;
-
-        if (__instance.CurrentOutfitType == PlayerOutfitType.MushroomMixup) return;
-
-        var targetPlayerInfo = targetPlayer.Data;
-
-        var room = Utils.GetRoomFromPosition(__instance.GetTruePosition());
-        var roomName = room != null ? room.RoomId.ToString() : "an unknown location";
-
-        if (targetPlayerInfo.PlayerId == __instance.Data.PlayerId)
+        try
         {
-            ConsoleUI.Log($"<color=#{ColorUtility.ToHtmlStringRGB(GameData.Instance.GetPlayerById(__instance.PlayerId).Color)}>" +
-                          $"{GameData.Instance.GetPlayerById(__instance.PlayerId)._object.Data.PlayerName}</color> undid their shapeshift in {roomName}");
+            if (!CheatToggles.logShapeshifts) return;
+            if (__instance == null || __instance.Data == null || targetPlayer == null || targetPlayer.Data == null) return;
+            if (__instance.CurrentOutfitType == PlayerOutfitType.MushroomMixup) return;
+
+            var targetPlayerInfo = targetPlayer.Data;
+
+            var room = Utils.GetRoomFromPosition(__instance.GetTruePosition());
+            var roomName = room != null ? room.RoomId.ToString() : "an unknown location";
+
+            var selfInfo = GameData.Instance?.GetPlayerById(__instance.PlayerId);
+            string selfName = selfInfo?._object?.Data?.PlayerName ?? selfInfo?.PlayerName ?? $"Player {__instance.PlayerId}";
+            string selfColor = selfInfo != null ? ColorUtility.ToHtmlStringRGB(selfInfo.Color) : "FFFFFF";
+
+            if (targetPlayerInfo.PlayerId == __instance.Data.PlayerId)
+            {
+                ConsoleUI.Log($"<color=#{selfColor}>{selfName}</color> undid their shapeshift in {roomName}");
+            }
+            else
+            {
+                var targetInfo = GameData.Instance?.GetPlayerById(targetPlayerInfo.PlayerId);
+                string targetName = targetInfo?._object?.Data?.PlayerName ?? targetInfo?.PlayerName ?? $"Player {targetPlayerInfo.PlayerId}";
+                string targetColor = targetInfo != null ? ColorUtility.ToHtmlStringRGB(targetInfo.Color) : "FFFFFF";
+
+                ConsoleUI.Log($"<color=#{selfColor}>{selfName}</color> shapeshifted into <color=#{targetColor}>{targetName}</color> in {roomName}");
+            }
         }
-        else
-        {
-            ConsoleUI.Log($"<color=#{ColorUtility.ToHtmlStringRGB(GameData.Instance.GetPlayerById(__instance.PlayerId).Color)}>" +
-                          $"{GameData.Instance.GetPlayerById(__instance.PlayerId)._object.Data.PlayerName}</color> shapeshifted into " +
-                          $"<color=#{ColorUtility.ToHtmlStringRGB(GameData.Instance.GetPlayerById(targetPlayerInfo.PlayerId).Color)}>" +
-                          $"{GameData.Instance.GetPlayerById(targetPlayerInfo.PlayerId)._object.Data.PlayerName}</color> in {roomName}");
-        }
+        catch { }
     }
 }
 

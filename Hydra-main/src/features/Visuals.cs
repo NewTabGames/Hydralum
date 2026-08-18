@@ -110,19 +110,25 @@ namespace HydraMenu.features
 					if(_enabled == value) return;
 					_enabled = value;
 
-					FollowerCamera camera = Camera.main.GetComponent<FollowerCamera>();
+					FollowerCamera camera = Camera.main != null ? Camera.main.GetComponent<FollowerCamera>() : null;
 
 					if(value)
 					{
-						camera.SetTarget(target);
-						wasShadowsEnabled = HudManager._instance.ShadowQuad.gameObject.active;
-						HudManager.Instance.ShadowQuad.gameObject.SetActive(false);
+						if (camera != null && target != null) camera.SetTarget(target);
+						if (HudManager.Instance != null && HudManager.Instance.ShadowQuad != null && HudManager.Instance.ShadowQuad.gameObject != null)
+						{
+							wasShadowsEnabled = HudManager.Instance.ShadowQuad.gameObject.active;
+							HudManager.Instance.ShadowQuad.gameObject.SetActive(false);
+						}
 					}
 					else
 					{
-						camera.SetTarget(PlayerControl.LocalPlayer);
+						if (camera != null && PlayerControl.LocalPlayer != null) camera.SetTarget(PlayerControl.LocalPlayer);
 
-						if(wasShadowsEnabled) HudManager.Instance.ShadowQuad.gameObject.SetActive(true);
+						if(wasShadowsEnabled && HudManager.Instance != null && HudManager.Instance.ShadowQuad != null && HudManager.Instance.ShadowQuad.gameObject != null)
+						{
+							HudManager.Instance.ShadowQuad.gameObject.SetActive(true);
+						}
 					}
 				}
 			}

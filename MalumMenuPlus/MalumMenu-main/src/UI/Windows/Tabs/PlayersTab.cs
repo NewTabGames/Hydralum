@@ -29,7 +29,7 @@ public class PlayersTab : ITab
 
         GUILayout.Label("<size=10><color=#888888>Hold Ctrl to multi-select</color></size>");
 
-        bool isCtrlHeld = Event.current.control || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+        bool isCtrlHeld = (Event.current != null && Event.current.control) || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
 
         List<PlayerControl> selectedList = new();
         PlayerControl firstAvailable = null;
@@ -198,6 +198,7 @@ public class PlayersTab : ITab
             if (GUILayout.Button("Deselect All", GUIStylePreset.NormalButton, GUILayout.Width(90), GUILayout.Height(22)))
             {
                 _selectedPlayerIds.Clear();
+                GUILayout.EndHorizontal();
                 return;
             }
             GUILayout.EndHorizontal();

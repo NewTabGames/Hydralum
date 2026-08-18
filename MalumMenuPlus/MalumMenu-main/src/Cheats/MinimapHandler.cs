@@ -76,8 +76,10 @@ public static class MinimapHandler
 
                 // Sync the position of active herePoint icons with their players
                 var vector = herePoint.player.transform.position;
-                vector /= ShipStatus.Instance.MapScale;
-                vector.x *= Mathf.Sign(ShipStatus.Instance.transform.localScale.x);
+                float mapScale = (ShipStatus.Instance != null && ShipStatus.Instance.MapScale != 0f) ? ShipStatus.Instance.MapScale : 1f;
+                vector /= mapScale;
+                float localScaleX = ShipStatus.Instance != null ? ShipStatus.Instance.transform.localScale.x : 1f;
+                vector.x *= Mathf.Sign(localScaleX);
                 vector.z = -1f;
                 herePoint.sprite.transform.localPosition = vector;
             }

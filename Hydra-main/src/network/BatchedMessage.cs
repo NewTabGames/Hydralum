@@ -1,4 +1,4 @@
-﻿using AmongUs.GameOptions;
+using AmongUs.GameOptions;
 using AmongUs.InnerNet.GameDataMessages;
 using Hazel;
 using InnerNet;
@@ -139,10 +139,12 @@ namespace HydraMenu.network
 
 		public void QueueVotingComplete(MeetingHud.VoterState[] voteStates, NetworkedPlayerInfo ejectedPlayer, bool isTie)
 		{
-			if(AmTarget)
+			if(AmTarget && MeetingHud.Instance != null)
 			{
 				MeetingHud.Instance.VotingComplete(voteStates, ejectedPlayer, isTie);
 			}
+
+			if (MeetingHud.Instance == null) return;
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
 			writer.WritePacked(MeetingHud.Instance.NetId);
@@ -155,7 +157,7 @@ namespace HydraMenu.network
 				state.Serialize(writer);
 			}
 
-			writer.Write(ejectedPlayer.PlayerId);
+			writer.Write(ejectedPlayer != null ? ejectedPlayer.PlayerId : byte.MaxValue);
 			writer.Write(isTie);
 
 			writer.EndMessage();

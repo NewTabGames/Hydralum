@@ -1,4 +1,4 @@
-﻿using AmongUs.GameOptions;
+using AmongUs.GameOptions;
 using HarmonyLib;
 using Hazel;
 using HydraMenu.network;
@@ -16,7 +16,7 @@ namespace HydraMenu.features
 			get { return isSkeldFlipped; }
 			set
 			{
-				if(AmongUsClient.Instance == null || isSkeldFlipped == value) return;
+				if(AmongUsClient.Instance == null || AmongUsClient.Instance.ShipPrefabs == null || AmongUsClient.Instance.ShipPrefabs.Count <= 3 || isSkeldFlipped == value) return;
 
 				// ShipPrefabs is a list corresponding map IDs to their map
 				// ID 0 is Skeld, 1 is Mira, 2 is Polus, and 3 is Dleks
@@ -87,9 +87,9 @@ namespace HydraMenu.features
 
 			static void Prefix(PlayerControl __instance, uint level)
 			{
-				if(!Enabled || !AmongUsClient.Instance.AmHost || __instance == PlayerControl.LocalPlayer || level > MinLevel) return;
+				if(!Enabled || AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost || __instance == null || __instance == PlayerControl.LocalPlayer || __instance.Data == null || level > MinLevel) return;
 
-				Hydra.notifications.Send("Block Low Levels", $"{__instance.Data.PlayerName} is level {level}, which is below the level threshold. They will be kicked from the game.");
+				Hydra.notifications?.Send("Block Low Levels", $"{__instance.Data.PlayerName} is level {level}, which is below the level threshold. They will be kicked from the game.");
 				AmongUsClient.Instance.KickPlayer(__instance.OwnerId, false);
 			}
 		}
@@ -117,19 +117,16 @@ namespace HydraMenu.features
 
 			static void Postfix(PlayerControl player, MessageReader msgReader)
 			{
-				if(!Enabled || !AmongUsClient.Instance.AmHost || player.OwnerId == AmongUsClient.Instance.HostId) return;
+				if(!Enabled || AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost || player == null || player.Data == null || player.OwnerId == AmongUsClient.Instance.HostId) return;
 
 				// Prevent an exploit where if the comms sabotage is active, someone could enter and leave the security cameras to remove the comms effect from themselves
 				if(Sabotage.IsSabotageActive(SystemTypes.Comms))
 				{
-					// There is an edge case where if someone is on the security cameras panel when comms are actively sabotaged, and the sabotage is fixed,
-					// then the player will be able to watch the security cameras
-					// I don't think it is worthwhile to fix this edge case considering this feature is unlikely to even be used by anyone
-					Hydra.Log.LogMessage($"{player.Data.name} updated security cameras, we do not need to do anything as the Comms sabotage is already active");
+					Hydra.Log?.LogMessage($"{player.Data.PlayerName} updated security cameras, we do not need to do anything as the Comms sabotage is already active");
 					return;
 				}
 
-				Hydra.Log.LogMessage($"{player.Data.PlayerName} updated security cameras, sending Comms system update");
+				Hydra.Log?.LogMessage($"{player.Data.PlayerName} updated security cameras, sending Comms system update");
 
 				msgReader.Position--;
 				// 1 = Player started to watch cameras, 2 (and every other value) = Player stopped watching cameras
@@ -167,12 +164,13 @@ namespace HydraMenu.features
 			// Make sure List<T> is imported from Il2CppSystem otherwise things will go terribly wrong!
 			static void Prefix(ref List<NetworkedPlayerInfo> players, ref List<RoleTypes> roleList, ref int rolesAssigned)
 			{
-				if(!Enabled || !AmongUsClient.Instance.AmHost) return;
+				if(!Enabled || AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
 
-				Hydra.Log.LogInfo($"Attempting to assign ourselves the {assignedRole} role");
+				Hydra.Log?.LogInfo($"Attempting to assign ourselves the {assignedRole} role");
 
-				// Stupid shenanigans to deal with IL2Cpp interop
-				Il2CppSystem.Predicate<NetworkedPlayerInfo> predicate = (Il2CppSystem.Predicate<NetworkedPlayerInfo>)(player => player == PlayerControl.LocalPlayer.Data);
+				// Dealing with IL2Cpp interop
+				var localData = PlayerControl.LocalPlayer.Data;
+				Il2CppSystem.Predicate<NetworkedPlayerInfo> predicate = (Il2CppSystem.Predicate<NetworkedPlayerInfo>)(player => player == localData);
 				int playerIndex = players.FindIndex(predicate);
 
 				// The AssignRolesFromList function is called multiple times each with different list of players

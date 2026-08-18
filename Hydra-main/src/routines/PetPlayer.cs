@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 using UnityEngine;
 
 namespace HydraMenu.routines
@@ -16,7 +16,8 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
-			if(PlayerControl.LocalPlayer == null || target == null) return;
+			if(PlayerControl.LocalPlayer == null || target == null || AmongUsClient.Instance == null) return;
+			if(PlayerControl.LocalPlayer.cosmetics == null || PlayerControl.LocalPlayer.cosmetics.currentPet == null) return;
 
 			timeElapsed += Time.deltaTime;
 			if(timeElapsed < PET_DELAY) return;
@@ -28,28 +29,42 @@ namespace HydraMenu.routines
 			// The PlayerPhysics::CoPet function calls the PlayerPhysics::CancelPet function
 			// which sets PlayerControl::moveable to true, allowing the player to move again
 			// So we just reimplement the necessary parts to get our petting hand to show, and to send the Pet RPC
-			PlayerControl.LocalPlayer.cosmetics.CurrentPet.SetGettingPet(true, petPosition);
-			PlayerControl.LocalPlayer.cosmetics.PettingHand.StartPet(PlayerControl.LocalPlayer.cosmetics.currentPet);
+			if (PlayerControl.LocalPlayer.cosmetics.CurrentPet != null)
+			{
+				PlayerControl.LocalPlayer.cosmetics.CurrentPet.SetGettingPet(true, petPosition);
+			}
 
-			MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(
-				PlayerControl.LocalPlayer.MyPhysics.NetId,
-				(byte)RpcCalls.Pet,
-				SendOption.Reliable,
-				-1
-			);
+			if (PlayerControl.LocalPlayer.cosmetics.PettingHand != null)
+			{
+				PlayerControl.LocalPlayer.cosmetics.PettingHand.StartPet(PlayerControl.LocalPlayer.cosmetics.currentPet);
+			}
 
-			NetHelpers.WriteVector2(PlayerControl.LocalPlayer.GetTruePosition(), writer);
-			NetHelpers.WriteVector2(petPosition, writer);
+			if (PlayerControl.LocalPlayer.MyPhysics != null)
+			{
+				MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(
+					PlayerControl.LocalPlayer.MyPhysics.NetId,
+					(byte)RpcCalls.Pet,
+					SendOption.Reliable,
+					-1
+				);
 
-			AmongUsClient.Instance.FinishRpcImmediately(writer);
+				NetHelpers.WriteVector2(PlayerControl.LocalPlayer.GetTruePosition(), writer);
+				NetHelpers.WriteVector2(petPosition, writer);
+
+				AmongUsClient.Instance.FinishRpcImmediately(writer);
+			}
 		}
 
 		protected override void OnEnable()
 		{
-			// Attempting to move will result in our petting hand following our movement
-			// To avoid unexpected behavior, we prevent the player from moving
-			PlayerControl.LocalPlayer.moveable = false;
-			PlayerControl.LocalPlayer.NetTransform.body.velocity = Vector2.zero;
+			if (PlayerControl.LocalPlayer != null)
+			{
+				PlayerControl.LocalPlayer.moveable = false;
+				if (PlayerControl.LocalPlayer.NetTransform != null && PlayerControl.LocalPlayer.NetTransform.body != null)
+				{
+					PlayerControl.LocalPlayer.NetTransform.body.velocity = Vector2.zero;
+				}
+			}
 		}
 
 		protected override void OnDisable()
@@ -59,13 +74,16 @@ namespace HydraMenu.routines
 			if(PlayerControl.LocalPlayer != null)
 			{
 				PlayerControl.LocalPlayer.moveable = true;
-				PlayerControl.LocalPlayer.cosmetics.PettingHand.StopPetting();
+				if (PlayerControl.LocalPlayer.cosmetics != null && PlayerControl.LocalPlayer.cosmetics.PettingHand != null)
+				{
+					PlayerControl.LocalPlayer.cosmetics.PettingHand.StopPetting();
+				}
 			}
 		}
 
 		public override void OnDisconnect()
 		{
-			Hydra.notifications.Send("Pet Player", "Pet Player was disabled as you left the game.", 10);
+			Hydra.notifications?.Send("Pet Player", "Pet Player was disabled as you left the game.", 10);
 			Enabled = false;
 		}
 	}

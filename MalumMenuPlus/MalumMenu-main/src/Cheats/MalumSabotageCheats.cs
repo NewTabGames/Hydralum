@@ -299,26 +299,32 @@ public static class MalumSabotageCheats
 
     public static void Process(ShipStatus shipStatus)
     {
-        var currentMapID = Utils.GetCurrentMapID();
-
-        // Disable Sabotage is a toggle: while on, it keeps clearing/blocking sabotages every tick
-        if (CheatToggles.disableSabotage)
+        try
         {
-            DisableAllSabotages(shipStatus, currentMapID);
-        }
+            if (shipStatus == null || shipStatus.Systems == null) return;
 
-        if (CheatToggles.sabotageAll)
-        {
-            EnableAllSabotages();
-            CheatToggles.sabotageAll = false;
-        }
+            var currentMapID = Utils.GetCurrentMapID();
 
-        // Handle all sabotage systems
-        HandleReactor(shipStatus, currentMapID);
-        HandleOxygen(shipStatus, currentMapID);
-        HandleComms(shipStatus, currentMapID);
-        HandleElectrical(shipStatus, currentMapID);
-        HandleDoors(shipStatus);
+            // Disable Sabotage is a toggle: while on, it keeps clearing/blocking sabotages every tick
+            if (CheatToggles.disableSabotage)
+            {
+                DisableAllSabotages(shipStatus, currentMapID);
+            }
+
+            if (CheatToggles.sabotageAll)
+            {
+                EnableAllSabotages();
+                CheatToggles.sabotageAll = false;
+            }
+
+            // Handle all sabotage systems
+            HandleReactor(shipStatus, currentMapID);
+            HandleOxygen(shipStatus, currentMapID);
+            HandleComms(shipStatus, currentMapID);
+            HandleElectrical(shipStatus, currentMapID);
+            HandleDoors(shipStatus);
+        }
+        catch { }
     }
 
     // Turns off every sabotage/unfixable and repairs what's fixable. Reactor/Oxygen/Lights repair
@@ -329,28 +335,33 @@ public static class MalumSabotageCheats
 
     private static void DisableAllSabotages(ShipStatus shipStatus, byte mapId)
     {
-        // Throttle so continuously clearing doesn't spam repair RPCs while one is still registering
-        if (UnityEngine.Time.time - _lastSabotageClear < 0.5f) return;
-        _lastSabotageClear = UnityEngine.Time.time;
+        try
+        {
+            // Throttle so continuously clearing doesn't spam repair RPCs while one is still registering
+            if (UnityEngine.Time.time - _lastSabotageClear < 0.5f) return;
+            _lastSabotageClear = UnityEngine.Time.time;
 
-        CheatToggles.reactorSab = false;
-        CheatToggles.oxygenSab = false;
-        CheatToggles.elecSab = false;
-        CheatToggles.commsSab = false;
-        CheatToggles.unfixableLights = false;
-        CheatToggles.unfixableComms = false;
-        CheatToggles.mushSab = false;
-        CheatToggles.mushSpore = false;
-        CheatToggles.spamCloseAllDoors = false;
-        CheatToggles.spamOpenAllDoors = false;
+            CheatToggles.reactorSab = false;
+            CheatToggles.oxygenSab = false;
+            CheatToggles.elecSab = false;
+            CheatToggles.commsSab = false;
+            CheatToggles.unfixableLights = false;
+            CheatToggles.unfixableComms = false;
+            CheatToggles.mushSab = false;
+            CheatToggles.mushSpore = false;
+            CheatToggles.spamCloseAllDoors = false;
+            CheatToggles.spamOpenAllDoors = false;
 
-        // Reactor/Oxygen/Lights repair via their handlers' transitions (their toggles just went off).
-        // Comms only needs an explicit repair, and only when it's actually down.
-        var commsActive = (mapId is 1 or 5)
-            ? shipStatus.Systems[SystemTypes.Comms].Cast<HqHudSystemType>().IsActive
-            : shipStatus.Systems[SystemTypes.Comms].Cast<HudOverrideSystemType>().IsActive;
+            if (shipStatus != null && shipStatus.Systems != null && shipStatus.Systems.ContainsKey(SystemTypes.Comms))
+            {
+                var commsActive = (mapId is 1 or 5)
+                    ? shipStatus.Systems[SystemTypes.Comms].Cast<HqHudSystemType>().IsActive
+                    : shipStatus.Systems[SystemTypes.Comms].Cast<HudOverrideSystemType>().IsActive;
 
-        if (commsActive) RepairComms(shipStatus, mapId is 1 or 5);
+                if (commsActive) RepairComms(shipStatus, mapId is 1 or 5);
+            }
+        }
+        catch { }
     }
 
     // Turns on Unfixable Lights, Unfixable Comms, Reactor and Oxygen at once (and, if the setting
@@ -368,10 +379,16 @@ public static class MalumSabotageCheats
 
     public static void ProcessFungle(FungleShipStatus shipStatus)
     {
-        var currentMapID = Utils.GetCurrentMapID();
+        try
+        {
+            if (shipStatus == null || shipStatus.Systems == null) return;
 
-        // Handle Fungle sabotage systems
-        HandleMushMix(shipStatus, currentMapID);
-        HandleSpores(shipStatus, currentMapID);
+            var currentMapID = Utils.GetCurrentMapID();
+
+            // Handle Fungle sabotage systems
+            HandleMushMix(shipStatus, currentMapID);
+            HandleSpores(shipStatus, currentMapID);
+        }
+        catch { }
     }
 }

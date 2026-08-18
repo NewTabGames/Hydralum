@@ -12,10 +12,10 @@ public static class ChatController_AddChat
 	// Basically does what the original method did with the required modifications
 	public static bool Prefix(PlayerControl sourcePlayer, string chatText, bool censor, ChatController __instance)
     {
+        if (!sourcePlayer || !PlayerControl.LocalPlayer || PlayerControl.LocalPlayer.Data == null) return true;
+
 		// Simply run original method if seeGhosts is disabled or LocalPlayer already dead
         if (!CheatToggles.seeGhosts || PlayerControl.LocalPlayer.Data.IsDead) return true;
-
-        if (!sourcePlayer || !PlayerControl.LocalPlayer) return true;
 
 		NetworkedPlayerInfo data = PlayerControl.LocalPlayer.Data;
 		NetworkedPlayerInfo data2 = sourcePlayer.Data;

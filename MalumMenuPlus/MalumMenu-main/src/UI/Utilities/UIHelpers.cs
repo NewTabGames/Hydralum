@@ -18,7 +18,11 @@ public static class UIHelpers
             return Color.HSVToRGB(hue, 1f, 1f);
         }
 
-        var configHtmlColor = MalumMenu.menuHtmlColor.Value;
+        var configHtmlColor = MalumMenu.menuHtmlColor?.Value;
+        if (string.IsNullOrEmpty(configHtmlColor))
+        {
+            return new Color(0.54f, 0.17f, 0.89f); // Default Malum purple
+        }
 
         // Gradient theme: "grad:#AAAAAA,#BBBBBB" — smooth continuous traveling wave
         if (configHtmlColor.StartsWith("grad:"))

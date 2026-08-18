@@ -19,7 +19,7 @@ public static class MeetingHud_Update
             {
                 if (!playerVoteArea) continue;
 
-                var playerData = GameData.Instance.GetPlayerById(playerVoteArea.TargetPlayerId);
+                var playerData = GameData.Instance?.GetPlayerById(playerVoteArea.TargetPlayerId);
 
                 if (playerData != null && !playerData.Disconnected && playerVoteArea.VotedFor != PlayerVoteArea.HasNotVoted && playerVoteArea.VotedFor != PlayerVoteArea.MissedVote && playerVoteArea.VotedFor != PlayerVoteArea.DeadVote && !votedPlayers.Contains(playerVoteArea.TargetPlayerId))
                 {
@@ -29,7 +29,7 @@ public static class MeetingHud_Update
                     {
                         foreach (var votedForArea in __instance.playerStates)
                         {
-                            if (votedForArea.TargetPlayerId == playerVoteArea.VotedFor)
+                            if (votedForArea != null && votedForArea.TargetPlayerId == playerVoteArea.VotedFor)
                             {
                                 __instance.BloopAVoteIcon(playerData, 0, votedForArea.transform);
                                 break;
@@ -48,11 +48,12 @@ public static class MeetingHud_Update
                 if (!votedForArea) continue;
 
                 var voteSpreader = votedForArea.transform.GetComponent<VoteSpreader>();
-                if (!voteSpreader) continue;
+                if (!voteSpreader || voteSpreader.Votes == null) continue;
 
                 foreach (var spriteRenderer in voteSpreader.Votes)
                 {
-                    spriteRenderer.gameObject.SetActive(CheatToggles.revealVotes);
+                    if (spriteRenderer != null && spriteRenderer.gameObject != null)
+                        spriteRenderer.gameObject.SetActive(CheatToggles.revealVotes);
                 }
             }
 
@@ -69,7 +70,10 @@ public static class MeetingHud_Update
         MalumESP.MeetingNametags(__instance);
 
         // Bugfix: NoClip staying active if meeting is called whilst climbing ladder
-        PlayerControl.LocalPlayer.onLadder = false;
+        if (PlayerControl.LocalPlayer)
+        {
+            PlayerControl.LocalPlayer.onLadder = false;
+        }
     }
 }
 
@@ -79,34 +83,39 @@ public static class MeetingHud_PopulateResults
     // Prefix patch of MeetingHud.PopulateResults to clear all vote icons before repopulating them for final results
     public static void Prefix(MeetingHud __instance)
     {
-        foreach (var votedForArea in __instance.playerStates)
+        if (__instance.playerStates != null)
         {
-            if (!votedForArea) continue;
-
-            var voteSpreader = votedForArea.transform.GetComponent<VoteSpreader>();
-            if (!voteSpreader) continue;
-
-            var length = voteSpreader.Votes.Count;
-            if (length == 0) continue;
-
-            foreach (var spriteRenderer in voteSpreader.Votes)
+            foreach (var votedForArea in __instance.playerStates)
             {
-                Object.DestroyImmediate(spriteRenderer);
-            }
+                if (!votedForArea) continue;
 
-            voteSpreader.Votes.Clear();
+                var voteSpreader = votedForArea.transform.GetComponent<VoteSpreader>();
+                if (!voteSpreader || voteSpreader.Votes == null) continue;
+
+                var length = voteSpreader.Votes.Count;
+                if (length == 0) continue;
+
+                foreach (var spriteRenderer in voteSpreader.Votes)
+                {
+                    if (spriteRenderer != null) Object.DestroyImmediate(spriteRenderer);
+                }
+
+                voteSpreader.Votes.Clear();
+            }
         }
 
         if (__instance.SkippedVoting)
         {
             var voteSpreader = __instance.SkippedVoting.transform.GetComponent<VoteSpreader>();
-
-            foreach (var spriteRenderer in voteSpreader.Votes)
+            if (voteSpreader != null && voteSpreader.Votes != null)
             {
-                Object.DestroyImmediate(spriteRenderer);
-            }
+                foreach (var spriteRenderer in voteSpreader.Votes)
+                {
+                    if (spriteRenderer != null) Object.DestroyImmediate(spriteRenderer);
+                }
 
-            voteSpreader.Votes.Clear();
+                voteSpreader.Votes.Clear();
+            }
         }
 
         MeetingHud_Update.votedPlayers.Clear();
@@ -121,13 +130,14 @@ public static class MeetingHud_CheckForEndVoting
     {
         if (!CheatToggles.voteImmune) return true; // We don't need to check whether we are host because this method only runs on the host's side
 
-        if (!__instance.playerStates.All(ps => ps.AmDead || ps.DidVote)) return true;
+        if (__instance.playerStates == null || !__instance.playerStates.All(ps => ps.AmDead || ps.DidVote)) return true;
 
         var max = __instance.CalculateVotes().MaxPair(out var tie);
-        var exiled = GameData.Instance.AllPlayers.ToArray().FirstOrDefault(v => !tie && v.PlayerId == max.Key);
+        var allPlayers = GameData.Instance?.AllPlayers?.ToArray();
+        var exiled = allPlayers?.FirstOrDefault(v => !tie && v.PlayerId == max.Key);
 
         // This is the only change from the original method - make sure local player is not exiled
-        if (exiled != null && exiled == PlayerControl.LocalPlayer.Data)
+        if (exiled != null && PlayerControl.LocalPlayer != null && exiled == PlayerControl.LocalPlayer.Data)
         {
             exiled = null;
         }

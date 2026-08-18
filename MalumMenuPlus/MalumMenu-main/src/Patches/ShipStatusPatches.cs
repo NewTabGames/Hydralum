@@ -18,14 +18,10 @@ public static class ShipStatus_FixedUpdate
         MalumCheats.DisableVentsCheat();
 
         MalumPPMCheats.ReportBodyPPM();
-    }
-}
 
-[HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.FixedUpdate))]
-public static class FungleShipStatus_FixedUpdate
-{
-    public static void Postfix(FungleShipStatus __instance)
-    {
-        MalumSabotageCheats.ProcessFungle(__instance);
+        if (__instance is FungleShipStatus fungle)
+        {
+            MalumSabotageCheats.ProcessFungle(fungle);
+        }
     }
 }

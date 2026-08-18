@@ -42,32 +42,37 @@ public class DebugUI : MonoBehaviour
 
     private void DebugWindow(int windowID)
     {
-        GUILayout.BeginVertical(GUI.skin.box);
-
-        _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, false);
-
-        foreach (var log in _logEntries)
+        try
         {
-            GUILayout.Label(log, _logStyle);
+            GUILayout.BeginVertical(GUI.skin.box);
+
+            _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, false);
+
+            var logs = _logEntries.ToArray();
+            foreach (var log in logs)
+            {
+                GUILayout.Label(log, _logStyle);
+            }
+
+            GUILayout.EndScrollView();
+
+            GUILayout.EndVertical();
+
+            GUILayout.BeginHorizontal();
+
+            if (GUILayout.Button("Clear Log", GUILayout.Width(260)))
+            {
+                _logEntries.Clear();
+            }
+
+            if (GUILayout.Button("Copy Log to Clipboard"))
+            {
+                GUIUtility.systemCopyBuffer = string.Join("\n", _logEntries.ToArray());
+            }
+
+            GUILayout.EndHorizontal();
         }
-
-        GUILayout.EndScrollView();
-
-        GUILayout.EndVertical();
-
-        GUILayout.BeginHorizontal();
-
-        if (GUILayout.Button("Clear Log", GUILayout.Width(260)))
-        {
-            _logEntries.Clear();
-        }
-
-        if (GUILayout.Button("Copy Log to Clipboard"))
-        {
-            GUIUtility.systemCopyBuffer = string.Join("\n", _logEntries);
-        }
-
-        GUILayout.EndHorizontal();
+        catch { }
 
         GUI.DragWindow();
     }

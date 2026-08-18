@@ -19,7 +19,7 @@ public static class ArrowHandler
     // Searches through task prefabs in ShipStatus to cache first arrow GameObject found
     private static void CacheArrowFromShipStatus()
     {
-        if (_cachedArrowTemplate != null) return;
+        if (_cachedArrowTemplate != null || ShipStatus.Instance == null) return;
 
         NormalPlayerTask[][] allTasksArrays = new NormalPlayerTask[][]
         {
@@ -30,15 +30,15 @@ public static class ArrowHandler
 
         foreach (var tasks in allTasksArrays)
         {
+            if (tasks == null) continue;
             foreach (var task in tasks)
             {
-                if (task.Arrow != null)
+                if (task != null && task.Arrow != null)
                 {
                     _cachedArrowTemplate = task.Arrow.gameObject;
-                    MalumMenu.Log.LogInfo($"Cached Arrow.gameObject for task {task.TaskType}");
+                    MalumMenu.Log?.LogInfo($"Cached Arrow.gameObject for task {task.TaskType}");
                     return;
                 }
-                MalumMenu.Log.LogInfo($"No Arrow.gameObject found for task {task.TaskType}");
             }
         }
     }
@@ -46,20 +46,24 @@ public static class ArrowHandler
     // Creates a new ArrowBehaviour for a task that doesn't have one
     public static ArrowBehaviour CreateArrowForTask(NormalPlayerTask task)
     {
+        if (task == null) return null;
+
         // Cache an arrow GameObject from ShipStatus task prefabs if its missing
         CacheArrowFromShipStatus();
+
+        if (_cachedArrowTemplate == null) return null;
 
         // Set task.transform as parent of arrowObj so it gets destroyed with the task
         var arrowObj = Object.Instantiate(_cachedArrowTemplate, task.transform, false);
 
-        return arrowObj.GetComponent<ArrowBehaviour>();
+        return arrowObj != null ? arrowObj.GetComponent<ArrowBehaviour>() : null;
     }
 
     // Ensures a task has an arrow, creating one if necessary
     public static void EnsureArrowExists(NormalPlayerTask task)
     {
         // Only create arrows for owned, incomplete tasks that don't already have one
-        if (!IsOwnedAndIncomplete(task) || task.Arrow != null) return;
+        if (task == null || !IsOwnedAndIncomplete(task) || task.Arrow != null) return;
 
         task.Arrow = CreateArrowForTask(task);
     }
@@ -105,7 +109,7 @@ public static class ArrowHandler
             {
                 Il2CppSystem.Collections.Generic.List<Console> consoles = NormalPlayerTask.PickRandomConsoles(0, TaskTypes.ReplaceParts);
 
-                if (consoles is { Count: > 0 })
+                if (consoles is { Count: > 0 } && task.Data != null && task.Data.Length > 0)
                 {
                     var firstConsole = consoles.ToArray().FirstOrDefault(c => c.ConsoleId == task.Data[0]);
                     SetArrowTarget(task, firstConsole);
@@ -118,7 +122,7 @@ public static class ArrowHandler
             {
                 Il2CppSystem.Collections.Generic.List<Console> consoles = NormalPlayerTask.PickRandomConsoles(0, TaskTypes.RoastMarshmallow);
 
-                if (consoles is { Count: > 0 })
+                if (consoles is { Count: > 0 } && task.Data != null && task.Data.Length > 0)
                 {
                     var stickConsole = consoles.ToArray().FirstOrDefault(c => c.ConsoleId == task.Data[0]);
                     SetArrowTarget(task, stickConsole);

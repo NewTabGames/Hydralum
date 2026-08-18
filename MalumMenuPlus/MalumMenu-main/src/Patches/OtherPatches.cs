@@ -73,7 +73,7 @@ public static class FreeChatInputField_UpdateCharCount
     public static void Postfix(FreeChatInputField __instance)
     {
         // Only works if CheatToggles.longerMsgs is enabled
-        if (!CheatToggles.longerMessages) return;
+        if (!CheatToggles.longerMessages || __instance == null || __instance.textArea == null || __instance.textArea.text == null || __instance.charCountText == null) return;
 
         // Update charCountText to account for longer characterLimit
         int length = __instance.textArea.text.Length;
@@ -332,11 +332,12 @@ public static class GameContainer_SetupGameInfo
         if (!CheatToggles.seeLobbyInfo) return;
 
         // The Crewmate icon gets aligned properly with this
-        const string separator = "<#0000>000000000000000</color>";
+        if (__instance == null || __instance.gameListing == null || __instance.capacity == null) return;
 
-        var trueHostName = __instance.gameListing.TrueHostName;
+        var separator = "---------------";
+        var trueHostName = string.IsNullOrEmpty(__instance.gameListing.TrueHostName) ? "" : $"Host: {__instance.gameListing.TrueHostName}";
 
-        var age = __instance.gameListing.Age;
+        var age = (int)__instance.gameListing.Age;
         var lobbyTime = $"Age: {age / 60}:{(age % 60 < 10 ? "0" : "")}{age % 60}";
 
         var platform = Utils.PlatformTypeToString(__instance.gameListing.Platform);
@@ -374,9 +375,13 @@ public static class IGameOptionsExtensions_GetAdjustedNumImpostors
     {
         if (!CheatToggles.noOptionsLimits) return true;
 
-        __result = GameOptionsManager.Instance.CurrentGameOptions.NumImpostors;
+        if (GameOptionsManager.Instance != null && GameOptionsManager.Instance.CurrentGameOptions != null)
+        {
+            __result = GameOptionsManager.Instance.CurrentGameOptions.NumImpostors;
+            return false;
+        }
 
-        return false;
+        return true;
     }
 }
 

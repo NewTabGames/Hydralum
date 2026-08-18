@@ -42,22 +42,27 @@ public class TasksUI : MonoBehaviour
 
     private void TasksWindow(int windowID)
     {
-        GUILayout.BeginVertical();
-
-        _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, true);
-
-        foreach (var player in PlayerControl.AllPlayerControls)
+        try
         {
-            if (!player.Data || !player.Data.Role || string.IsNullOrEmpty(player.Data.PlayerName)) continue;
-
             GUILayout.BeginVertical();
 
-            var nameKey = player.Data.PlayerName;
-            _expandedPlayers.TryGetValue(nameKey, out var expanded);
-            var arrow = expanded ? "\u25BC" : "\u25B6"; // ▼ or ▶
+            _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, true);
 
-            var taskCount = player.myTasks.Count;
-            var completeCount = player.myTasks.ToArray().Count(t => t.IsComplete);
+            var allControls = PlayerControl.AllPlayerControls;
+            if (allControls != null)
+            {
+                foreach (var player in allControls)
+                {
+                    if (!player || player.Data == null || player.Data.Role == null || string.IsNullOrEmpty(player.Data.PlayerName) || player.myTasks == null) continue;
+
+                    GUILayout.BeginVertical();
+
+                    var nameKey = player.Data.PlayerName;
+                    _expandedPlayers.TryGetValue(nameKey, out var expanded);
+                    var arrow = expanded ? "\u25BC" : "\u25B6"; // ▼ or ▶
+
+                    var taskCount = player.myTasks.Count;
+                    var completeCount = player.myTasks.ToArray().Count(t => t != null && t.IsComplete);
 
             if (player == PlayerControl.LocalPlayer && player.Data.IsDead)
             {
@@ -122,7 +127,8 @@ public class TasksUI : MonoBehaviour
                 GUILayout.EndHorizontal();
             }
 
-            GUILayout.EndVertical();
+                GUILayout.EndVertical();
+            }
         }
 
         GUILayout.EndScrollView();
@@ -133,7 +139,9 @@ public class TasksUI : MonoBehaviour
         }
 
         GUILayout.EndVertical();
-
-        GUI.DragWindow();
     }
+    catch { }
+
+    GUI.DragWindow();
+}
 }

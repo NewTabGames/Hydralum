@@ -1,4 +1,4 @@
-﻿using AmongUs.GameOptions;
+using AmongUs.GameOptions;
 using HarmonyLib;
 using Hazel;
 using InnerNet;
@@ -109,9 +109,10 @@ namespace HydraMenu.features
 
 			static bool Prefix(int srcClient, int clientId)
 			{
-				Hydra.Log.LogInfo($"[VotekickLogger] {srcClient} voted to kick out {clientId}");
-				if(clientId != PlayerControl.LocalPlayer.OwnerId) return true;
+				Hydra.Log?.LogInfo($"[VotekickLogger] {srcClient} voted to kick out {clientId}");
+				if(PlayerControl.LocalPlayer == null || clientId != PlayerControl.LocalPlayer.OwnerId) return true;
 
+				if (AmongUsClient.Instance == null) return false;
 				ClientData player = AmongUsClient.Instance.FindClientById(srcClient);
 				if(player == null) return false;
 
@@ -187,9 +188,10 @@ namespace HydraMenu.features
 						SystemTypes system = (SystemTypes)reader.ReadByte();
 						PlayerControl player = reader.ReadNetObject<PlayerControl>();
 
-						if(ProtectAgainstNonHostKickExploit && system == SystemTypes.Ventilation && !AmongUsClient.Instance.AmHost)
+						if(ProtectAgainstNonHostKickExploit && system == SystemTypes.Ventilation && AmongUsClient.Instance != null && !AmongUsClient.Instance.AmHost)
 						{
-							Hydra.notifications.Send("Protections Alert", $"{player.Data.PlayerName} attempted to use the VentilationSystem kick exploit on you!");
+							string pName = player != null && player.Data != null ? player.Data.PlayerName : "Someone";
+							Hydra.notifications?.Send("Protections Alert", $"{pName} attempted to use the VentilationSystem kick exploit on you!");
 							return false;
 						}
 

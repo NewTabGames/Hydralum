@@ -112,48 +112,52 @@ namespace HydraMenu.ui
 			// https://docs.unity3d.com/6000.3/Documentation/Manual/GUIScriptingGuide.html
 			if(!visible) return;
 
-			GUI.skin.label.fontSize = (int)(13 * scale);
-
-			// Render UI box
-			GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum - Hydra v{MyPluginInfo.PLUGIN_VERSION}", Styles.MainBox);
-
-			// Switch button on top header matching the Hydralum mock design
-			Rect switchBtnRect = new Rect(windowPosition.x + WindowSize.x - 95 * scale, windowPosition.y + 2 * scale, 90 * scale, 20 * scale);
-			Color previousColor = GUI.backgroundColor;
-			GUI.backgroundColor = new Color(0.6f, 0.2f, 0.8f);
-			if(GUI.Button(switchBtnRect, "Switch"))
+			try
 			{
-				SwitchToMalum();
-			}
-			GUI.backgroundColor = previousColor;
+				GUI.skin.label.fontSize = (int)(13 * scale);
 
-			for(byte i = 0; i < sections.Length; i++)
-			{
-				ISection section = sections[i];
+				// Render UI box
+				GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum - Hydra v{MyPluginInfo.PLUGIN_VERSION}", Styles.MainBox);
 
-				// Add the tab to the left-pane
-				RenderTab(i, section);
-
-				if(i == activeTab)
+				// Switch button on top header matching the Hydralum mock design
+				Rect switchBtnRect = new Rect(windowPosition.x + WindowSize.x - 95 * scale, windowPosition.y + 2 * scale, 90 * scale, 20 * scale);
+				Color previousColor = GUI.backgroundColor;
+				GUI.backgroundColor = new Color(0.6f, 0.2f, 0.8f);
+				if(GUI.Button(switchBtnRect, "Switch"))
 				{
-					GUILayout.BeginArea(new Rect(FeaturePanePosition.x, FeaturePanePosition.y, FeaturePaneSize.x, FeaturePaneSize.y));
-					section.scrollVector = GUILayout.BeginScrollView(section.scrollVector);
-
-					try
-					{
-						section.Render();
-					}
-					catch (Exception ex)
-					{
-						GUILayout.Label($"<color=red>Error rendering {section.name} section:</color>\n<size=11>{ex.Message}</size>");
-					}
-
-					GUILayout.EndScrollView();
-					GUILayout.EndArea();
+					SwitchToMalum();
 				}
-			}
+				GUI.backgroundColor = previousColor;
 
-			HandleBoxMovement();
+				for(byte i = 0; i < sections.Length; i++)
+				{
+					ISection section = sections[i];
+
+					// Add the tab to the left-pane
+					RenderTab(i, section);
+
+					if(i == activeTab)
+					{
+						GUILayout.BeginArea(new Rect(FeaturePanePosition.x, FeaturePanePosition.y, FeaturePaneSize.x, FeaturePaneSize.y));
+						section.scrollVector = GUILayout.BeginScrollView(section.scrollVector);
+
+						try
+						{
+							section.Render();
+						}
+						catch (Exception ex)
+						{
+							GUILayout.Label($"<color=red>Error rendering {section.name} section:</color>\n<size=11>{ex.Message}</size>");
+						}
+
+						GUILayout.EndScrollView();
+						GUILayout.EndArea();
+					}
+				}
+
+				HandleBoxMovement();
+			}
+			catch { }
 		}
 
 		private void HandleBoxMovement()
@@ -230,8 +234,12 @@ namespace HydraMenu.ui
 			if (_cachedMalumUIType != null) return _cachedMalumUIType;
 			foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
 			{
-				_cachedMalumUIType = asm.GetType("MalumMenu.MenuUI");
-				if (_cachedMalumUIType != null) break;
+				try
+				{
+					_cachedMalumUIType = asm.GetType("MalumMenu.MenuUI");
+					if (_cachedMalumUIType != null) break;
+				}
+				catch { }
 			}
 			return _cachedMalumUIType;
 		}
@@ -246,7 +254,7 @@ namespace HydraMenu.ui
 				if (malumUIType != null)
 				{
 					// Seamless in-place switch: match HydraMenu's current window position
-					var rectField = malumUIType.GetField("_windowRect", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+					var rectField = malumUIType.GetField("_windowRect", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 					if (rectField != null)
 					{
 						Rect r = (Rect)rectField.GetValue(null);
@@ -255,13 +263,13 @@ namespace HydraMenu.ui
 						rectField.SetValue(null, r);
 					}
 
-					var lastOpenedField = malumUIType.GetField("lastOpenedWasHydra", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+					var lastOpenedField = malumUIType.GetField("lastOpenedWasHydra", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 					if (lastOpenedField != null)
 					{
 						lastOpenedField.SetValue(null, false);
 					}
 
-					var field = malumUIType.GetField("isGUIActive", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+					var field = malumUIType.GetField("isGUIActive", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 					if (field != null)
 					{
 						field.SetValue(null, true);
@@ -273,7 +281,7 @@ namespace HydraMenu.ui
 			}
 			catch (Exception ex)
 			{
-				Hydra.Log?.LogError($"Error switching to Malum: {ex}");
+				Hydra.notifications?.Send("Menu Switch", $"Failed to open MalumMenu: {ex.Message}", 5);
 			}
 		}
 

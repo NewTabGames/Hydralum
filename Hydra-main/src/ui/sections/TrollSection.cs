@@ -57,44 +57,51 @@ namespace HydraMenu.ui.sections
 				}
 				else
 				{
-					FungleShipStatus shipStatus = ShipStatus.Instance.Cast<FungleShipStatus>();
+					FungleShipStatus shipStatus = ShipStatus.Instance != null ? ShipStatus.Instance.TryCast<FungleShipStatus>() : null;
 
-					foreach(Mushroom mushroom in shipStatus.sporeMushrooms.Values)
+					if (shipStatus != null && shipStatus.sporeMushrooms != null && PlayerControl.LocalPlayer != null)
 					{
-						PlayerControl.LocalPlayer.RpcTriggerSpores(mushroom);
-					}
+						foreach(Mushroom mushroom in shipStatus.sporeMushrooms.Values)
+						{
+							if (mushroom != null) PlayerControl.LocalPlayer.RpcTriggerSpores(mushroom);
+						}
 
-					Hydra.notifications.Send("Trigger Spores", "All spores have been triggered.", 5);
+						Hydra.notifications.Send("Trigger Spores", "All spores have been triggered.", 5);
+					}
 				}
 			}
 
 			if(GUILayout.Button("Deplete HnS Timer"))
 			{
-				AmongUsClient.Instance.StartCoroutine(DepleteSeekTimer().WrapToIl2Cpp());
+				if (AmongUsClient.Instance != null)
+				{
+					AmongUsClient.Instance.StartCoroutine(DepleteSeekTimer().WrapToIl2Cpp());
+				}
 			}
 
 			GUILayout.Space(5);
 			GUILayout.Label($"Vent TP:");
 			Hydra.routines.teleportSpammer.Enabled = GUILayout.Toggle(Hydra.routines.teleportSpammer.Enabled, "Teleport Flooder");
 
+			int ventCount = ShipStatus.Instance != null && ShipStatus.Instance.AllVents != null ? ShipStatus.Instance.AllVents.Count : 0;
 			GUILayout.Label($"Teleport everyone to vent: {selectedVent}");
-			selectedVent = (int)GUILayout.HorizontalSlider(selectedVent, 0, ShipStatus.Instance != null ? ShipStatus.Instance.AllVents.Count - 1 : 10);
+			selectedVent = (int)GUILayout.HorizontalSlider(selectedVent, 0, Math.Max(0, ventCount - 1));
 
-			if(GUILayout.Button("Teleport to Vent"))
+			if(GUILayout.Button("Teleport to Vent") && ventCount > 0)
 			{
 				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 				{
-					Teleporter.TeleportToVent(player, selectedVent);
+					if (player != null) Teleporter.TeleportToVent(player, selectedVent);
 				}
 			}
 
-			if(GUILayout.Button("Teleport to Random Vent"))
+			if(GUILayout.Button("Teleport to Random Vent") && ventCount > 0)
 			{
 				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 				{
-					if(player == PlayerControl.LocalPlayer) continue;
+					if(player == null || player == PlayerControl.LocalPlayer) continue;
 
-					int ventId = rnd.Next(0, ShipStatus.Instance.AllVents.Count);
+					int ventId = rnd.Next(0, ventCount);
 
 					Teleporter.TeleportToVent(player, ventId);
 				}
@@ -114,18 +121,26 @@ namespace HydraMenu.ui.sections
 		// so we can spam the CompleteTask RPC with the same task, and reduce the task timer to zero seconds
 		private IEnumerator DepleteSeekTimer()
 		{
-			if(!GameManager.Instance.IsHideAndSeek())
+			if(GameManager.Instance == null || !GameManager.Instance.IsHideAndSeek())
 			{
 				Hydra.notifications.Send("Deplete HnS Timer", "This feature can only be used in Hide and Seek.");
 				yield break;
 			}
 
-			LogicGameFlowHnS gameFlow = GameManager.Instance.LogicFlow.Cast<LogicGameFlowHnS>();
-			LogicOptionsHnS logicOptions = GameManager.Instance.LogicOptions.Cast<LogicOptionsHnS>();
+			LogicGameFlowHnS gameFlow = GameManager.Instance.LogicFlow != null ? GameManager.Instance.LogicFlow.TryCast<LogicGameFlowHnS>() : null;
+			LogicOptionsHnS logicOptions = GameManager.Instance.LogicOptions != null ? GameManager.Instance.LogicOptions.TryCast<LogicOptionsHnS>() : null;
 
-			if(AmongUsClient.Instance.AmHost)
+			if (gameFlow == null || logicOptions == null) yield break;
+
+			if(AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)
 			{
 				gameFlow.AdjustEscapeTimer(gameFlow.currentHideTime, true);
+				yield break;
+			}
+
+			if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.myTasks == null || PlayerControl.LocalPlayer.myTasks.Count == 0)
+			{
+				Hydra.notifications.Send("Deplete HnS Timer", "This feature requires you to have at least one task.");
 				yield break;
 			}
 
@@ -160,6 +175,12 @@ namespace HydraMenu.ui.sections
 				case NormalPlayerTask.TaskLength.Long:
 					completeDeduction = logicOptions.GetLongTaskTimeValue();
 					break;
+			}
+
+			if (completeDeduction <= 0.001f)
+			{
+				Hydra.notifications.Send("Deplete HnS Timer", "Task deduction time is 0.");
+				yield break;
 			}
 
 			int totalCompletions = 0;

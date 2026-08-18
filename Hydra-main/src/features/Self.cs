@@ -26,11 +26,11 @@ namespace HydraMenu.features
 			public static bool Enabled { get; set; } = true;
 			static void Postfix(Ladder __instance)
 			{
-				if(Enabled)
+				if(Enabled && __instance != null)
 				{
-					Hydra.Log.LogMessage($"Used ladder");
+					Hydra.Log?.LogMessage($"Used ladder");
 					__instance.CoolDown = 0.0f;
-					__instance.Destination.CoolDown = 0.0f;
+					if (__instance.Destination != null) __instance.Destination.CoolDown = 0.0f;
 				}
 			}
 		}
@@ -42,7 +42,7 @@ namespace HydraMenu.features
 
 			static void Prefix()
 			{
-				if(enabled) PlayerControl.LocalPlayer.RemainingEmergencies = 999999;
+				if(enabled && PlayerControl.LocalPlayer != null) PlayerControl.LocalPlayer.RemainingEmergencies = 999999;
 			}
 		}
 

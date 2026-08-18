@@ -7,6 +7,7 @@ namespace HydraMenu.ui
 {
 	internal class NotificationManager : MonoBehaviour
 	{
+		public readonly object lockObj = new object();
 		public List<Notification> notifications = new List<Notification>();
 		public bool DisableNotifications = false;
 
@@ -37,36 +38,56 @@ namespace HydraMenu.ui
 
 		public void Update()
 		{
-			int notificationCount = Math.Min(GetMaxNotifications(), notifications.Count);
-
-			for(int i = 0; i < notificationCount; i++)
+			try
 			{
-				Notification notification = notifications[i];
-				notification.lifetime += Time.deltaTime;
-
-				if(notification.HasExpired)
+				lock (lockObj)
 				{
-					notifications.RemoveAt(i);
+					int maxNotifs = GetMaxNotifications();
+					int notificationCount = Math.Min(maxNotifs, notifications.Count);
 
-					// Since we removed an element from the notifications list, we have to decrement both the current notification index
-					// and the max notifications to avoid errors from accessing outside the list length
-					i--;
-					notificationCount--;
-					continue;
+					for(int i = 0; i < notificationCount; i++)
+					{
+						if (i >= notifications.Count) break;
+						Notification notification = notifications[i];
+						notification.lifetime += Time.deltaTime;
+
+						if(notification.HasExpired)
+						{
+							notifications.RemoveAt(i);
+							i--;
+							notificationCount--;
+							continue;
+						}
+					}
 				}
 			}
+			catch { }
 		}
 
 		public void OnGUI()
 		{
-			if(DisableNotifications) return;
-
-			int notificationCount = Math.Min(GetMaxNotifications(), notifications.Count);
-
-			for(byte i = 0; i < notificationCount; i++)
+			try
 			{
-				RenderNotification(i, notifications[i]);
+				if(DisableNotifications) return;
+
+				Notification[] snapshot;
+				lock (lockObj)
+				{
+					snapshot = notifications.ToArray();
+				}
+
+				int maxNotifs = GetMaxNotifications();
+				int notificationCount = Math.Min(maxNotifs, snapshot.Length);
+
+				for(byte i = 0; i < notificationCount; i++)
+				{
+					if (i < snapshot.Length && snapshot[i] != null)
+					{
+						RenderNotification(i, snapshot[i]);
+					}
+				}
 			}
+			catch { }
 		}
 
 		[HideFromIl2Cpp]
@@ -84,23 +105,30 @@ namespace HydraMenu.ui
 
 		public int GetMaxNotifications()
 		{
-			return Screen.height / 2 / (int)BoxSize.y;
+			int boxH = Math.Max(1, (int)BoxSize.y);
+			return Math.Max(1, Screen.height / 2 / boxH);
 		}
 
 		// The time to live value for a notification should be five seconds if it is a success message, and ten seconds if it is a failure message
 		public void Send(string title, string message, float ttl = 10)
 		{
-			Hydra.Log.LogMessage($"[Notification] [{title}] {message}");
+			Hydra.Log?.LogMessage($"[Notification] [{title}] {message}");
 
 			if(DisableNotifications) return;
 
 			Notification notification = new Notification(title, message, ttl);
-			notifications.Add(notification);
+			lock (lockObj)
+			{
+				notifications.Add(notification);
+			}
 		}
 
 		public void ClearNotifications()
 		{
-			notifications.Clear();
+			lock (lockObj)
+			{
+				notifications.Clear();
+			}
 		}
 	}
 }

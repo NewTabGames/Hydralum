@@ -17,8 +17,9 @@ namespace HydraMenu.features
 			static void Postfix(PlayerControl __instance, PlayerControl target, MurderResultFlags resultFlags)
 			{
 				if(!Enabled || !resultFlags.HasFlag(MurderResultFlags.Succeeded)) return;
+				if (__instance == null || __instance.Data == null || target == null || target.Data == null || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
 
-				if(AmongUsClient.Instance.AmHost)
+				if(AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)
 				{
 					Utilities.OpenMeeting(source ?? PlayerControl.LocalPlayer, target.Data);
 					return;
@@ -26,7 +27,7 @@ namespace HydraMenu.features
 
 				if(PlayerControl.LocalPlayer.Data.IsDead) return;
 
-				Hydra.notifications.Send("Auto Report Bodies", $"{target.Data.PlayerName} was killed by {__instance.Data.PlayerName} ({Utilities.GetPlayerColor(__instance.Data)}), their body has been automatically reported.");
+				Hydra.notifications?.Send("Auto Report Bodies", $"{target.Data.PlayerName} was killed by {__instance.Data.PlayerName} ({Utilities.GetPlayerColor(__instance.Data)}), their body has been automatically reported.");
 				PlayerControl.LocalPlayer.CmdReportDeadBody(target.Data);
 			}
 		}
@@ -48,9 +49,9 @@ namespace HydraMenu.features
 				{
 					if(enabled == value) return;
 
-					if(value && AmongUsClient.Instance.AmHost)
+					if(value && AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)
 					{
-						Hydra.notifications.Send("Block Sabotages", "This option should be used when you are not the host of the lobby. Use Disable Sabotages in the Host section instead.");
+						Hydra.notifications?.Send("Block Sabotages", "This option should be used when you are not the host of the lobby. Use Disable Sabotages in the Host section instead.");
 						Host.DisableSabotages.Enabled = true;
 						return;
 					}
@@ -61,9 +62,9 @@ namespace HydraMenu.features
 
 			static void Postfix(SabotageSystemType __instance)
 			{
-				if(!Enabled || __instance.Timer > 0.1f) return;
+				if(!Enabled || __instance == null || __instance.Timer > 0.1f || ShipStatus.Instance == null) return;
 
-				Hydra.Log.LogMessage($"Sabotage cooldown has depleted to {__instance.Timer}, sending Sabotage system update");
+				Hydra.Log?.LogMessage($"Sabotage cooldown has depleted to {__instance.Timer}, sending Sabotage system update");
 				ShipStatus.Instance.RpcUpdateSystem(SystemTypes.Sabotage, 255);
 			}
 		}

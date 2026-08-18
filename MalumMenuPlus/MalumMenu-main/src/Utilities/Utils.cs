@@ -75,8 +75,12 @@ public static class Utils
         if (player == null || player.Data == null) return ("", "", false);
 
         var realName = $"<color=#{ColorUtility.ToHtmlStringRGB(player.Data.Color)}>{player.Data.PlayerName}</color>";
-        var displayName = $"<color=#{ColorUtility.ToHtmlStringRGB(Palette.PlayerColors[player.CurrentOutfit.ColorId])}>{player.CurrentOutfit.PlayerName}</color>";
-        var isDisguised = player.CurrentOutfit.PlayerName != player.Data.PlayerName;
+        int colorId = (player.CurrentOutfit != null && player.CurrentOutfit.ColorId >= 0 && player.CurrentOutfit.ColorId < Palette.PlayerColors.Length)
+            ? player.CurrentOutfit.ColorId
+            : 0;
+        string outfitName = player.CurrentOutfit != null ? player.CurrentOutfit.PlayerName : player.Data.PlayerName;
+        var displayName = $"<color=#{ColorUtility.ToHtmlStringRGB(Palette.PlayerColors[colorId])}>{outfitName}</color>";
+        var isDisguised = outfitName != player.Data.PlayerName;
 
         return (realName, displayName, isDisguised);
     }
@@ -122,6 +126,7 @@ public static class Utils
     // Used to fix UI problems when zooming out
     public static void AdjustResolution()
     {
+        if (Screen.height <= 0) return;
         ResolutionManager.ResolutionChanged.Invoke((float)Screen.width / Screen.height, Screen.width, Screen.height, Screen.fullScreen);
     }
 
@@ -308,19 +313,24 @@ public static class Utils
 
         outputList.Clear();
 
-        var allPlayers = GameData.Instance.AllPlayers;
-        foreach (var playerInfo in allPlayers)
+        var allPlayers = GameData.Instance?.AllPlayers;
+        if (allPlayers != null)
         {
-            var player = playerInfo.Object;
-            if (player)
+            foreach (var playerInfo in allPlayers)
             {
-                outputList.Add(player);
+                if (playerInfo != null && playerInfo.Object != null)
+                {
+                    outputList.Add(playerInfo.Object);
+                }
             }
         }
 
-        outputList = outputList.OrderBy(target => GetDistanceBetween(source, target)).ToList();
+        if (source != null)
+        {
+            outputList = outputList.OrderBy(target => GetDistanceBetween(source, target)).ToList();
+        }
 
-        return outputList.Count <= 0 ? null : outputList;
+        return outputList;
     }
 
     // Returns current map ID if available
@@ -370,7 +380,9 @@ public static class Utils
     // Returns the current approximate FPS
     public static int GetFps()
     {
-        return (int)(1f / Time.unscaledDeltaTime);
+        float dt = Time.unscaledDeltaTime;
+        if (dt <= 0.0001f) return 60;
+        return (int)(1f / dt);
     }
 
     // Gets a UnityEngine.KeyCode from a string

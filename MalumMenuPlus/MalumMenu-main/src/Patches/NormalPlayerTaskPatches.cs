@@ -14,16 +14,24 @@ public static class NormalPlayerTask_Initialize
             if (__instance.taskStep == 0)
             {
                 var airshipTask = __instance.GetComponent<AirshipUploadTask>();
-                var consolePositions = airshipTask.FindValidConsolesPositions();
-
-                // AirshipUploadTask uses an Arrows[] array instead of the inherited Arrow field
-                for (var i = 0; i < consolePositions.Count && i < airshipTask.Arrows.Length; i++)
+                if (airshipTask != null && airshipTask.Arrows != null)
                 {
-                    // There are two already existing arrows, we just need to set the target of one of them at step 0
-                    airshipTask.Arrows[i].target = consolePositions[i];
-                }
+                    var consolePositions = airshipTask.FindValidConsolesPositions();
+                    if (consolePositions != null)
+                    {
+                        // AirshipUploadTask uses an Arrows[] array instead of the inherited Arrow field
+                        for (var i = 0; i < consolePositions.Count && i < airshipTask.Arrows.Length; i++)
+                        {
+                            if (airshipTask.Arrows[i] != null)
+                            {
+                                // There are two already existing arrows, we just need to set the target of one of them at step 0
+                                airshipTask.Arrows[i].target = consolePositions[i];
+                            }
+                        }
 
-                airshipTask.LocationDirty = true;
+                        airshipTask.LocationDirty = true;
+                    }
+                }
 
                 return;
             }
@@ -96,11 +104,15 @@ public static class AirshipUploadTask_FixedUpdate_Patch
         }
 
         var consolePositions = __instance.FindValidConsolesPositions();
+        int validCount = consolePositions != null ? consolePositions.Count : 0;
 
         for (var i = 0; i < __instance.Arrows.Length; i++)
         {
             // Only activate arrows that correspond to valid console positions
-            __instance.Arrows[i].gameObject.SetActive(i < consolePositions.Count && __instance.Owner != null && __instance.Owner.AmOwner);
+            if (__instance.Arrows[i] != null && __instance.Arrows[i].gameObject != null)
+            {
+                __instance.Arrows[i].gameObject.SetActive(i < validCount && __instance.Owner != null && __instance.Owner.AmOwner);
+            }
         }
     }
 }

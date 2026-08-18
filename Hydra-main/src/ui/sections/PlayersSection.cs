@@ -144,7 +144,7 @@ namespace HydraMenu.ui.sections
 
 			if(GUI.Button(playerInfo, playerName, style))
 			{
-				bool isCtrl = Event.current.control || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+				bool isCtrl = (Event.current != null && Event.current.control) || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
 				if(isCtrl)
 				{
 					if(selectedPlayerIds.Contains(player.PlayerId))
@@ -425,6 +425,7 @@ namespace HydraMenu.ui.sections
 			if(GUILayout.Button("Deselect All", GUILayout.Width(90)))
 			{
 				selectedPlayerIds.Clear();
+				GUILayout.EndHorizontal();
 				return;
 			}
 			GUILayout.EndHorizontal();

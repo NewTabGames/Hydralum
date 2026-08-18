@@ -118,7 +118,7 @@ public class OutfitsTab : ITab
         {
             int col = 0;
             try { col = AmongUs.Data.DataManager.Player.Customization.Color; } catch { }
-            if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null)
+            if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.DefaultOutfit != null)
             {
                 col = PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId;
             }

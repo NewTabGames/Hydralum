@@ -73,9 +73,11 @@ namespace HydraMenu
 
 			foreach(PlayerControl player in allPlayers)
 			{
+				if (player == null || player.Data == null || player.Data.Role == null) continue;
+
 				if(
-					(excludeSelf && AmongUsClient.Instance.ClientId == player.OwnerId) ||
-					(excludeHost && AmongUsClient.Instance.HostId == player.OwnerId) ||
+					(excludeSelf && AmongUsClient.Instance != null && AmongUsClient.Instance.ClientId == player.OwnerId) ||
+					(excludeHost && AmongUsClient.Instance != null && AmongUsClient.Instance.HostId == player.OwnerId) ||
 					(excludeDead && player.Data.IsDead) ||
 					(excludeImposters && player.Data.Role.CanUseKillButton)
 				) continue;
@@ -203,19 +205,21 @@ namespace HydraMenu
 
 			bool hasAnticheat = IsAnticheatPresent();
 
+			if (AmongUsClient.Instance == null || reporter == null || reporter.Data == null) return;
+
 			if(hasAnticheat && AmongUsClient.Instance.GameState != InnerNetClient.GameStates.Started)
 			{
-				Hydra.notifications.Send("Start Meeting", "The game must have started in order for this feature to work.");
+				Hydra.notifications?.Send("Start Meeting", "The game must have started in order for this feature to work.");
 				return;
 			}
 
 			if(AmongUsClient.Instance.AmHost)
 			{
-				Hydra.Log.LogInfo($"We are the host so we can directly use the StartMeeting RPC");
+				Hydra.Log?.LogInfo($"We are the host so we can directly use the StartMeeting RPC");
 
 				if(ShipStatus.Instance == null)
 				{
-					Hydra.notifications.Send("Start Meeting", "There must be a valid instance of ShipStatus for this feature to work.");
+					Hydra.notifications?.Send("Start Meeting", "There must be a valid instance of ShipStatus for this feature to work.");
 				}
 				else
 				{
@@ -225,17 +229,17 @@ namespace HydraMenu
 				return;
 			}
 
-			Hydra.Log.LogInfo("We are not the host so we have to use the ReportDeadBody RPC");
+			Hydra.Log?.LogInfo("We are not the host so we have to use the ReportDeadBody RPC");
 
 			if(hasAnticheat && reporter != PlayerControl.LocalPlayer)
 			{
-				Hydra.notifications.Send("Start Meeting", "You must be the host of the lobby to make another player start a meeting.");
+				Hydra.notifications?.Send("Start Meeting", "You must be the host of the lobby to make another player start a meeting.");
 				return;
 			}
 
 			if(reporter.Data.IsDead)
 			{
-				Hydra.notifications.Send("Start Meeting", "You can only call meetings or report bodies if you are alive.");
+				Hydra.notifications?.Send("Start Meeting", "You can only call meetings or report bodies if you are alive.");
 				return;
 			}
 
@@ -325,14 +329,15 @@ namespace HydraMenu
 			// Fall back to current map according to game options if ShipStatus does not exist
 			if(ShipStatus.Instance == null)
 			{
-				if(AmongUsClient.Instance.NetworkMode == NetworkModes.FreePlay)
+				if(AmongUsClient.Instance != null && AmongUsClient.Instance.NetworkMode == NetworkModes.FreePlay)
 				{
 					return (MapNames)AmongUsClient.Instance.TutorialMapId;
 				}
-				else
+				else if (GameOptionsManager.Instance != null && GameOptionsManager.Instance.CurrentGameOptions != null)
 				{
 					return (MapNames)GameOptionsManager.Instance.CurrentGameOptions.MapId;
 				}
+				return MapNames.Skeld;
 			}
 
 			return (SpawnType)ShipStatus.Instance.SpawnId switch
@@ -360,6 +365,8 @@ namespace HydraMenu
 
 		public static string GetPlayerColor(NetworkedPlayerInfo player)
 		{
+			if (player == null || player.DefaultOutfit == null) return "Fortegreen";
+
 			int colorId = player.DefaultOutfit.ColorId;
 
 			if(colorId < 0 || colorId >= Palette.ColorNames.Length)
@@ -382,22 +389,25 @@ namespace HydraMenu
 		// In my experience this has been incredibly useful to kick out players who are blatantly hacking, calling useless meetings, or causing other mischief even if I am not the host if the lobby
 		public static void KickPlayer(PlayerControl player, bool skipFirstStage = false)
 		{
+			if (player == null || AmongUsClient.Instance == null) return;
+
 			if(AmongUsClient.Instance.AmHost)
 			{
 				AmongUsClient.Instance.KickPlayer(player.OwnerId, true);
-				Hydra.notifications.Send("Kick Player", $"{player.Data.PlayerName} has been kicked from the game.", 5);
+				string pName = player.Data != null ? player.Data.PlayerName : $"Player {player.PlayerId}";
+				Hydra.notifications?.Send("Kick Player", $"{pName} has been kicked from the game.", 5);
 				return;
 			}
 
 			if(player.OwnerId == AmongUsClient.Instance.HostId)
 			{
-				Hydra.notifications.Send("Kick Player", "You are not able to kick out the host of the lobby.");
+				Hydra.notifications?.Send("Kick Player", "You are not able to kick out the host of the lobby.");
 				return;
 			}
 
 			if(ShipStatus.Instance == null)
 			{
-				Hydra.notifications.Send("Kick Player", "The game must have started in order for this feature to work.");
+				Hydra.notifications?.Send("Kick Player", "The game must have started in order for this feature to work.");
 				return;
 			}
 

@@ -1,4 +1,4 @@
-﻿using HydraMenu.network;
+using HydraMenu.network;
 using UnityEngine;
 
 namespace HydraMenu.routines
@@ -12,19 +12,23 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
-			if(ShipStatus.Instance == null) return;
+			if(ShipStatus.Instance == null || PlayerControl.LocalPlayer == null) return;
 
 			timeElapsed += Time.deltaTime;
 			if(timeElapsed < SPORE_TRIGGER_DURATION) return;
 			timeElapsed = 0f;
 
-			FungleShipStatus shipStatus = ShipStatus.Instance.Cast<FungleShipStatus>();
+			FungleShipStatus shipStatus = ShipStatus.Instance.TryCast<FungleShipStatus>();
+			if (shipStatus == null || shipStatus.sporeMushrooms == null) return;
 
 			BatchedMessage batch = new BatchedMessage();
 
 			foreach(Mushroom mushroom in shipStatus.sporeMushrooms.Values)
 			{
-				batch.QueueTriggerSpore(PlayerControl.LocalPlayer, mushroom);
+				if (mushroom != null)
+				{
+					batch.QueueTriggerSpore(PlayerControl.LocalPlayer, mushroom);
+				}
 			}
 
 			batch.FinishBatch();
@@ -34,14 +38,14 @@ namespace HydraMenu.routines
 		{
 			if(ShipStatus.Instance == null)
 			{
-				Hydra.notifications.Send("Trigger Spores", "Auto-Trigger Spores can only be used if the game has started.", 10);
+				Hydra.notifications?.Send("Trigger Spores", "Auto-Trigger Spores can only be used if the game has started.", 10);
 				Enabled = false;
 				return;
 			}
 
 			if(Utilities.GetCurrentMap() != MapNames.Fungle)
 			{
-				Hydra.notifications.Send("Trigger Spores", "Auto-Trigger Spores can only be used in The Fungle.", 10);
+				Hydra.notifications?.Send("Trigger Spores", "Auto-Trigger Spores can only be used in The Fungle.", 10);
 				Enabled = false;
 				return;
 			}
@@ -49,7 +53,7 @@ namespace HydraMenu.routines
 
 		public override void OnDisconnect()
 		{
-			Hydra.notifications.Send("Trigger Spores", "Auto-Trigger Spores was disabled as you left the game.", 10);
+			Hydra.notifications?.Send("Trigger Spores", "Auto-Trigger Spores was disabled as you left the game.", 10);
 			Enabled = false;
 		}
 	}

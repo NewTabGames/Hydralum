@@ -1,4 +1,4 @@
-﻿using AmongUs.GameOptions;
+using AmongUs.GameOptions;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -54,15 +54,19 @@ namespace HydraMenu.ui
 		public static RoleTypes HorizontalRoleSlider(RoleTypes currentRole)
 		{
 			int currentValue = RolesList.IndexOf(currentRole);
+			if (currentValue < 0) currentValue = 0;
 
-			byte newValue = (byte)GUILayout.HorizontalSlider(currentValue, 0, RolesList.Count - 1);
+			int maxIndex = Math.Max(0, RolesList.Count - 1);
+			int newValue = Math.Clamp((int)GUILayout.HorizontalSlider(currentValue, 0, maxIndex), 0, maxIndex);
 
 			return RolesList[newValue];
 		}
 
 		public static PlayerColors HorizontalColorSlider(PlayerColors currentColor)
 		{
-			return (PlayerColors)GUILayout.HorizontalSlider((int)currentColor, 0, Palette.ColorNames.Length);
+			int maxColor = Math.Max(0, Palette.ColorNames.Length - 1);
+			int val = Math.Clamp((int)GUILayout.HorizontalSlider((int)currentColor, 0, maxColor), 0, maxColor);
+			return (PlayerColors)val;
 		}
 
 		public static bool PlayerSpecificToggle(string label, PlayerControl selectedPlayer, ref PlayerControl currentPlayer)

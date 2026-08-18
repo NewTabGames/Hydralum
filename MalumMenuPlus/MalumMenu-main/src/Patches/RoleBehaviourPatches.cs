@@ -110,9 +110,12 @@ public static class ImpostorRole_FindClosestTarget
     {
         if (!CheatToggles.killReach) return true;
 
-        var playerList = Utils.GetPlayersSortedByDistance().Where(player => !player.IsNull() && __instance.IsValidTarget(player.Data) && player.Collider.enabled).ToList();
+        var sorted = Utils.GetPlayersSortedByDistance();
+        if (sorted == null) { __result = null; return false; }
 
-        __result = playerList[0];
+        var playerList = sorted.Where(player => !player.IsNull() && player.Data != null && __instance.IsValidTarget(player.Data) && player.Collider != null && player.Collider.enabled).ToList();
+
+        __result = playerList.Count > 0 ? playerList[0] : null;
 
         return false;
     }
@@ -126,9 +129,12 @@ public static class DetectiveRole_FindClosestTarget
     {
         if (!CheatToggles.interrogateReach) return true;
 
-        var playerList = Utils.GetPlayersSortedByDistance().Where(player => !player.IsNull() && __instance.IsValidTarget(player.Data) && player.Collider.enabled).ToList();
+        var sorted = Utils.GetPlayersSortedByDistance();
+        if (sorted == null) { __result = null; return false; }
 
-        __result = playerList[0];
+        var playerList = sorted.Where(player => !player.IsNull() && player.Data != null && __instance.IsValidTarget(player.Data) && player.Collider != null && player.Collider.enabled).ToList();
+
+        __result = playerList.Count > 0 ? playerList[0] : null;
 
         return false;
     }
@@ -142,9 +148,12 @@ public static class TrackerRole_FindClosestTarget
     {
         if (!CheatToggles.trackReach) return true;
 
-        var playerList = Utils.GetPlayersSortedByDistance().Where(player => !player.IsNull() && __instance.IsValidTarget(player.Data) && player.Collider.enabled).ToList();
+        var sorted = Utils.GetPlayersSortedByDistance();
+        if (sorted == null) { __result = null; return false; }
 
-        __result = playerList[0];
+        var playerList = sorted.Where(player => !player.IsNull() && player.Data != null && __instance.IsValidTarget(player.Data) && player.Collider != null && player.Collider.enabled).ToList();
+
+        __result = playerList.Count > 0 ? playerList[0] : null;
 
         return false;
     }

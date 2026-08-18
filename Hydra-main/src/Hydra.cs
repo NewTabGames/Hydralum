@@ -91,8 +91,8 @@ internal class Hydra : BasePlugin
 						if (mainMalumType != null) break;
 					}
 				}
-				var isPanickedField = mainMalumType?.GetField("isPanicked", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-				bool isPanicked = isPanickedField != null && (bool)isPanickedField.GetValue(null);
+				var isPanickedField = mainMalumType?.GetField("isPanicked", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+				bool isPanicked = isPanickedField?.GetValue(null) is bool b && b;
 				if (!isPanicked)
 				{
 					var ejectMethod = malumType.GetMethod("Eject", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);

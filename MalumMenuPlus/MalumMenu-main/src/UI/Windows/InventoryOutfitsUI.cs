@@ -74,10 +74,12 @@ public class InventoryOutfitsUI : MonoBehaviour
 
     private void DrawWindow(int windowId)
     {
-        GUILayout.BeginVertical();
+        try
+        {
+            GUILayout.BeginVertical();
 
-        // 1. Save Section
-        GUILayout.Label("Save Current Outfit", GUIStylePreset.TabSubtitle);
+            // 1. Save Section
+            GUILayout.Label("Save Current Outfit", GUIStylePreset.TabSubtitle);
         GUILayout.Label($"Preset Name: <b>{_customOutfitName}</b>", GUIStylePreset.Hint);
 
         GUILayout.BeginHorizontal();
@@ -319,6 +321,8 @@ public class InventoryOutfitsUI : MonoBehaviour
         GUILayout.EndHorizontal();
 
         GUILayout.EndVertical();
+        }
+        catch { }
 
         GUI.DragWindow();
     }

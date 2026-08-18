@@ -49,18 +49,25 @@ public static class DoorsHandler
     // Opens all doors on the map
     public static void OpenAllDoors()
     {
+        if (ShipStatus.Instance == null || ShipStatus.Instance.AllDoors == null) return;
+
         foreach (var door in ShipStatus.Instance.AllDoors)
         {
-            OpenDoor(door);
+            if (door != null) OpenDoor(door);
         }
     }
 
     // Closes all doors on the map
     public static void CloseAllDoors()
     {
+        if (ShipStatus.Instance == null || ShipStatus.Instance.AllDoors == null) return;
+
         foreach (var door in ShipStatus.Instance.AllDoors)
         {
-            try { ShipStatus.Instance.RpcCloseDoorsOfType(door.Room); } catch { }
+            if (door != null)
+            {
+                try { ShipStatus.Instance.RpcCloseDoorsOfType(door.Room); } catch { }
+            }
         }
     }
 

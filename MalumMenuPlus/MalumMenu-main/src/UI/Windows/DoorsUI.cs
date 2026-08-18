@@ -35,21 +35,23 @@ public class DoorsUI : MonoBehaviour
 
     private void DoorsWindow(int windowID)
     {
-        if (!Utils.isShip)
+        try
         {
-            GUI.DragWindow();
-            return;
-        }
+            if (!Utils.isShip)
+            {
+                GUI.DragWindow();
+                return;
+            }
 
-        var map = (MapNames)Utils.GetCurrentMapID();
+            var map = (MapNames)Utils.GetCurrentMapID();
 
-        if (map is MapNames.MiraHQ)
-        {
-            GUI.DragWindow();
-            return;
-        }
+            if (map is MapNames.MiraHQ)
+            {
+                GUI.DragWindow();
+                return;
+            }
 
-        GUILayout.BeginVertical();
+            GUILayout.BeginVertical();
 
         foreach (var doorRoom in DoorsHandler.GetRoomsWithDoors())
         {
@@ -171,6 +173,8 @@ public class DoorsUI : MonoBehaviour
         GUILayout.EndHorizontal();
 
         GUILayout.EndVertical();
+        }
+        catch { }
 
         GUI.DragWindow();
     }

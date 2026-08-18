@@ -57,32 +57,41 @@ public static class TracersHandler
     // Draws a tracer LocalPlayer to a dead body. Only draws tracers for unreported dead bodies.
     public static void DrawBodyTracer(DeadBody deadBody)
     {
-        var color = Color.clear; // All tracers are invisible by default
-
-        if (CheatToggles.tracersBodies)
+        try
         {
-            if (CheatToggles.distanceBasedTracers)
-            {
-                color = GetDistanceBasedColor(deadBody.transform.position);
-            }
-            else if (CheatToggles.colorBasedTracers)
-            {
-                color = GameData.Instance.GetPlayerById(deadBody.ParentId).Color; // Color-Based Tracer
-            }
-            else
-            {
-                color = Color.yellow; // Dead Body Tracer (Yellow)
-            }
-        }
+            if (deadBody == null || !PlayerControl.LocalPlayer) return;
 
-        // Draw tracer between the dead body and LocalPlayer using the right color
-        Utils.DrawTracer(deadBody.gameObject, PlayerControl.LocalPlayer.gameObject, color);
+            var color = Color.clear; // All tracers are invisible by default
+
+            if (CheatToggles.tracersBodies)
+            {
+                if (CheatToggles.distanceBasedTracers)
+                {
+                    color = GetDistanceBasedColor(deadBody.transform.position);
+                }
+                else if (CheatToggles.colorBasedTracers)
+                {
+                    var playerInfo = GameData.Instance?.GetPlayerById(deadBody.ParentId);
+                    color = playerInfo != null ? playerInfo.Color : Color.yellow; // Color-Based Tracer
+                }
+                else
+                {
+                    color = Color.yellow; // Dead Body Tracer (Yellow)
+                }
+            }
+
+            // Draw tracer between the dead body and LocalPlayer using the right color
+            Utils.DrawTracer(deadBody.gameObject, PlayerControl.LocalPlayer.gameObject, color);
+        }
+        catch { }
     }
 
     // Gets a color based on the distance between the LocalPlayer and a target position.
     // Closer distances are red, medium distances are yellow, and farther distances are green.
     private static Color GetDistanceBasedColor(Vector3 targetPosition)
     {
+        if (!PlayerControl.LocalPlayer) return Color.white;
+
         const float maxDistance = 20f; // Green at 20+ units
         const float minDistance = 2f;  // Red at 2 units or fewer
 
