@@ -48,7 +48,7 @@ If you already have **BepInEx 6 IL2CPP** installed:
 
 Among Us is an **IL2CPP** game, so it requires **BepInEx 6 (IL2CPP)** instead of standard BepInEx 5.
 
-> ⚠️ **Important**: Do **NOT** download BepInEx 5 (`BepInEx_win_x64_5.4.x.zip`). That version is for Mono games and will not load in Among Us.
+>  **Important**: Do **NOT** download BepInEx 5 (`BepInEx_win_x64_5.4.x.zip`). That version is for Mono games and will not load in Among Us.
 
 1. **Download BepInEx 6 IL2CPP x86**:
    - **[Direct Download: BepInEx 6 IL2CPP x86 (Build 785)](https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785%2B6abdba4.zip)**
@@ -68,7 +68,6 @@ Among Us is an **IL2CPP** game, so it requires **BepInEx 6 (IL2CPP)** instead of
 | Action | Keybind / Control |
 | :--- | :--- |
 | **Toggle Menu (Malum)** | `Delete` key |
-| **Toggle Menu (Hydra)** | `F6` key |
 | **Switch Menu** | `[ Switch ]` header button in top-right of menu |
 
 ---
@@ -88,3 +87,17 @@ dotnet build src/MalumMenu.csproj -c Release
 cd ../../Hydra-main
 dotnet build src/HydraMenu.csproj -c Release
 ```
+
+
+
+
+
+
+
+
+
+This is made by ai ofc. I thought of a cool project and wanted to build it.
+I didn't want to spend months/years learning how to code and once I finally
+learned fully, AU is probably gonna be completely dead. Not like it is already.
+At this point, there isn't even a point in learning how to code manually.
+All you really need to do is understand how it works.
