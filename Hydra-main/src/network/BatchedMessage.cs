@@ -165,7 +165,7 @@ namespace HydraMenu.network
 			writer.EndMessage();
 		}
 
-		public void QueueVotingComplete(MeetingHud.VoterState[] voteStates, NetworkedPlayerInfo ejectedPlayer, bool isTie)
+		public void QueueVotingComplete(MeetingHud.VoterState[] voteStates, NetworkedPlayerInfo ejectedPlayer, bool isTie, bool wasOverruled = false, byte overruleNonce = 0)
 		{
 			msgCount++;
 
@@ -190,6 +190,8 @@ namespace HydraMenu.network
 
 			writer.Write(ejectedPlayer != null ? ejectedPlayer.PlayerId : byte.MaxValue);
 			writer.Write(isTie);
+			writer.Write(wasOverruled);
+			writer.Write(overruleNonce);
 
 			writer.EndMessage();
 		}
