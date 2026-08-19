@@ -14,6 +14,7 @@
     </RestoreAdditionalProjectSources>
     <RootNamespace>HydraMenu</RootNamespace>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <AmongUs>C:\Program Files (x86)\Steam\steamapps\common\Among Us</AmongUs>
   </PropertyGroup>
 
   <ItemGroup>

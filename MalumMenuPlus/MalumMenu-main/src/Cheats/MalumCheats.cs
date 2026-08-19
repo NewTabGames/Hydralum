@@ -27,7 +27,10 @@ public static class MalumCheats
             PlayerControl.LocalPlayer.SetKillTimer(GameManager.Instance.LogicOptions.GetKillCooldown());
             ShipStatus.Instance.EmergencyCooldown = GameManager.Instance.LogicOptions.GetEmergencyCooldown();
             Camera.main.GetComponent<FollowerCamera>().Locked = false;
-            DestroyableSingleton<HudManager>.Instance.SetMapButtonEnabled(true);
+            if (DestroyableSingleton<HudManager>.Instance != null && DestroyableSingleton<HudManager>.Instance.MapButton != null && DestroyableSingleton<HudManager>.Instance.MapButton.gameObject != null)
+            {
+                DestroyableSingleton<HudManager>.Instance.MapButton.gameObject.SetActive(true);
+            }
             DestroyableSingleton<HudManager>.Instance.SetHudActive(true);
             ControllerManager.Instance.CloseAndResetAll();
 

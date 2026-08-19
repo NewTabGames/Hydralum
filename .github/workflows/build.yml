@@ -27,6 +27,12 @@ jobs:
     - name: Build Hydra
       run: dotnet build Hydra-main/src/HydraMenu.csproj -c Release
 
+    - name: Copy Fresh DLLs to DLLs Folder
+      run: |
+        mkdir -p DLLs
+        cp MalumMenuPlus/MalumMenu-main/src/bin/Release/net6.0/MalumMenuPlus.dll DLLs/
+        cp Hydra-main/src/bin/Release/net6.0/HydraMenu.dll DLLs/
+
     - name: Upload DLLs
       uses: actions/upload-artifact@v4
       with:

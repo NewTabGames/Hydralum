@@ -8,6 +8,7 @@
         <VersionPrefix>3.2.0</VersionPrefix>
         <Description>all play and no cheats makes among us a dull game</Description>
         <Authors>scp222thj, astra1dev</Authors>
+        <AmongUs>C:\Program Files (x86)\Steam\steamapps\common\Among Us</AmongUs>
     </PropertyGroup>
 
     <!--<ItemGroup>
