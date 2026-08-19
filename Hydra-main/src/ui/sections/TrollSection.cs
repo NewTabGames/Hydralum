@@ -1,9 +1,11 @@
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using Hazel;
+using HydraMenu.assets;
 using HydraMenu.features;
 using HydraMenu.network;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace HydraMenu.ui.sections
@@ -25,6 +27,7 @@ namespace HydraMenu.ui.sections
 			Troll.AutoReportBodies.Enabled = Controls.PlayerSpecificToggle("Auto Report Bodies", PlayerControl.LocalPlayer, ref Troll.AutoReportBodies.source);
 			Hydra.routines.autoTriggerSpores.Enabled = GUILayout.Toggle(Hydra.routines.autoTriggerSpores.Enabled, "Auto Trigger Spores");
 			Troll.BlockSabotages.Enabled = GUILayout.Toggle(Troll.BlockSabotages.Enabled, "Block Sabotages");
+			Troll.BlockVenting.Enabled = GUILayout.Toggle(Troll.BlockVenting.Enabled, "Disable Vents");
 
 			if(GUILayout.Button("Kick All Players"))
 			{
@@ -47,6 +50,12 @@ namespace HydraMenu.ui.sections
 
 					Utilities.KickPlayer(player, true);
 				}
+			}
+
+			if(GUILayout.Button("Copy Random Player"))
+			{
+				PlayerControl randomPl = Utilities.GetRandomPlayer();
+				if (randomPl != null) Utilities.CopyPlayer(randomPl);
 			}
 
 			if(GUILayout.Button("Trigger All Spores"))
@@ -79,12 +88,15 @@ namespace HydraMenu.ui.sections
 				}
 			}
 
+			Dictionary<int, string> vents = MapAssets.GetVents();
+
 			GUILayout.Space(5);
 			GUILayout.Label($"Vent TP:");
 			Hydra.routines.teleportSpammer.Enabled = GUILayout.Toggle(Hydra.routines.teleportSpammer.Enabled, "Teleport Flooder");
 
-			int ventCount = ShipStatus.Instance != null && ShipStatus.Instance.AllVents != null ? ShipStatus.Instance.AllVents.Count : 0;
-			GUILayout.Label($"Teleport everyone to vent: {selectedVent}");
+			int ventCount = vents != null && vents.Count > 0 ? vents.Count : (ShipStatus.Instance != null && ShipStatus.Instance.AllVents != null ? ShipStatus.Instance.AllVents.Count : 0);
+			string ventName = vents != null && vents.ContainsKey(selectedVent) ? vents[selectedVent] : selectedVent.ToString();
+			GUILayout.Label($"Teleport everyone to vent: {ventName}");
 			selectedVent = (int)GUILayout.HorizontalSlider(selectedVent, 0, Math.Max(0, ventCount - 1));
 
 			if(GUILayout.Button("Teleport to Vent") && ventCount > 0)

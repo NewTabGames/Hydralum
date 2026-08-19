@@ -16,6 +16,38 @@ namespace HydraMenu.features
             }
         }
 
+		[HarmonyPatch(typeof(LightSource), nameof(LightSource.Update))]
+		public static class Fullbright
+		{
+			public static bool Enabled { get; set; } = false;
+
+			static void Postfix(LightSource __instance)
+			{
+				if(!Enabled || __instance == null) return;
+
+				if (HudManager.Instance != null && HudManager.Instance.ShadowQuad != null && HudManager.Instance.ShadowQuad.gameObject != null)
+				{
+					HudManager.Instance.ShadowQuad.gameObject.SetActive(false);
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(PlayerPhysics), nameof(PlayerPhysics.FixedUpdate))]
+		public static class ShowGhosts
+		{
+			public static bool Enabled { get; set; } = false;
+
+			static void Postfix(PlayerPhysics __instance)
+			{
+				if(!Enabled || __instance == null || __instance.myPlayer == null || __instance.myPlayer.Data == null) return;
+
+				if(__instance.myPlayer.Data.IsDead)
+				{
+					__instance.myPlayer.Visible = true;
+				}
+			}
+		}
+
         // The GameData::ShowNotification function by default only handles disconnect reasons of ExitGame, Kicked, or Banned
         // Any other disconnection reasons automatically default to the error disconnection message
 		[HarmonyPatch(typeof(GameData), nameof(GameData.ShowNotification))]

@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 using Il2CppInterop.Runtime;
 using InnerNet;
 using System;
@@ -101,6 +101,12 @@ namespace HydraMenu.anticheat.rpc
 			if(GameManager.Instance.IsHideAndSeek())
 			{
 				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to sabotage {system} while in Hide and Seek.");
+				return false;
+			}
+
+			if(player != null && player.inVent)
+			{
+				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to sabotage {system} while in a vent.");
 				return false;
 			}
 

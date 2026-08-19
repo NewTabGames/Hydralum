@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace HydraMenu.assets
 {
@@ -59,8 +59,8 @@ namespace HydraMenu.assets
 				MapNames.Skeld or MapNames.Dleks => skeldAnimations,
 				MapNames.Polus => polusAnimations,
 				// These maps do not have any task animations, other than medbay scan
-				MapNames.MiraHQ or MapNames.Airship or MapNames.Fungle => [],
-				// If we do not any known animations for the current map then just default to the Skeld ones
+				MapNames.MiraHQ or MapNames.Airship or MapNames.Fungle => new Dictionary<string, TaskTypes>(),
+				// If we do not have any known animations for the current map then just default to the Skeld ones
 				_ => skeldAnimations
 			};
 		}
@@ -73,7 +73,7 @@ namespace HydraMenu.assets
 			{
 				MapNames.Skeld => skeldVents,
 				MapNames.Polus => polusVents,
-				// If we do not any known vents for the current map then just default to the Skeld ones
+				// If we do not have any known vents for the current map then just default to the Skeld ones
 				_ => skeldVents
 			};
 		}

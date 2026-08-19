@@ -10,6 +10,7 @@ namespace HydraMenu.network
 	{
 		public readonly MessageWriter writer;
 		public readonly int targetClientId;
+		private int msgCount = 0;
 
 		public BatchedMessage(int targetClientId = -1)
 		{
@@ -29,6 +30,11 @@ namespace HydraMenu.network
 			}
 		}
 
+		private bool IsGlobal
+		{
+			get { return targetClientId == -1; }
+		}
+
 		private bool AmTarget
 		{
 			get { return targetClientId == -1 || targetClientId == AmongUsClient.Instance.ClientId; }
@@ -36,6 +42,7 @@ namespace HydraMenu.network
 
 		public void QueueDataFlag(uint netId, MessageWriter msg)
 		{
+			msgCount++;
 			writer.StartMessage((byte)GameDataTypes.DataFlag);
 			writer.WritePacked(netId);
 			writer.Write(msg, false);
@@ -44,15 +51,19 @@ namespace HydraMenu.network
 
 		public void QueueSpawn(InnerNetObject netObject, int ownerId = -2, SpawnFlags flags = SpawnFlags.None)
 		{
+			msgCount++;
 			SpawnGameDataMessage spawn = AmongUsClient.Instance.CreateSpawnMessage(netObject, ownerId, flags);
 			spawn.Serialize(writer);
 		}
 
 		public void QueueCompleteTask(PlayerControl source, uint taskIndex)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.CompleteTask(taskIndex);
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -64,9 +75,12 @@ namespace HydraMenu.network
 
 		public void QueueSetName(PlayerControl source, string name)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.SetName(name);
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -79,9 +93,12 @@ namespace HydraMenu.network
 
 		public void QueueSetColor(PlayerControl source, byte color)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.SetColor(color);
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -94,9 +111,12 @@ namespace HydraMenu.network
 
 		public void QueueMurderPlayer(PlayerControl source, PlayerControl target, MurderResultFlags result)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.MurderPlayer(target, result);
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -109,9 +129,12 @@ namespace HydraMenu.network
 
 		public void QueueSnapTo(PlayerControl source, Vector2 position)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.NetTransform.SnapTo(position, (ushort)(source.NetTransform.lastSequenceId + 1));
+				if(AmTarget) return;
 			}
 
 			ushort seqId = (ushort)(source.NetTransform.lastSequenceId + 2);
@@ -126,10 +149,15 @@ namespace HydraMenu.network
 
 		public void QueueCloseMeeting()
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
-				MeetingHud.Instance.Close();
+				if (MeetingHud.Instance != null) MeetingHud.Instance.Close();
+				if(AmTarget) return;
 			}
+
+			if (MeetingHud.Instance == null) return;
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
 			writer.WritePacked(MeetingHud.Instance.NetId);
@@ -139,9 +167,12 @@ namespace HydraMenu.network
 
 		public void QueueVotingComplete(MeetingHud.VoterState[] voteStates, NetworkedPlayerInfo ejectedPlayer, bool isTie)
 		{
-			if(AmTarget && MeetingHud.Instance != null)
+			msgCount++;
+
+			if((IsGlobal || AmTarget) && MeetingHud.Instance != null)
 			{
 				MeetingHud.Instance.VotingComplete(voteStates, ejectedPlayer, isTie);
+				if(AmTarget) return;
 			}
 
 			if (MeetingHud.Instance == null) return;
@@ -165,10 +196,15 @@ namespace HydraMenu.network
 
 		public void QueueAddVote(int sourceId, int targetId)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
-				VoteBanSystem.Instance.AddVote(sourceId, targetId);
+				if (VoteBanSystem.Instance != null) VoteBanSystem.Instance.AddVote(sourceId, targetId);
+				if(AmTarget) return;
 			}
+
+			if (VoteBanSystem.Instance == null) return;
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
 			writer.WritePacked(VoteBanSystem.Instance.NetId);
@@ -180,10 +216,15 @@ namespace HydraMenu.network
 
 		public void QueueCloseDoors(SystemTypes door)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
-				ShipStatus.Instance.CloseDoorsOfType(door);
+				if (ShipStatus.Instance != null) ShipStatus.Instance.CloseDoorsOfType(door);
+				if(AmTarget) return;
 			}
+
+			if (ShipStatus.Instance == null) return;
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
 			writer.WritePacked(ShipStatus.Instance.NetId);
@@ -194,6 +235,10 @@ namespace HydraMenu.network
 
 		public void QueueUpdateSystem(PlayerControl source, SystemTypes system, MessageWriter msg)
 		{
+			msgCount++;
+
+			if (ShipStatus.Instance == null) return;
+
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
 			writer.WritePacked(ShipStatus.Instance.NetId);
 			writer.Write((byte)RpcCalls.UpdateSystem);
@@ -205,9 +250,12 @@ namespace HydraMenu.network
 
 		public void QueueSetHatStr(PlayerControl source, string hat, byte seqId)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.SetHat(hat, source.Data.DefaultOutfit.ColorId);
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -220,9 +268,12 @@ namespace HydraMenu.network
 
 		public void QueueSetSkinStr(PlayerControl source, string skin, byte seqId)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.SetSkin(skin, source.Data.DefaultOutfit.ColorId);
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -235,9 +286,12 @@ namespace HydraMenu.network
 
 		public void QueueSetPetStr(PlayerControl source, string pet, byte seqId)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.SetPet(pet, source.Data.DefaultOutfit.ColorId);
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -250,9 +304,12 @@ namespace HydraMenu.network
 
 		public void QueueSetVisorStr(PlayerControl source, string visor, byte seqId)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.SetVisor(visor, source.Data.DefaultOutfit.ColorId);
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -265,9 +322,12 @@ namespace HydraMenu.network
 
 		public void QueueSetNameplateStr(PlayerControl source, string nameplate, byte seqId)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.SetNamePlate(nameplate);
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -280,9 +340,12 @@ namespace HydraMenu.network
 
 		public void QueueSetRole(PlayerControl source, RoleTypes role, bool canOverride = false)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.StartCoroutine(source.CoSetRole(role, canOverride));
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -295,9 +358,12 @@ namespace HydraMenu.network
 
 		public void QueueShapeshift(PlayerControl source, PlayerControl target, bool shouldAnimate)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				source.Shapeshift(target, shouldAnimate);
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -310,9 +376,12 @@ namespace HydraMenu.network
 
 		public void QueueTriggerSpore(PlayerControl source, Mushroom mushroom)
 		{
-			if(AmTarget)
+			msgCount++;
+
+			if(IsGlobal || AmTarget)
 			{
 				mushroom.TriggerSpores();
+				if(AmTarget) return;
 			}
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
@@ -325,7 +394,10 @@ namespace HydraMenu.network
 		public void FinishBatch()
 		{
 			writer.EndMessage();
-			AmongUsClient.Instance.SendOrDisconnect(writer);
+			if(msgCount > 0 && AmongUsClient.Instance != null)
+			{
+				AmongUsClient.Instance.SendOrDisconnect(writer);
+			}
 			writer.Recycle();
 		}
 	}

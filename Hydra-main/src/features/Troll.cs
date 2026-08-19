@@ -32,6 +32,33 @@ namespace HydraMenu.features
 			}
 		}
 
+		[HarmonyPatch(typeof(VentilationSystem), nameof(VentilationSystem.Deserialize))]
+		public static class BlockVenting
+		{
+			public static bool Enabled { get; set; } = false;
+
+			static void Postfix(VentilationSystem __instance)
+			{
+				if(!Enabled || __instance == null || __instance.PlayersInsideVents == null || ShipStatus.Instance == null || ShipStatus.Instance.AllVents == null) return;
+
+				Hydra.Log?.LogInfo($"Received update for VentilationSystem, going to kick out all players who are inside a vent");
+
+				if(PlayerControl.AllPlayerControls != null && __instance.PlayersInsideVents.Count >= PlayerControl.AllPlayerControls.Count)
+				{
+					Hydra.Log?.LogInfo($"Apparently there are more people inside of vents than people inside the game, the host may be trying to overload our game! Players in vents: {__instance.PlayersInsideVents.Count}, total players: {PlayerControl.AllPlayerControls.Count}");
+					return;
+				}
+
+				foreach(byte ventId in __instance.PlayersInsideVents.Values)
+				{
+					if(ventId >= ShipStatus.Instance.AllVents.Count) continue;
+
+					Hydra.Log?.LogInfo($"Kicked someone out of vent {ventId}");
+					VentilationSystem.Update(VentilationSystem.Operation.StartCleaning, ventId);
+				}
+			}
+		}
+
 		// When the host receives a Sabotage system update, it first ensures that there is no active meeting, and that the sabotage cooldown has ended
 		// If all checks pass, the host sets the sabotage cooldown to 30.0s and then handles which system to update based off of the sabotage type
 		// The only problem is that the host updates the sabotage cooldown without first confirming that the attempted sabotage actually succeeded
