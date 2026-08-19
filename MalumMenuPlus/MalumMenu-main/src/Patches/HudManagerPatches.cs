@@ -75,27 +75,36 @@ public static class HudManager_Update
 		{
 			if (hud == null || hud.transform == null) return;
 
-			// Find reference position from Chat or Map button
-			Transform refTransform = hud.Chat != null ? hud.Chat.transform : (hud.MapButton != null ? hud.MapButton.transform : null);
-			if (refTransform == null) return;
-
 			// Look for Detective Notes / Notepad button container
 			for (int i = 0; i < hud.transform.childCount; i++)
 			{
 				Transform child = hud.transform.GetChild(i);
-				if (child == null || child == refTransform) continue;
+				if (child == null) continue;
 
 				string name = child.name;
 				if (name.IndexOf("Note", StringComparison.OrdinalIgnoreCase) >= 0 ||
-				    name.IndexOf("Detective", StringComparison.OrdinalIgnoreCase) >= 0)
+				    name.IndexOf("Detective", StringComparison.OrdinalIgnoreCase) >= 0 ||
+				    name.IndexOf("Book", StringComparison.OrdinalIgnoreCase) >= 0)
 				{
-					// If the Notes button is positioned too close to the right edge and overlaps Chat
-					Vector3 pos = child.localPosition;
-					float targetX = refTransform.localPosition.x - 0.95f;
-					if (pos.x > targetX && Math.Abs(pos.y - refTransform.localPosition.y) < 0.5f)
+					var aspect = child.GetComponent<AspectPosition>();
+					if (aspect != null)
 					{
-						pos.x = targetX;
-						child.localPosition = pos;
+						Vector3 dist = aspect.DistanceFromEdge;
+						if (dist.x < 3.2f)
+						{
+							dist.x = 3.2f;
+							aspect.DistanceFromEdge = dist;
+							aspect.AdjustPosition();
+						}
+					}
+					else
+					{
+						Vector3 pos = child.localPosition;
+						if (pos.x > -3.2f)
+						{
+							pos.x = -3.2f;
+							child.localPosition = pos;
+						}
 					}
 				}
 			}
