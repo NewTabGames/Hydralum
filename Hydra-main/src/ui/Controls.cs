@@ -24,6 +24,7 @@ namespace HydraMenu.ui
 			RoleTypes.Tracker,
 			RoleTypes.Detective,
 			RoleTypes.Viper,
+			(RoleTypes)19,
 			RoleTypes.CrewmateGhost,
 			RoleTypes.ImpostorGhost
 		};

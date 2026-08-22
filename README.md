@@ -87,17 +87,3 @@ dotnet build src/MalumMenu.csproj -c Release
 cd ../../Hydra-main
 dotnet build src/HydraMenu.csproj -c Release
 ```
-
-
-
-
-
-
-
-
-
-This is made by ai ofc. I thought of a cool project and wanted to build it.
-I didn't want to spend months/years learning how to code and once I finally
-learned fully, AU is probably gonna be completely dead. Not like it is already.
-At this point, there isn't even a point in learning how to code manually.
-All you really need to do is understand how it works.

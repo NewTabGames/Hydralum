@@ -196,6 +196,11 @@ public static class MalumESP
     {
         try
         {
+            if (chatBubble == null || chatBubble.NameText == null) return;
+
+            // Ensure name does not wrap onto a second line and collide with message text
+            chatBubble.NameText.enableWordWrapping = false;
+
             // Update the player's nametag appropriately
             chatBubble.NameText.text = Utils.GetNameTag(chatBubble.playerInfo, chatBubble.NameText.text, true);
 
@@ -203,7 +208,6 @@ public static class MalumESP
             chatBubble.NameText.ForceMeshUpdate(true, true);
             chatBubble.Background.size = new Vector2(5.52f, 0.2f + chatBubble.NameText.GetNotDumbRenderedHeight() + chatBubble.TextArea.GetNotDumbRenderedHeight());
             chatBubble.MaskArea.size = chatBubble.Background.size - new Vector2(0f, 0.03f);
-
         }
         catch { }
     }

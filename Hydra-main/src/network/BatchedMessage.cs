@@ -165,13 +165,22 @@ namespace HydraMenu.network
 			writer.EndMessage();
 		}
 
-		public void QueueVotingComplete(MeetingHud.VoterState[] voteStates, NetworkedPlayerInfo ejectedPlayer, bool isTie, bool wasOverruled = false, byte overruleNonce = 0)
+		public void QueueVotingComplete(MeetingHud.VoterState[] voteStates, NetworkedPlayerInfo ejectedPlayer, bool isTie, bool wasOverruled = false, ushort overruleNonce = 0)
 		{
 			msgCount++;
 
 			if((IsGlobal || AmTarget) && MeetingHud.Instance != null)
 			{
-				MeetingHud.Instance.VotingComplete(voteStates, ejectedPlayer, isTie);
+				// VotingComplete changed from 3 params to 5 in v18s (2026.8.18)
+				var vcMethod = typeof(MeetingHud).GetMethod(nameof(MeetingHud.VotingComplete));
+				if (vcMethod != null)
+				{
+					var vcParams = vcMethod.GetParameters();
+					if (vcParams.Length >= 5)
+						vcMethod.Invoke(MeetingHud.Instance, new object[] { voteStates, ejectedPlayer, isTie, wasOverruled, overruleNonce });
+					else
+						vcMethod.Invoke(MeetingHud.Instance, new object[] { voteStates, ejectedPlayer, isTie });
+				}
 				if(AmTarget) return;
 			}
 

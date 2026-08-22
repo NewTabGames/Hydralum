@@ -32,13 +32,14 @@ public partial class MalumMenu : BasePlugin
     public static KeybindListener keybindListener;
 
     public static string malumVersion = "3.2.0";
-    public static List<string> supportedAU = new List<string> { "2026.6.5", "2026.3.31" };
+    public static List<string> supportedAU = new List<string> { "2026.8.18", "2026.8.18s", "2026.6.5", "2026.3.31" };
     public static bool isPanicked = false;
 
     public static ConfigEntry<string> menuKeybind;
     public static ConfigEntry<string> menuHtmlColor;
     public static ConfigEntry<bool> menuOpenOnMouse;
     public static ConfigEntry<bool> menuKeepSubwindowsOpen;
+    public static ConfigEntry<bool> showVersionWarning;
     public static ConfigEntry<string> spoofLevel;
     public static ConfigEntry<string> spoofPlatform;
     public static ConfigEntry<bool> spoofDeviceId;
@@ -73,6 +74,11 @@ public partial class MalumMenu : BasePlugin
                                 "KeepSubwindowsOpen",
                                 false,
                                 "When enabled, closing the MalumMenu GUI will not automatically close its subwindows");
+
+        showVersionWarning = Config.Bind("MalumMenu.GUI",
+                                "ShowVersionWarning",
+                                true,
+                                "When enabled, a warning popup will appear at main menu if your Among Us version is not in the supported list");
 
         autoLoadProfile = Config.Bind("MalumMenu.Profile",
                                 "AutoLoadProfile",
@@ -160,8 +166,8 @@ public partial class MalumMenu : BasePlugin
         {
             if (scene.name == "MainMenu" && !isPanicked)
             {
-                // Warns about unsupported AU versions
-                if (!supportedAU.Contains(Application.version))
+                // Warns about unsupported AU versions if enabled
+                if (showVersionWarning != null && showVersionWarning.Value && !supportedAU.Contains(Application.version))
                 {
                     Utils.ShowPopup("\nThis version of MalumMenu and this version of Among Us are incompatible\n\nInstall the right version to avoid problems");
                 }

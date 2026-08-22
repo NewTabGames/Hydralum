@@ -436,8 +436,27 @@ public static class Utils
         return PlayerControl.LocalPlayer.Data.OwnerId != -2;
     }
 
-    public static string PlatformTypeToString(Platforms platform)
+    public static string PlatformTypeToString(Platforms platform, bool shortFormat = false)
     {
+        if (shortFormat)
+        {
+            return platform switch
+            {
+                Platforms.StandaloneEpicPC => "Epic",
+                Platforms.StandaloneSteamPC => "Steam",
+                Platforms.StandaloneMac => "Mac",
+                Platforms.StandaloneWin10 => "MS Store",
+                Platforms.StandaloneItch => "Itch",
+                Platforms.IPhone => "iOS",
+                Platforms.Android => "Android",
+                Platforms.Switch => "Switch",
+                Platforms.Xbox => "Xbox",
+                Platforms.Playstation => "PS",
+                (Platforms)112 => "Starlight",
+                _ => "Unknown"
+            };
+        }
+
         return platform switch
         {
             Platforms.StandaloneEpicPC => "Epic Games",
@@ -455,7 +474,6 @@ public static class Utils
         };
     }
 
-    // Gets the name for a specified player's role as a string
     // Gets the name for a specified player's role as a string
     // Strings are automatically translated
     public static string GetRoleName(NetworkedPlayerInfo playerData)
@@ -494,7 +512,7 @@ public static class Utils
             var platform = "Unknown";
             if (!isLocalGame && client != null && client.PlatformData != null)
             {
-                try { platform = PlatformTypeToString(client.PlatformData.Platform); } catch { }
+                try { platform = PlatformTypeToString(client.PlatformData.Platform, isChat); } catch { }
             }
 
             var hostString = (client != null && host != null && client == host) ? "Host - " : "";
@@ -515,7 +533,7 @@ public static class Utils
                 {
                     if (isChat)
                     {
-                        return $"<color=#{roleColor}>{nameTag} <size=70%>{roleName}</size></color> <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
+                        return $"<color=#{roleColor}>{nameTag} <size=65%>{roleName}</size></color> <size=65%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
                     }
 
                     return $"<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{roleColor}><size=70%>{roleName}</size>\r\n{nameTag}</color>";

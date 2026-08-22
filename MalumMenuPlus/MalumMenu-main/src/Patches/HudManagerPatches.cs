@@ -41,6 +41,38 @@ public static class HudManager_SetMapAndInfoButtonsEnabled
 	}
 }
 
+[HarmonyPatch]
+public static class MatchInfoHudButton_Update
+{
+	public static System.Reflection.MethodBase TargetMethod()
+	{
+		return AccessTools.Method("MatchInfoHudButton:Update");
+	}
+
+	// Keep MatchInfoHudButton placed neatly to the left of the Chat + Settings dual box (3.65f)
+	public static bool Prefix(Component __instance)
+	{
+		try
+		{
+			if (__instance != null)
+			{
+				var aspect = __instance.GetComponent<AspectPosition>();
+				if (aspect != null)
+				{
+					Vector3 dist = aspect.DistanceFromEdge;
+					dist.x = 3.65f;
+					dist.y = 0.505f;
+					dist.z = -400f;
+					aspect.DistanceFromEdge = dist;
+					aspect.AdjustPosition();
+				}
+			}
+		}
+		catch { }
+		return false;
+	}
+}
+
 [HarmonyPatch(typeof(HudManager), nameof(HudManager.Update))]
 public static class HudManager_Update
 {
