@@ -73,37 +73,106 @@ public static class HudManager_Update
 	{
 		try
 		{
-			if (hud == null || hud.transform == null) return;
+			if (hud == null) return;
 
-			// Look for Detective Notes / Notepad button container
-			for (int i = 0; i < hud.transform.childCount; i++)
+			bool mapActive = hud.MapButton != null && hud.MapButton.gameObject != null && hud.MapButton.gameObject.activeInHierarchy;
+			
+			// 1. Position MapButton on the far right
+			if (hud.MapButton != null)
 			{
-				Transform child = hud.transform.GetChild(i);
-				if (child == null) continue;
-
-				string name = child.name;
-				if (name.IndexOf("Note", StringComparison.OrdinalIgnoreCase) >= 0 ||
-				    name.IndexOf("Detective", StringComparison.OrdinalIgnoreCase) >= 0 ||
-				    name.IndexOf("Book", StringComparison.OrdinalIgnoreCase) >= 0)
+				var mapAspect = hud.MapButton.GetComponent<AspectPosition>();
+				if (mapAspect != null)
 				{
-					var aspect = child.GetComponent<AspectPosition>();
-					if (aspect != null)
+					Vector3 d = mapAspect.DistanceFromEdge;
+					if (Math.Abs(d.x - 0.65f) > 0.05f)
 					{
-						Vector3 dist = aspect.DistanceFromEdge;
-						if (dist.x < 3.2f)
+						d.x = 0.65f;
+						mapAspect.DistanceFromEdge = d;
+						mapAspect.AdjustPosition();
+					}
+				}
+			}
+
+			// 2. Position Chat button & Settings gear (dual box)
+			float chatDistX = mapActive ? 2.05f : 0.65f;
+
+			if (hud.Chat != null && hud.Chat.chatButtonAspectPosition != null)
+			{
+				Vector3 d = hud.Chat.chatButtonAspectPosition.DistanceFromEdge;
+				if (Math.Abs(d.x - chatDistX) > 0.05f)
+				{
+					d.x = chatDistX;
+					hud.Chat.chatButtonAspectPosition.DistanceFromEdge = d;
+					hud.Chat.chatButtonAspectPosition.AdjustPosition();
+				}
+			}
+
+			if (hud.SettingsButton != null)
+			{
+				var settingsAspect = hud.SettingsButton.GetComponent<AspectPosition>();
+				if (settingsAspect != null)
+				{
+					Vector3 d = settingsAspect.DistanceFromEdge;
+					if (Math.Abs(d.x - chatDistX) > 0.05f)
+					{
+						d.x = chatDistX;
+						settingsAspect.DistanceFromEdge = d;
+						settingsAspect.AdjustPosition();
+					}
+				}
+			}
+
+			// 3. Position MatchInfoButton (Notepad with ?) cleanly to the left of the Chat+Settings dual box
+			float matchDistX = chatDistX + 1.4f; // 3.45f when map is active, 2.05f when map is inactive
+
+			try
+			{
+				var matchProp = typeof(HudManager).GetProperty("MatchInfoButton");
+				if (matchProp != null)
+				{
+					var matchBtn = matchProp.GetValue(hud) as Component;
+					if (matchBtn != null)
+					{
+						var matchAspect = matchBtn.GetComponent<AspectPosition>();
+						if (matchAspect != null)
 						{
-							dist.x = 3.2f;
-							aspect.DistanceFromEdge = dist;
-							aspect.AdjustPosition();
+							Vector3 d = matchAspect.DistanceFromEdge;
+							if (Math.Abs(d.x - matchDistX) > 0.05f)
+							{
+								d.x = matchDistX;
+								matchAspect.DistanceFromEdge = d;
+								matchAspect.AdjustPosition();
+							}
 						}
 					}
-					else
+				}
+			}
+			catch { }
+
+			// Also handle any child object matching MatchInfo / Detective Notes / Notepad
+			if (hud.transform != null)
+			{
+				for (int i = 0; i < hud.transform.childCount; i++)
+				{
+					Transform child = hud.transform.GetChild(i);
+					if (child == null) continue;
+
+					string name = child.name;
+					if (name.IndexOf("MatchInfo", StringComparison.OrdinalIgnoreCase) >= 0 ||
+					    name.IndexOf("Detective", StringComparison.OrdinalIgnoreCase) >= 0 ||
+					    name.IndexOf("Book", StringComparison.OrdinalIgnoreCase) >= 0 ||
+					    name.IndexOf("Note", StringComparison.OrdinalIgnoreCase) >= 0)
 					{
-						Vector3 pos = child.localPosition;
-						if (pos.x > -3.2f)
+						var aspect = child.GetComponent<AspectPosition>();
+						if (aspect != null)
 						{
-							pos.x = -3.2f;
-							child.localPosition = pos;
+							Vector3 dist = aspect.DistanceFromEdge;
+							if (Math.Abs(dist.x - matchDistX) > 0.05f)
+							{
+								dist.x = matchDistX;
+								aspect.DistanceFromEdge = dist;
+								aspect.AdjustPosition();
+							}
 						}
 					}
 				}
