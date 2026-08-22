@@ -26,7 +26,7 @@ namespace HydraMenu.anticheat.gamedata
 			return true;
 		}
 
-		public override GameDataTypes GetGameDataType()
+		public override GameDataTypes GetId()
 		{
 			return GameDataTypes.ReadyFlag;
 		}

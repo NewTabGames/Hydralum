@@ -12,7 +12,7 @@ namespace HydraMenu.anticheat
 			return true;
 		}
 
-		public abstract RpcCalls GetRpcCall();
+		public abstract RpcCalls GetId();
 
 		public virtual bool IsHostOnly()
 		{

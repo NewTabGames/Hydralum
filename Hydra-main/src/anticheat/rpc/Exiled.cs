@@ -11,7 +11,7 @@ namespace HydraMenu.anticheat.rpc
 			return false;
 		}
 
-		public override RpcCalls GetRpcCall()
+		public override RpcCalls GetId()
 		{
 			return RpcCalls.Exiled;
 		}

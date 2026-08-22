@@ -40,7 +40,7 @@ namespace HydraMenu
             Styles.selectedGradientIndex = Mathf.Clamp(GradientIndex.Value, 0, Styles.Gradients.Length - 1);
             MainUI.windowPosition = new Vector2(WindowPosX.Value, WindowPosY.Value);
             features.Self.ColorSniper.Enabled = ColorSniperEnabled.Value;
-            features.Self.ColorSniper.TargetColor = (ui.Controls.PlayerColors)Mathf.Clamp(ColorSniperTargetColor.Value, 0, (int)ui.Controls.PlayerColors.Fortegreen);
+            features.Self.ColorSniper.TargetColor = (byte)Mathf.Clamp(ColorSniperTargetColor.Value, 0, (int)ui.Controls.PlayerColors.Fortegreen);
         }
 
         public static void Save()

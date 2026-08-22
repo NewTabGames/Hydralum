@@ -1,4 +1,4 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using InnerNet;
 
 namespace HydraMenu.features
@@ -90,8 +90,7 @@ namespace HydraMenu.features
 			{
 				if(Enabled && target == PlayerControl.LocalPlayer)
 				{
-					string killer = __instance != null && __instance.Data != null ? __instance.Data.PlayerName : "Someone";
-					Hydra.notifications?.Send("Immortality", $"{killer} attempted to kill you!", 5);
+					Hydra.notifications.Send("Immortality", $"{__instance.Data.PlayerName} attempted to kill you!", 5);
 				}
 			}
 		}
@@ -101,9 +100,9 @@ namespace HydraMenu.features
 		{
 			static void Postfix()
 			{
-				if(!Enabled || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null || PlayerControl.LocalPlayer.Data.IsDead) return;
+				if(!Enabled || PlayerControl.LocalPlayer.Data.IsDead) return;
 
-				Hydra.Log?.LogInfo("Meeting has ended, resending Immortality RPC to retain immortal status");
+				Hydra.Log.LogInfo("Meeting has ended, resending Immortality RPC to retain immortal status");
 				VentilationSystem.Update(VentilationSystem.Operation.Enter, CUSTOM_VENT_ID);
 			}
 		}

@@ -35,7 +35,7 @@ namespace HydraMenu.anticheat.rpc
 			return true;
 		}
 
-		public override RpcCalls GetRpcCall()
+		public override RpcCalls GetId()
 		{
 			return RpcCalls.AddVote;
 		}

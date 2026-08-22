@@ -44,7 +44,7 @@ namespace HydraMenu.anticheat.rpc
 			return Utilities.IsAnticheatPresent() ? player.NetId : player.Data.NetId;
 		}
 
-		public override RpcCalls GetRpcCall()
+		public override RpcCalls GetId()
 		{
 			return RpcCalls.SetName;
 		}

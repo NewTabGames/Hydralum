@@ -1,4 +1,4 @@
-using Hazel;
+﻿using Hazel;
 using Il2CppInterop.Runtime;
 using InnerNet;
 using System;
@@ -104,7 +104,7 @@ namespace HydraMenu.anticheat.rpc
 				return false;
 			}
 
-			if(player != null && player.inVent)
+			if(player.inVent)
 			{
 				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to sabotage {system} while in a vent.");
 				return false;
@@ -151,7 +151,7 @@ namespace HydraMenu.anticheat.rpc
 			return true;
 		}
 
-		public override RpcCalls GetRpcCall()
+		public override RpcCalls GetId()
 		{
 			return RpcCalls.UpdateSystem;
 		}

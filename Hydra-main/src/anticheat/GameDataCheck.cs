@@ -12,6 +12,6 @@ namespace HydraMenu.anticheat
 			return true;
 		}
 
-		public abstract GameDataTypes GetGameDataType();
+		public abstract GameDataTypes GetId();
 	}
 }

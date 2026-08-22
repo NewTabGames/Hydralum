@@ -1,6 +1,5 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using InnerNet;
-using UnityEngine;
 
 namespace HydraMenu.anticheat
 {
@@ -11,18 +10,14 @@ namespace HydraMenu.anticheat
 		{
 			static void Postfix(PlayerControl __instance)
 			{
-				if (!Anticheat.Enabled || !Anticheat.CheckSpoofedPlatforms || __instance == null) return;
-				if (__instance.AmOwner) return;
+				if(!Anticheat.Enabled || !Anticheat.CheckSpoofedPlatforms) return;
 
-				ClientData clientData = AmongUsClient.Instance?.GetClientFromCharacter(__instance);
-				if (clientData == null) return;
-
-				if (AmongUsClient.Instance != null && clientData.Id == AmongUsClient.Instance.ClientId) return;
-				if (PlayerControl.LocalPlayer != null && __instance == PlayerControl.LocalPlayer) return;
+				ClientData clientData = AmongUsClient.Instance.GetClientFromCharacter(__instance);
+				if(clientData == null) return;
 
 				PlatformSpecificData platformData = clientData.PlatformData;
 
-				if (!IsValidPlatform(platformData))
+				if(!IsValidPlatform(platformData))
 				{
 					Anticheat.Flag(__instance, $"{clientData.PlayerName} was detected with spoofed platform information. Platform: {platformData.Platform}, Platform name: {platformData.PlatformName}, XUID: {platformData.XboxPlatformId}, PSID: {platformData.PsnPlatformId}.");
 				}

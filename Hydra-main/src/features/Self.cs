@@ -6,6 +6,63 @@ namespace HydraMenu.features
 {
 	internal class Self
 	{
+		// When PlayerControl::RpcPlayAnimation or PlayerControl::RpcSetScanner is called, they check if visual tasks are on before sending the RPC
+		// If we want to be able to send those RPCs even with visual tasks are off, then we will need to reimplement those functions
+		// We could just patch LogicOptionsNormal::GetVisualTasks and LogicOptionsHnS::GetVisualTasks, however the latter is optimized out by the Il2Cpp compiler so our patch won't actually get applied
+		// meaning this will only show task animations on normal games and not hide and seek aswell
+		public static bool AlwaysShowTaskAnimations { get; set; } = true;
+
+		/*
+		[HarmonyPatch(typeof(DataManager), nameof(DataManager.Player.Ban.IsBanned), MethodType.Getter)]
+		public static class BypassIntentionalDisconnectionBlocks
+		{
+			public static bool Enabled { get; set; } = true;
+
+			static void Postfix(ref bool __result)
+			{
+				if(Enabled) __result = false;
+			}
+		}
+		*/
+
+		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.RpcSetScanner))]
+		class AlwaysDoScanAnimation
+		{
+			static bool Prefix(PlayerControl __instance, bool value)
+			{
+				if(__instance != PlayerControl.LocalPlayer) return true;
+
+				if(AlwaysShowTaskAnimations)
+				{
+					RPCEmitter.SendSetScanner(value);
+					return false;
+				}
+				else
+				{
+					return true;
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.RpcPlayAnimation))]
+		class AlwaysDoTaskAnimaton
+		{
+			static bool Prefix(PlayerControl __instance, byte animType)
+			{
+				if(__instance != PlayerControl.LocalPlayer) return true;
+
+				if(AlwaysShowTaskAnimations)
+				{
+					RPCEmitter.SendPlayAnimation(animType);
+					return false;
+				}
+				else
+				{
+					return true;
+				}
+			}
+		}
+
 		[HarmonyPatch(typeof(PlayerStatsData), nameof(PlayerStatsData.ValidateStat))]
 		public static class UpdateStatsFreeplay
 		{
@@ -20,17 +77,28 @@ namespace HydraMenu.features
 			}
 		}
 
+		[HarmonyPatch(typeof(PlayerPhysics), nameof(PlayerPhysics.TrueSpeed), MethodType.Getter)]
+		public static class PlayerSpeedModifier
+		{
+			public static float Multiplier { get; set; } = 1.0f;
+
+			static void Postfix(ref float __result)
+			{
+				__result *= Multiplier;
+			}
+		}
+
 		[HarmonyPatch(typeof(Ladder), nameof(Ladder.SetDestinationCooldown))]
 		public static class NoLadderCooldown
 		{
 			public static bool Enabled { get; set; } = true;
 			static void Postfix(Ladder __instance)
 			{
-				if(Enabled && __instance != null)
+				if(Enabled)
 				{
-					Hydra.Log?.LogMessage($"Used ladder");
+					Hydra.Log.LogMessage($"Used ladder");
 					__instance.CoolDown = 0.0f;
-					if (__instance.Destination != null) __instance.Destination.CoolDown = 0.0f;
+					__instance.Destination.CoolDown = 0.0f;
 				}
 			}
 		}
@@ -42,64 +110,15 @@ namespace HydraMenu.features
 
 			static void Prefix()
 			{
-				if(enabled && PlayerControl.LocalPlayer != null) PlayerControl.LocalPlayer.RemainingEmergencies = 999999;
+				if(enabled) PlayerControl.LocalPlayer.RemainingEmergencies = 999999;
 			}
 		}
 
+		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.RpcSetColor))]
 		public static class ColorSniper
 		{
 			public static bool Enabled { get; set; } = false;
-			public static ui.Controls.PlayerColors TargetColor { get; set; } = ui.Controls.PlayerColors.Red;
-			private static float timer = 0f;
-			private const float checkInterval = 0.5f;
-
-			public static void Run()
-			{
-				if(!Enabled) return;
-				if(PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null || PlayerControl.LocalPlayer.Data.DefaultOutfit == null) return;
-				if(AmongUsClient.Instance == null || !AmongUsClient.Instance.AmConnected) return;
-
-				byte targetColorId = (byte)TargetColor;
-
-				// If we already have the target color, do nothing
-				if(PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId == targetColorId) return;
-
-				timer += UnityEngine.Time.deltaTime;
-				if(timer < checkInterval) return;
-				timer = 0f;
-
-				// Check if another player in the lobby currently has this color
-				bool isColorTaken = false;
-				if(PlayerControl.AllPlayerControls != null)
-				{
-					foreach(PlayerControl player in PlayerControl.AllPlayerControls)
-					{
-						if(player == null || player == PlayerControl.LocalPlayer || player.Data == null || player.Data.Disconnected || player.Data.DefaultOutfit == null) continue;
-						if(player.Data.DefaultOutfit.ColorId == targetColorId)
-						{
-							isColorTaken = true;
-							break;
-						}
-					}
-				}
-
-				if(!isColorTaken)
-				{
-					PlayerControl.LocalPlayer.CmdCheckColor(targetColorId);
-				}
-			}
-		}
-
-		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.FixedUpdate))]
-		public static class PlayerControl_FixedUpdate_ColorSniper
-		{
-			public static void Postfix(PlayerControl __instance)
-			{
-				if(__instance.AmOwner)
-				{
-					ColorSniper.Run();
-				}
-			}
+			public static byte TargetColor { get; set; } = 0;
 		}
 	}
 }
