@@ -26,17 +26,20 @@ public static class MeetingHud_Update
                 {
                     if (!playerVoteArea) continue;
 
-                    var playerData = GameData.Instance?.GetPlayerById(playerVoteArea.TargetPlayerId);
+                    byte targetId = PlayerVoteAreaHelper.GetPlayerId(playerVoteArea);
+                    int votedFor = PlayerVoteAreaHelper.GetVotedFor(playerVoteArea);
 
-                    if (playerData != null && !playerData.Disconnected && playerVoteArea.VotedFor != PlayerVoteArea.HasNotVoted && playerVoteArea.VotedFor != PlayerVoteArea.MissedVote && playerVoteArea.VotedFor != PlayerVoteArea.DeadVote && !votedPlayers.Contains(playerVoteArea.TargetPlayerId))
+                    var playerData = GameData.Instance?.GetPlayerById(targetId);
+
+                    if (playerData != null && !playerData.Disconnected && votedFor != PlayerVoteAreaHelper.HasNotVoted && votedFor != PlayerVoteAreaHelper.MissedVote && votedFor != PlayerVoteAreaHelper.DeadVote && !votedPlayers.Contains(targetId))
                     {
-                        votedPlayers.Add(playerVoteArea.TargetPlayerId);
+                        votedPlayers.Add(targetId);
 
-                        if (playerVoteArea.VotedFor != PlayerVoteArea.SkippedVote)
+                        if (votedFor != PlayerVoteAreaHelper.SkippedVote)
                         {
                             foreach (var votedForArea in __instance.playerStates)
                             {
-                                if (votedForArea != null && votedForArea.TargetPlayerId == playerVoteArea.VotedFor)
+                                if (votedForArea != null && PlayerVoteAreaHelper.GetPlayerId(votedForArea) == votedFor)
                                 {
                                     __instance.BloopAVoteIcon(playerData, 0, votedForArea.transform);
                                     break;
@@ -179,8 +182,8 @@ public static class MeetingHud_CheckForEndVoting
                 {
                     states[index] = new MeetingHud.VoterState
                     {
-                        VoterId = playerState.TargetPlayerId,
-                        VotedForId = playerState.VotedFor
+                        VoterId = PlayerVoteAreaHelper.GetPlayerId(playerState),
+                        VotedForId = (byte)PlayerVoteAreaHelper.GetVotedFor(playerState)
                     };
                 }
             }

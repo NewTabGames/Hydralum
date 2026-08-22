@@ -11,7 +11,6 @@ public static class MalumESP
         if (CheatToggles.noShadows)
         {
             // Change the Z axis position of spore clouds as to make players appear above them
-
             mushroom.sporeMask.transform.position = new Vector3(mushroom.sporeMask.transform.position.x, mushroom.sporeMask.transform.position.y, -1);
             return;
         }
@@ -84,21 +83,16 @@ public static class MalumESP
 
             _resolutionChangeNeeded = true;
 
-            if (Input.GetAxis("Mouse ScrollWheel") < 0f ) // Zoom out
+            if (Input.GetAxis("Mouse ScrollWheel") < 0f) // Zoom out
             {
-
                 // Both the main camera and the UI camera need to be adjusted
-
                 Camera.main.orthographicSize++;
                 hudManager.UICamera.orthographicSize++;
 
-                // Utils.AdjustResolution() seems to be needed to properly sync the game's UI
-                // after a change in orthographicSize
-
+                // Utils.AdjustResolution() seems to be needed to properly sync the game's UI after a change in orthographicSize
                 Utils.AdjustResolution();
-
             }
-            else if (Input.GetAxis("Mouse ScrollWheel") > 0f )
+            else if (Input.GetAxis("Mouse ScrollWheel") > 0f)
             {
                 // Zoom in
                 if (!(Camera.main.orthographicSize > 3f)) return; // Never go below the default orthographicSize: 3f
@@ -135,7 +129,8 @@ public static class MalumESP
             try
             {
                 // Fetch the NetworkedPlayerInfo of each playerState
-                var data = GameData.Instance != null ? GameData.Instance.GetPlayerById(playerState.TargetPlayerId) : null;
+                byte targetId = PlayerVoteAreaHelper.GetPlayerId(playerState);
+                var data = GameData.Instance != null ? GameData.Instance.GetPlayerById(targetId) : null;
                 if (data == null || data.Disconnected) continue;
 
                 string playerName = data.PlayerName ?? (data.DefaultOutfit != null ? data.DefaultOutfit.PlayerName : "");
@@ -193,7 +188,8 @@ public static class MalumESP
                     playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0f, 0f);
                 }
             }
-        } catch { }
+        }
+        catch { }
     }
 
     public static void ChatNametags(ChatBubble chatBubble)
@@ -208,19 +204,20 @@ public static class MalumESP
             chatBubble.Background.size = new Vector2(5.52f, 0.2f + chatBubble.NameText.GetNotDumbRenderedHeight() + chatBubble.TextArea.GetNotDumbRenderedHeight());
             chatBubble.MaskArea.size = chatBubble.Background.size - new Vector2(0f, 0.03f);
 
-        } catch { }
+        }
+        catch { }
     }
 
     public static void SeeGhostsCheat(PlayerPhysics playerPhysics)
     {
-        try{
-
-            if(playerPhysics.myPlayer.Data.IsDead && !PlayerControl.LocalPlayer.Data.IsDead)
+        try
+        {
+            if (playerPhysics.myPlayer.Data.IsDead && !PlayerControl.LocalPlayer.Data.IsDead)
             {
                 playerPhysics.myPlayer.Visible = CheatToggles.seeGhosts;
             }
-
-        }catch{}
+        }
+        catch { }
     }
 
     public static void FreecamCheat()

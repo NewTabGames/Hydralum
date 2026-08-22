@@ -781,3 +781,45 @@ public static class Utils
         PanicCleaner.Create();
     }
 }
+
+public static class PlayerVoteAreaHelper
+{
+    private static readonly System.Reflection.PropertyInfo PlayerIdProp = typeof(PlayerVoteArea).GetProperty("PlayerId") ?? typeof(PlayerVoteArea).GetProperty("TargetPlayerId");
+    private static readonly System.Reflection.PropertyInfo VotedForProp = typeof(PlayerVoteArea).GetProperty("VotedForId") ?? typeof(PlayerVoteArea).GetProperty("VotedFor");
+
+    public const byte HasNotVoted = 254;
+    public const byte SkippedVote = 253;
+    public const byte MissedVote = 252;
+    public const byte DeadVote = 255;
+
+    public static byte GetPlayerId(PlayerVoteArea area)
+    {
+        if (area == null || PlayerIdProp == null) return 255;
+        try
+        {
+            object val = PlayerIdProp.GetValue(area);
+            if (val == null) return 255;
+            return Convert.ToByte(val);
+        }
+        catch
+        {
+            return 255;
+        }
+    }
+
+    public static int GetVotedFor(PlayerVoteArea area)
+    {
+        if (area == null || VotedForProp == null) return HasNotVoted;
+        try
+        {
+            object val = VotedForProp.GetValue(area);
+            if (val == null) return HasNotVoted;
+            return Convert.ToInt32(val);
+        }
+        catch
+        {
+            return HasNotVoted;
+        }
+    }
+}
+
