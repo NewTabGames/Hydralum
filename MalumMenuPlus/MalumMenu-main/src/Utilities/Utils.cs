@@ -794,31 +794,68 @@ public static class PlayerVoteAreaHelper
 
     public static byte GetPlayerId(PlayerVoteArea area)
     {
-        if (area == null || PlayerIdProp == null) return 255;
+        if (area == null) return 255;
         try
         {
-            object val = PlayerIdProp.GetValue(area);
-            if (val == null) return 255;
-            return Convert.ToByte(val);
+            if (PlayerIdProp != null)
+            {
+                object val = PlayerIdProp.GetValue(area);
+                return ExtractByte(val, 255);
+            }
         }
-        catch
-        {
-            return 255;
-        }
+        catch { }
+        return 255;
     }
 
     public static int GetVotedFor(PlayerVoteArea area)
     {
-        if (area == null || VotedForProp == null) return HasNotVoted;
+        if (area == null) return HasNotVoted;
         try
         {
-            object val = VotedForProp.GetValue(area);
-            if (val == null) return HasNotVoted;
-            return Convert.ToInt32(val);
+            if (VotedForProp != null)
+            {
+                object val = VotedForProp.GetValue(area);
+                return ExtractByte(val, HasNotVoted);
+            }
+        }
+        catch { }
+        return HasNotVoted;
+    }
+
+    private static byte ExtractByte(object val, byte fallback)
+    {
+        if (val == null) return fallback;
+        if (val is byte b) return b;
+        if (val is sbyte sb) return (byte)sb;
+        if (val is int i) return (byte)i;
+
+        try
+        {
+            var valField = val.GetType().GetField("Value", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (valField != null)
+            {
+                var fv = valField.GetValue(val);
+                if (fv is byte fb) return fb;
+                if (fv is sbyte fsb) return (byte)fsb;
+                if (fv is int fi) return (byte)fi;
+            }
+        }
+        catch { }
+
+        try
+        {
+            string s = val.ToString();
+            if (byte.TryParse(s, out byte pb)) return pb;
+        }
+        catch { }
+
+        try
+        {
+            return System.Convert.ToByte(val);
         }
         catch
         {
-            return HasNotVoted;
+            return fallback;
         }
     }
 }
