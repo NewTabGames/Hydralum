@@ -8,7 +8,7 @@ namespace HydraMenu.features
 		public static class OnChat
 		{
 			public static bool LogChatMessages { get; set; } = true;
-			public static bool ShowMessagesByGhosts { get; set; } = true;
+			public static bool ShowMessagesByGhosts { get; set; } = false;
 
 			static void Postfix(ChatController __instance, PlayerControl sourcePlayer, string chatText)
 			{

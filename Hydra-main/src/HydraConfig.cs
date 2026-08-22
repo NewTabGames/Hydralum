@@ -17,6 +17,10 @@ namespace HydraMenu
         public static ConfigEntry<float> WindowPosY;
         public static ConfigEntry<bool> ColorSniperEnabled;
         public static ConfigEntry<int> ColorSniperTargetColor;
+        public static ConfigEntry<bool> ShowMessagesByGhosts;
+        public static ConfigEntry<bool> ShowGhosts;
+        public static ConfigEntry<bool> Fullbright;
+        public static ConfigEntry<bool> AlwaysVisibleChat;
 
         public static void Init(ConfigFile config)
         {
@@ -31,6 +35,10 @@ namespace HydraMenu
             WindowPosY = config.Bind("GUI", "WindowPosY", 100f, "Saved window Y position");
             ColorSniperEnabled = config.Bind("Self", "ColorSniperEnabled", false, "Automatically grab your chosen color when available in lobby");
             ColorSniperTargetColor = config.Bind("Self", "ColorSniperTargetColor", 0, "Target color index for Color Sniper");
+            ShowMessagesByGhosts = config.Bind("Visuals", "ShowMessagesByGhosts", false, "Show messages sent by dead ghosts in chat while alive");
+            ShowGhosts = config.Bind("Visuals", "ShowGhosts", false, "Render dead ghost players while alive");
+            Fullbright = config.Bind("Visuals", "Fullbright", false, "Maximum player vision/lighting");
+            AlwaysVisibleChat = config.Bind("Visuals", "AlwaysVisibleChat", false, "Keep chat bubble button visible during gameplay");
 
             // Apply loaded config values
             MainUI.scale = Mathf.Clamp(MenuScale.Value, 0.5f, 2.0f);
@@ -41,6 +49,10 @@ namespace HydraMenu
             MainUI.windowPosition = new Vector2(WindowPosX.Value, WindowPosY.Value);
             features.Self.ColorSniper.Enabled = ColorSniperEnabled.Value;
             features.Self.ColorSniper.TargetColor = (byte)Mathf.Clamp(ColorSniperTargetColor.Value, 0, (int)ui.Controls.PlayerColors.Fortegreen);
+            features.Chat.OnChat.ShowMessagesByGhosts = ShowMessagesByGhosts.Value;
+            features.Visuals.ShowGhosts.Enabled = ShowGhosts.Value;
+            features.Visuals.Fullbright.Enabled = Fullbright.Value;
+            features.Chat.AlwaysVisibleChat.Enabled = AlwaysVisibleChat.Value;
         }
 
         public static void Save()
@@ -57,6 +69,10 @@ namespace HydraMenu
             if (WindowPosY != null) WindowPosY.Value = MainUI.windowPosition.y;
             if (ColorSniperEnabled != null) ColorSniperEnabled.Value = features.Self.ColorSniper.Enabled;
             if (ColorSniperTargetColor != null) ColorSniperTargetColor.Value = (int)features.Self.ColorSniper.TargetColor;
+            if (ShowMessagesByGhosts != null) ShowMessagesByGhosts.Value = features.Chat.OnChat.ShowMessagesByGhosts;
+            if (ShowGhosts != null) ShowGhosts.Value = features.Visuals.ShowGhosts.Enabled;
+            if (Fullbright != null) Fullbright.Value = features.Visuals.Fullbright.Enabled;
+            if (AlwaysVisibleChat != null) AlwaysVisibleChat.Value = features.Chat.AlwaysVisibleChat.Enabled;
         }
     }
 }
