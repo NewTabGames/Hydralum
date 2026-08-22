@@ -160,7 +160,7 @@ public static class OutfitManager
         if (outfit == null) return false;
 
         // Auto-sync Color Sniper target color to match this preset
-        CheatToggles.colorSniperTargetColor = (byte)Mathf.Clamp(outfit.ColorId, 0, 17);
+        MalumColorSniper.SetTargetColor((byte)outfit.ColorId);
         if (CheatToggles.colorSniper)
         {
             MalumColorSniper.TrySnipeColor();

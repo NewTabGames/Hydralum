@@ -48,6 +48,8 @@ public partial class MalumMenu : BasePlugin
     public static ConfigEntry<bool> guestMode;
     public static ConfigEntry<bool> autoLoadProfile;
     public static ConfigEntry<string> configEditor;
+    public static ConfigEntry<byte> colorSniperTargetColor;
+    public static ConfigEntry<bool> colorSniperEnabled;
 
     public override void Load()
     {
@@ -121,6 +123,19 @@ public partial class MalumMenu : BasePlugin
                                 "NoTelemetry",
                                 true,
                                 "When enabled, it will stop Among Us from collecting analytics of your games and sending them to Innersloth using Unity Analytics");
+
+        colorSniperTargetColor = Config.Bind("MalumMenu.Outfits",
+                                "ColorSniperTargetColor",
+                                (byte)0,
+                                "The saved target color ID (0-17) for Color Sniper");
+
+        colorSniperEnabled = Config.Bind("MalumMenu.Outfits",
+                                "ColorSniperEnabled",
+                                false,
+                                "When enabled, Color Sniper will automatically snipe your target color in lobbies");
+
+        CheatToggles.colorSniperTargetColor = colorSniperTargetColor.Value;
+        CheatToggles.colorSniper = colorSniperEnabled.Value;
 
         // Enabled by default
         CheatToggles.unlockFeatures = true;

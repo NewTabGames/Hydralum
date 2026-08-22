@@ -7,6 +7,25 @@ public static class MalumColorSniper
 {
     private static float _checkTimer = 0f;
 
+    public static void SetTargetColor(byte targetColor)
+    {
+        byte clamped = (byte)Mathf.Clamp(targetColor, 0, 17);
+        CheatToggles.colorSniperTargetColor = clamped;
+        if (MalumMenu.colorSniperTargetColor != null)
+        {
+            MalumMenu.colorSniperTargetColor.Value = clamped;
+        }
+    }
+
+    public static void SetEnabled(bool enabled)
+    {
+        CheatToggles.colorSniper = enabled;
+        if (MalumMenu.colorSniperEnabled != null)
+        {
+            MalumMenu.colorSniperEnabled.Value = enabled;
+        }
+    }
+
     public static void Update()
     {
         if (!CheatToggles.colorSniper) return;

@@ -1,4 +1,4 @@
-﻿using AmongUs.GameOptions;
+using AmongUs.GameOptions;
 using HydraMenu.features;
 using UnityEngine;
 
@@ -20,8 +20,6 @@ namespace HydraMenu.ui.sections
 
 			Roles.DisableShapeshiftAnimation = GUILayout.Toggle(Roles.DisableShapeshiftAnimation, "Disable Shapeshift Animation");
 			// Roles.DisablePhantomEndAnimation = GUILayout.Toggle(Roles.DisablePhantomEndAnimation, "Disable Phantom End Animation");
-
-			Roles.NoKillChecks = GUILayout.Toggle(Roles.NoKillChecks, "No Kill Checks");
 
 			GUILayout.Label($"Change role to: {selectedRole}");
 			GUILayout.BeginHorizontal();

@@ -22,6 +22,8 @@ DLLs/
 /MalumMenu-*
 *Steam-Itch*
 Antigravity.md
+scratch/
+**/scratch/
 
 # OS generated files
 .DS_Store
