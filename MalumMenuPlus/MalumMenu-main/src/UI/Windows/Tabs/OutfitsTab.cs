@@ -60,6 +60,10 @@ public class OutfitsTab : ITab
 
         GUILayout.Space(10);
 
+        DrawSniperSection();
+
+        GUILayout.Space(10);
+
         DrawToolsSection();
 
         GUILayout.EndVertical();
@@ -232,6 +236,49 @@ public class OutfitsTab : ITab
             }
             GUILayout.EndHorizontal();
         }
+    }
+
+    private void DrawSniperSection()
+    {
+        GUILayout.Label("Color Sniper", GUIStylePreset.TabSubtitle);
+
+        CheatToggles.colorSniper = GUILayout.Toggle(CheatToggles.colorSniper, " Enable Color Sniper");
+
+        byte currentTarget = CheatToggles.colorSniperTargetColor;
+        string colName = currentTarget < ColorNames.Length ? ColorNames[currentTarget] : $"Color #{currentTarget}";
+        
+        string hex = "FFFFFF";
+        if (Palette.PlayerColors != null && currentTarget < Palette.PlayerColors.Length)
+        {
+            hex = ColorUtility.ToHtmlStringRGB(Palette.PlayerColors[currentTarget]);
+        }
+
+        GUILayout.Label($"Target Color: <b><color=#{hex}>{colName}</color></b>", GUIStylePreset.Hint);
+
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("<", GUIStylePreset.NormalButton, GUILayout.Width(30), GUILayout.Height(24)))
+        {
+            CheatToggles.colorSniperTargetColor = (byte)(CheatToggles.colorSniperTargetColor > 0 ? CheatToggles.colorSniperTargetColor - 1 : ColorNames.Length - 1);
+            if (CheatToggles.colorSniper) MalumColorSniper.TrySnipeColor();
+        }
+
+        if (GUILayout.Button($"<color=#{hex}>Claim {colName}</color>", GUIStylePreset.NormalButton, GUILayout.Height(24)))
+        {
+            if (PlayerControl.LocalPlayer != null)
+            {
+                PlayerControl.LocalPlayer.CmdCheckColor(CheatToggles.colorSniperTargetColor);
+            }
+            SetStatus($"<color=#{hex}>Requested {colName}!</color>");
+        }
+
+        if (GUILayout.Button(">", GUIStylePreset.NormalButton, GUILayout.Width(30), GUILayout.Height(24)))
+        {
+            CheatToggles.colorSniperTargetColor = (byte)(CheatToggles.colorSniperTargetColor < ColorNames.Length - 1 ? CheatToggles.colorSniperTargetColor + 1 : 0);
+            if (CheatToggles.colorSniper) MalumColorSniper.TrySnipeColor();
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Label("<size=10><color=#888888>Auto-syncs when equipping presets</color></size>");
     }
 
     private void DrawToolsSection()

@@ -56,6 +56,8 @@ public class MenuUI : MonoBehaviour
     {
         FpsUnlocker.Apply();
 
+        MalumColorSniper.Update();
+
         // Vent Network hop keys (Right arrow = next / Left arrow = previous), polled here for GetKeyDown
         MalumCheats.VentNetworkInput();
 

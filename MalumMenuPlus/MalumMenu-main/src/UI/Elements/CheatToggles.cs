@@ -184,6 +184,10 @@ public struct CheatToggles
     public static bool anticheatDiscard;
     public static bool anticheatPlatform;
 
+    // Outfits & Avatar
+    public static bool colorSniper;
+    public static byte colorSniperTargetColor;
+
     // Passive
     public static bool unlockFps;
     public static bool unlockFeatures;

@@ -159,6 +159,13 @@ public static class OutfitManager
     {
         if (outfit == null) return false;
 
+        // Auto-sync Color Sniper target color to match this preset
+        CheatToggles.colorSniperTargetColor = (byte)Mathf.Clamp(outfit.ColorId, 0, 17);
+        if (CheatToggles.colorSniper)
+        {
+            MalumColorSniper.TrySnipeColor();
+        }
+
         bool applied = false;
 
         // 1. Update Game Customization Data (works in Inventory, Wardrobe, Main Menu & Game)
