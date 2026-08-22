@@ -6,6 +6,24 @@ using Object = UnityEngine.Object;
 
 namespace MalumMenu;
 
+[HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Start))]
+public static class MeetingHud_Start
+{
+    public static void Postfix()
+    {
+        MeetingHud_Update.votedPlayers.Clear();
+    }
+}
+
+[HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.OnDestroy))]
+public static class MeetingHud_OnDestroy
+{
+    public static void Postfix()
+    {
+        MeetingHud_Update.votedPlayers.Clear();
+    }
+}
+
 [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Update))]
 public static class MeetingHud_Update
 {
@@ -35,19 +53,23 @@ public static class MeetingHud_Update
                     {
                         votedPlayers.Add(targetId);
 
-                        if (votedFor != PlayerVoteAreaHelper.SkippedVote)
+                        bool bloopedOnPlayer = false;
+                        if (votedFor != PlayerVoteAreaHelper.SkippedVote && votedFor != 253)
                         {
                             foreach (var votedForArea in __instance.playerStates)
                             {
                                 if (votedForArea != null && PlayerVoteAreaHelper.GetPlayerId(votedForArea) == votedFor)
                                 {
                                     __instance.BloopAVoteIcon(playerData, 0, votedForArea.transform);
+                                    bloopedOnPlayer = true;
                                     break;
                                 }
                             }
                         }
-                        else if (__instance.SkippedVoting != null)
+
+                        if (!bloopedOnPlayer && __instance.SkippedVoting != null)
                         {
+                            __instance.SkippedVoting.SetActive(true);
                             __instance.BloopAVoteIcon(playerData, 0, __instance.SkippedVoting.transform);
                         }
                     }
@@ -62,8 +84,11 @@ public static class MeetingHud_Update
 
                     foreach (var spriteRenderer in voteSpreader.Votes)
                     {
-                        if (spriteRenderer != null && spriteRenderer.gameObject != null)
-                            spriteRenderer.gameObject.SetActive(true);
+                        if (spriteRenderer != null)
+                        {
+                            if (spriteRenderer.gameObject != null) spriteRenderer.gameObject.SetActive(true);
+                            spriteRenderer.enabled = true;
+                        }
                     }
                 }
 
@@ -72,10 +97,18 @@ public static class MeetingHud_Update
                     var voteSpreader = __instance.SkippedVoting.transform.GetComponent<VoteSpreader>();
                     if (voteSpreader != null && voteSpreader.Votes != null)
                     {
+                        if (voteSpreader.Votes.Count > 0)
+                        {
+                            __instance.SkippedVoting.SetActive(true);
+                        }
+
                         foreach (var spriteRenderer in voteSpreader.Votes)
                         {
-                            if (spriteRenderer != null && spriteRenderer.gameObject != null)
-                                spriteRenderer.gameObject.SetActive(true);
+                            if (spriteRenderer != null)
+                            {
+                                if (spriteRenderer.gameObject != null) spriteRenderer.gameObject.SetActive(true);
+                                spriteRenderer.enabled = true;
+                            }
                         }
                     }
                 }

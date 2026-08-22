@@ -88,6 +88,11 @@ public class RolesTab : ITab
         GUILayout.Label("Crewmate", GUIStylePreset.TabSubtitle);
 
         CheatToggles.showTasksMenu = GUILayout.Toggle(CheatToggles.showTasksMenu, " Show Tasks Menu");
+
+        if (GUILayout.Button("Complete All Tasks"))
+        {
+            CheatToggles.completeMyTasks = true;
+        }
     }
 
     private void DrawTracker()
