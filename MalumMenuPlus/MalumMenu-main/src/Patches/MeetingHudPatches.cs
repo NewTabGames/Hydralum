@@ -20,7 +20,7 @@ public static class MeetingHud_Update
         {
             if (__instance == null || __instance.playerStates == null) return;
 
-            if (__instance.state < MeetingHud.VoteStates.Results)
+            if (__instance.resultsStartedAt <= 0f)
             {
                 foreach (var playerVoteArea in __instance.playerStates)
                 {
@@ -185,7 +185,19 @@ public static class MeetingHud_CheckForEndVoting
                 }
             }
 
-            __instance.RpcVotingComplete(states, exiled, tie);
+            var rpcMethod = typeof(MeetingHud).GetMethod(nameof(MeetingHud.RpcVotingComplete));
+            if (rpcMethod != null)
+            {
+                var pars = rpcMethod.GetParameters();
+                if (pars.Length >= 5)
+                {
+                    rpcMethod.Invoke(__instance, new object[] { states, exiled, tie, false, (ushort)0 });
+                }
+                else
+                {
+                    rpcMethod.Invoke(__instance, new object[] { states, exiled, tie });
+                }
+            }
 
             return false;
         }

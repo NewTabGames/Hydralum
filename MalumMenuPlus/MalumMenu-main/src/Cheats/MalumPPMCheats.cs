@@ -86,11 +86,26 @@ public static class MalumPPMCheats
                     }
                 }
 
-                // Player pick menu to choose any living player and eject them during meeting
                 PlayerPickMenu.OpenPlayerPickMenu(playerInfo, (Action)(() =>
                 {
                     NetworkedPlayerInfo playerToEject = PlayerPickMenu.targetPlayerData;
-                    MeetingHud.Instance.RpcVotingComplete(new Il2CppStructArray<MeetingHud.VoterState>(0L), playerToEject, false);
+                    if (MeetingHud.Instance != null && playerToEject != null)
+                    {
+                        var rpcMethod = typeof(MeetingHud).GetMethod(nameof(MeetingHud.RpcVotingComplete));
+                        if (rpcMethod != null)
+                        {
+                            var states = new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<MeetingHud.VoterState>(0L);
+                            var pars = rpcMethod.GetParameters();
+                            if (pars.Length >= 5)
+                            {
+                                rpcMethod.Invoke(MeetingHud.Instance, new object[] { states, playerToEject, false, false, (ushort)0 });
+                            }
+                            else
+                            {
+                                rpcMethod.Invoke(MeetingHud.Instance, new object[] { states, playerToEject, false });
+                            }
+                        }
+                    }
                 }));
 
                 _ejectPlayerActive = true;

@@ -48,9 +48,22 @@ public static class MalumCheats
     {
         if (!CheatToggles.skipMeeting) return;
 
-        if (Utils.isMeeting)
+        if (Utils.isMeeting && MeetingHud.Instance != null)
         {
-            MeetingHud.Instance.RpcVotingComplete(new Il2CppStructArray<MeetingHud.VoterState>(0L), null, true);
+            var rpcMethod = typeof(MeetingHud).GetMethod(nameof(MeetingHud.RpcVotingComplete));
+            if (rpcMethod != null)
+            {
+                var states = new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<MeetingHud.VoterState>(0L);
+                var pars = rpcMethod.GetParameters();
+                if (pars.Length >= 5)
+                {
+                    rpcMethod.Invoke(MeetingHud.Instance, new object[] { states, null, true, false, (ushort)0 });
+                }
+                else
+                {
+                    rpcMethod.Invoke(MeetingHud.Instance, new object[] { states, null, true });
+                }
+            }
         }
 
         CheatToggles.skipMeeting = false;
