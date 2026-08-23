@@ -89,6 +89,13 @@ namespace MalumMenu
                                 }
                                 OnlineCount = Math.Max(1, active);
                                 AppDomain.CurrentDomain.SetData("HydralumOnlineCount", OnlineCount);
+
+                                // Update live summary in Firebase Console
+                                var statsPayload = $"{{\"online_players\":{OnlineCount},\"last_updated\":{now}}}";
+                                using (var statsContent = new StringContent(statsPayload, Encoding.UTF8, "application/json"))
+                                {
+                                    await HttpClient.PutAsync("https://hydralum-presence-default-rtdb.firebaseio.com/stats.json", statsContent, token);
+                                }
                             }
                         }
                     }
