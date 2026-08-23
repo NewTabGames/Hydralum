@@ -66,11 +66,34 @@ namespace HydraMenu
                     puid = PlayerControl.LocalPlayer.Data.Puid ?? "";
                 }
 
-                CurrentRoomCode = room ?? "";
-                LocalPlayerName = name ?? "";
-                LocalPlayerId = id;
-                LocalFriendCode = fc ?? "";
-                LocalPuid = puid ?? "";
+                if (!string.IsNullOrEmpty(room))
+                {
+                    CurrentRoomCode = room;
+                }
+                else if (AmongUsClient.Instance == null || AmongUsClient.Instance.GameId == 0)
+                {
+                    CurrentRoomCode = "";
+                }
+
+                if (!string.IsNullOrEmpty(name))
+                {
+                    LocalPlayerName = name;
+                }
+
+                if (id >= 0)
+                {
+                    LocalPlayerId = id;
+                }
+
+                if (!string.IsNullOrEmpty(fc))
+                {
+                    LocalFriendCode = fc;
+                }
+
+                if (!string.IsNullOrEmpty(puid))
+                {
+                    LocalPuid = puid;
+                }
 
                 if (CurrentRoomCode != _lastRoomCode)
                 {
@@ -105,6 +128,26 @@ namespace HydraMenu
                 if (_currentRoomPeerIds.Contains(playerInfo.PlayerId))
                     return true;
             }
+
+            // Cross-plugin fallback via AppDomain
+            try
+            {
+                if (AppDomain.CurrentDomain.GetData("HydralumPeerNames") is HashSet<string> domainPeers)
+                {
+                    if (!string.IsNullOrEmpty(playerInfo.PlayerName) && domainPeers.Contains(playerInfo.PlayerName))
+                        return true;
+                    if (!string.IsNullOrEmpty(playerInfo.FriendCode) && domainPeers.Contains(playerInfo.FriendCode))
+                        return true;
+                    if (!string.IsNullOrEmpty(playerInfo.Puid) && domainPeers.Contains(playerInfo.Puid))
+                        return true;
+                }
+                if (AppDomain.CurrentDomain.GetData("HydralumPeerIds") is HashSet<byte> domainPeerIds)
+                {
+                    if (domainPeerIds.Contains(playerInfo.PlayerId))
+                        return true;
+                }
+            }
+            catch { }
 
             return false;
         }
@@ -211,6 +254,9 @@ namespace HydraMenu
                                     _currentRoomPeerIds.Clear();
                                     foreach (var id in matchedPeerIds) _currentRoomPeerIds.Add(id);
                                 }
+
+                                AppDomain.CurrentDomain.SetData("HydralumPeerNames", matchedPeers);
+                                AppDomain.CurrentDomain.SetData("HydralumPeerIds", matchedPeerIds);
 
                                 OnlineCount = Math.Max(1, active);
                                 AppDomain.CurrentDomain.SetData("HydralumOnlineCount", OnlineCount);

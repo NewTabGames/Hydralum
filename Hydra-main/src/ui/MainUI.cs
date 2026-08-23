@@ -63,6 +63,9 @@ namespace HydraMenu.ui
 
 		public void Update()
 		{
+			AnnouncementManager.Update();
+			PresenceTracker.UpdateMainThread();
+
 			if(Input.GetKeyDown(KeyCode.F6))
 			{
 				if (IsMalumOpen())
@@ -110,9 +113,6 @@ namespace HydraMenu.ui
 
 				sections[activeTab].HandleSubsectionMove(offset);
 			}
-
-			AnnouncementManager.Update();
-			PresenceTracker.UpdateMainThread();
 		}
 
 		public void OnDisable()
