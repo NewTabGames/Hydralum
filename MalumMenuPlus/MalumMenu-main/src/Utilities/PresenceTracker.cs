@@ -60,7 +60,13 @@ namespace MalumMenu
                     name = PlayerControl.LocalPlayer.Data.PlayerName ?? "";
                     id = PlayerControl.LocalPlayer.PlayerId;
                 }
-                else
+
+                if (string.IsNullOrEmpty(name))
+                {
+                    try { name = AmongUs.Data.DataManager.Player.Customization.Name ?? ""; } catch { }
+                }
+
+                if (string.IsNullOrEmpty(name))
                 {
                     try { name = PlayerPrefs.GetString("PlayerName", ""); } catch { }
                 }
