@@ -15,6 +15,56 @@ namespace HydraMenu
         public string color { get; set; } = "#00FFAA";
         public string link { get; set; } = "";
         public string linkText { get; set; } = "Open Link";
+
+        public static AnnouncementData FromJson(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json) || json == "null") return null;
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Object) return null;
+
+                var data = new AnnouncementData();
+
+                if (root.TryGetProperty("enabled", out var propEnabled))
+                {
+                    if (propEnabled.ValueKind == JsonValueKind.True) data.enabled = true;
+                    else if (propEnabled.ValueKind == JsonValueKind.False) data.enabled = false;
+                    else if (propEnabled.ValueKind == JsonValueKind.String)
+                        data.enabled = bool.TryParse(propEnabled.GetString(), out var b) && b;
+                    else if (propEnabled.ValueKind == JsonValueKind.Number)
+                        data.enabled = propEnabled.GetInt32() != 0;
+                }
+
+                if (root.TryGetProperty("title", out var propTitle))
+                    data.title = propTitle.ToString();
+
+                if (root.TryGetProperty("message", out var propMsg))
+                    data.message = propMsg.ToString();
+
+                if (root.TryGetProperty("color", out var propColor))
+                    data.color = propColor.ToString();
+
+                if (root.TryGetProperty("link", out var propLink))
+                {
+                    string l = propLink.ToString();
+                    if (!string.IsNullOrWhiteSpace(l) && l != "Value") data.link = l;
+                }
+
+                if (root.TryGetProperty("linkText", out var propLinkText))
+                {
+                    string lt = propLinkText.ToString();
+                    if (!string.IsNullOrWhiteSpace(lt) && lt != "Value") data.linkText = lt;
+                }
+
+                return data;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 
     public static class AnnouncementManager
@@ -48,22 +98,7 @@ namespace HydraMenu
             if (raw != _lastSyncedJson)
             {
                 _lastSyncedJson = raw;
-                if (!string.IsNullOrWhiteSpace(raw) && raw != "null")
-                {
-                    try
-                    {
-                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                        Current = JsonSerializer.Deserialize<AnnouncementData>(raw, options);
-                    }
-                    catch
-                    {
-                        Current = null;
-                    }
-                }
-                else
-                {
-                    Current = null;
-                }
+                Current = AnnouncementData.FromJson(raw);
             }
         }
 
