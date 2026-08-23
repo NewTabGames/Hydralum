@@ -23,8 +23,6 @@ namespace HydraMenu
         public static string CurrentRoomCode { get; private set; } = "";
         public static string LocalPlayerName { get; private set; } = "";
         public static int LocalPlayerId { get; private set; } = -1;
-        public static string LocalFriendCode { get; private set; } = "";
-        public static string LocalPuid { get; private set; } = "";
 
         private static string _lastRoomCode = "";
         private static volatile bool _forceRefresh = false;
@@ -56,15 +54,11 @@ namespace HydraMenu
 
                 string name = "";
                 int id = -1;
-                string fc = "";
-                string puid = "";
 
                 if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null)
                 {
                     name = PlayerControl.LocalPlayer.Data.PlayerName ?? "";
                     id = PlayerControl.LocalPlayer.PlayerId;
-                    fc = PlayerControl.LocalPlayer.Data.FriendCode ?? "";
-                    puid = PlayerControl.LocalPlayer.Data.Puid ?? "";
                 }
                 else
                 {
@@ -88,16 +82,6 @@ namespace HydraMenu
                 if (id >= 0)
                 {
                     LocalPlayerId = id;
-                }
-
-                if (!string.IsNullOrEmpty(fc))
-                {
-                    LocalFriendCode = fc;
-                }
-
-                if (!string.IsNullOrEmpty(puid))
-                {
-                    LocalPuid = puid;
                 }
 
                 if (CurrentRoomCode != _lastRoomCode)
@@ -124,12 +108,6 @@ namespace HydraMenu
                 if (!string.IsNullOrEmpty(playerInfo.PlayerName) && _currentRoomPeers.Contains(playerInfo.PlayerName))
                     return true;
 
-                if (!string.IsNullOrEmpty(playerInfo.FriendCode) && _currentRoomPeers.Contains(playerInfo.FriendCode))
-                    return true;
-
-                if (!string.IsNullOrEmpty(playerInfo.Puid) && _currentRoomPeers.Contains(playerInfo.Puid))
-                    return true;
-
                 if (_currentRoomPeerIds.Contains(playerInfo.PlayerId))
                     return true;
             }
@@ -140,10 +118,6 @@ namespace HydraMenu
                 if (AppDomain.CurrentDomain.GetData("HydralumPeerNames") is HashSet<string> domainPeers)
                 {
                     if (!string.IsNullOrEmpty(playerInfo.PlayerName) && domainPeers.Contains(playerInfo.PlayerName))
-                        return true;
-                    if (!string.IsNullOrEmpty(playerInfo.FriendCode) && domainPeers.Contains(playerInfo.FriendCode))
-                        return true;
-                    if (!string.IsNullOrEmpty(playerInfo.Puid) && domainPeers.Contains(playerInfo.Puid))
                         return true;
                 }
                 if (AppDomain.CurrentDomain.GetData("HydralumPeerIds") is HashSet<byte> domainPeerIds)
@@ -177,7 +151,8 @@ namespace HydraMenu
             try
             {
                 _cts?.Cancel();
-                _ = HttpClient.DeleteAsync($"{FirebaseUrl}/{SessionId}.json");
+                using var request = new HttpRequestMessage(HttpMethod.Delete, $"{FirebaseUrl}/{SessionId}.json");
+                HttpClient.Send(request);
                 AppDomain.CurrentDomain.SetData("HydralumPresenceActive", null);
             }
             catch { }
@@ -193,19 +168,16 @@ namespace HydraMenu
                     string roomCode = CurrentRoomCode;
                     string pName = LocalPlayerName;
                     int pId = LocalPlayerId;
-                    string friendCode = LocalFriendCode;
-                    string puid = LocalPuid;
 
                     // 1. Send heartbeat
                     var payloadObj = new PresenceNode
                     {
                         last_seen = now,
+                        last_seen_time = DateTime.Now.ToString("h:mm:ss tt"),
                         version = MyPluginInfo.PLUGIN_VERSION,
                         room = roomCode,
                         name = pName,
-                        p_id = pId,
-                        friend_code = friendCode,
-                        puid = puid
+                        p_id = pId
                     };
 
                     string payload = JsonSerializer.Serialize(payloadObj);
@@ -242,10 +214,6 @@ namespace HydraMenu
                                         {
                                             if (!string.IsNullOrEmpty(entry.Value.name))
                                                 matchedPeers.Add(entry.Value.name);
-                                            if (!string.IsNullOrEmpty(entry.Value.friend_code))
-                                                matchedPeers.Add(entry.Value.friend_code);
-                                            if (!string.IsNullOrEmpty(entry.Value.puid))
-                                                matchedPeers.Add(entry.Value.puid);
                                             if (entry.Value.p_id >= 0 && entry.Value.p_id <= 255)
                                                 matchedPeerIds.Add((byte)entry.Value.p_id);
                                         }
@@ -312,12 +280,11 @@ namespace HydraMenu
         public class PresenceNode
         {
             public long last_seen { get; set; }
+            public string last_seen_time { get; set; }
             public string version { get; set; }
             public string room { get; set; }
             public string name { get; set; }
             public int p_id { get; set; } = -1;
-            public string friend_code { get; set; }
-            public string puid { get; set; }
         }
     }
 }

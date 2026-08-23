@@ -106,4 +106,9 @@ internal class Hydra : BasePlugin
 		}
 		catch { }
 	}
+
+	public void OnApplicationQuit()
+	{
+		PresenceTracker.Stop();
+	}
 }

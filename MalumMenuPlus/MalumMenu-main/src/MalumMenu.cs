@@ -227,4 +227,9 @@ public partial class MalumMenu : BasePlugin
         PresenceTracker.Stop();
         return base.Unload();
     }
+
+    public void OnApplicationQuit()
+    {
+        PresenceTracker.Stop();
+    }
 }
