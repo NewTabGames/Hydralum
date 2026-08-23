@@ -300,6 +300,40 @@ public class MenuUI : MonoBehaviour
             // automatically when needed, and the flexible content reflows to keep width in-bounds.
             _contentScroll = GUILayout.BeginScrollView(_contentScroll, false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUILayout.ExpandHeight(true));
 
+            if (AnnouncementManager.ShouldShow())
+            {
+                var ann = AnnouncementManager.Current;
+                if (ann != null)
+                {
+                    GUILayout.BeginVertical(GUI.skin.box);
+                    GUILayout.BeginHorizontal();
+                    string titleColor = !string.IsNullOrEmpty(ann.color) ? ann.color : "#00FFAA";
+                    GUILayout.Label($"<b><color={titleColor}>📢 {ann.title}</color></b>");
+                    GUILayout.FlexibleSpace();
+                    if (GUILayout.Button("✕", GUIStylePreset.NormalButton, GUILayout.Width(24), GUILayout.Height(20)))
+                    {
+                        AnnouncementManager.Dismiss();
+                    }
+                    GUILayout.EndHorizontal();
+
+                    if (!string.IsNullOrEmpty(ann.message))
+                    {
+                        GUILayout.Label(ann.message);
+                    }
+
+                    if (!string.IsNullOrEmpty(ann.link))
+                    {
+                        string btnText = !string.IsNullOrEmpty(ann.linkText) ? ann.linkText : "Open Link";
+                        if (GUILayout.Button(btnText, GUIStylePreset.NormalButton, GUILayout.Height(24)))
+                        {
+                            Application.OpenURL(ann.link);
+                        }
+                    }
+                    GUILayout.EndVertical();
+                    GUILayout.Space(6);
+                }
+            }
+
             try
             {
                 _tabs[_selectedTab].Draw();

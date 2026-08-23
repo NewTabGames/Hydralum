@@ -151,6 +151,40 @@ namespace HydraMenu.ui
 						GUILayout.BeginArea(new Rect(FeaturePanePosition.x, FeaturePanePosition.y, FeaturePaneSize.x, FeaturePaneSize.y));
 						section.scrollVector = GUILayout.BeginScrollView(section.scrollVector);
 
+						if (AnnouncementManager.ShouldShow())
+						{
+							var ann = AnnouncementManager.Current;
+							if (ann != null)
+							{
+								GUILayout.BeginVertical(GUI.skin.box);
+								GUILayout.BeginHorizontal();
+								string titleColor = !string.IsNullOrEmpty(ann.color) ? ann.color : "#00FFAA";
+								GUILayout.Label($"<b><color={titleColor}>📢 {ann.title}</color></b>");
+								GUILayout.FlexibleSpace();
+								if (GUILayout.Button("✕", GUILayout.Width(24 * scale), GUILayout.Height(20 * scale)))
+								{
+									AnnouncementManager.Dismiss();
+								}
+								GUILayout.EndHorizontal();
+
+								if (!string.IsNullOrEmpty(ann.message))
+								{
+									GUILayout.Label(ann.message);
+								}
+
+								if (!string.IsNullOrEmpty(ann.link))
+								{
+									string btnText = !string.IsNullOrEmpty(ann.linkText) ? ann.linkText : "Open Link";
+									if (GUILayout.Button(btnText, GUILayout.Height(24 * scale)))
+									{
+										Application.OpenURL(ann.link);
+									}
+								}
+								GUILayout.EndVertical();
+								GUILayout.Space(6);
+							}
+						}
+
 						try
 						{
 							section.Render();

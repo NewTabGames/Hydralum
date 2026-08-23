@@ -92,6 +92,9 @@ namespace MalumMenu
                             }
                         }
                     }
+
+                    // 3. Fetch announcement
+                    await AnnouncementManager.RefreshAsync(token);
                 }
                 catch
                 {
