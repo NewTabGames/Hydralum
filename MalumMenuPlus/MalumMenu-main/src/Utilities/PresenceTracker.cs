@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace MalumMenu
 {
@@ -64,6 +65,10 @@ namespace MalumMenu
                     id = PlayerControl.LocalPlayer.PlayerId;
                     fc = PlayerControl.LocalPlayer.Data.FriendCode ?? "";
                     puid = PlayerControl.LocalPlayer.Data.Puid ?? "";
+                }
+                else
+                {
+                    try { name = PlayerPrefs.GetString("PlayerName", ""); } catch { }
                 }
 
                 if (!string.IsNullOrEmpty(room))
@@ -244,6 +249,11 @@ namespace MalumMenu
                                             if (entry.Value.p_id >= 0 && entry.Value.p_id <= 255)
                                                 matchedPeerIds.Add((byte)entry.Value.p_id);
                                         }
+                                    }
+                                    else if (entry.Value == null || (now - entry.Value.last_seen) > 60)
+                                    {
+                                        // Prune stale session from Firebase
+                                        _ = HttpClient.DeleteAsync($"{FirebaseUrl}/{entry.Key}.json", token);
                                     }
                                 }
 

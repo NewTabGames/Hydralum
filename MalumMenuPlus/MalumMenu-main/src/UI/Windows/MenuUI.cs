@@ -451,4 +451,26 @@ public class MenuUI : MonoBehaviour
         catch { }
         return false;
     }
+
+    public static Rect GetHydraRect()
+    {
+        try
+        {
+            System.Type hydraType = GetHydraUIType();
+            if (hydraType != null)
+            {
+                var visField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (visField != null && (bool)visField.GetValue(null))
+                {
+                    var posField = hydraType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    var sizeProp = hydraType.GetProperty("WindowSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    Vector2 pos = posField != null ? (Vector2)posField.GetValue(null) : new Vector2(250, 100);
+                    Vector2 size = sizeProp != null ? (Vector2)sizeProp.GetValue(null, null) : new Vector2(500, 470);
+                    return new Rect(pos.x, pos.y, size.x, size.y);
+                }
+            }
+        }
+        catch { }
+        return Rect.zero;
+    }
 }

@@ -414,20 +414,30 @@ public static class PassiveUiElement_Patches
     // Prefix patch for all classes that inherit from PassiveUiElement to prevent clicks from going through Malum's UI
     public static bool Prefix()
     {
+        if (MalumMenu.isPanicked) return true;
         if (MalumMenu.menuAllowClickThrough != null && MalumMenu.menuAllowClickThrough.Value) return true;
 
         // Input.mousePosition has a bottom-left origin
         // Convert it to a top-left origin by flipping the Y coordinate
         Vector2 mousePosition = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
 
+        bool subwindowsOpen = MenuUI.isGUIActive || (MalumMenu.menuKeepSubwindowsOpen != null && MalumMenu.menuKeepSubwindowsOpen.Value);
+
+        bool isWardrobeVisible = CheatToggles.showWardrobeOverlay &&
+                                 PlayerCustomizationMenu.Instance != null &&
+                                 PlayerCustomizationMenu.Instance.isActiveAndEnabled;
+
+        Rect hydraRect = MenuUI.GetHydraRect();
+
         // Rect.Contains() uses GUI coordinates (top-left origin)
         return !((MenuUI.isGUIActive && MenuUI.windowRect.Contains(mousePosition)) ||
-                 (CheatToggles.showConsole && ConsoleUI.windowRect.Contains(mousePosition)) ||
-                 (CheatToggles.showDoorsMenu && DoorsUI.windowRect.Contains(mousePosition)) ||
-                 (CheatToggles.showProtectMenu && ProtectUI.windowRect.Contains(mousePosition)) ||
-                 (CheatToggles.showRolesMenu && RolesUI.windowRect.Contains(mousePosition)) ||
-                 (CheatToggles.showTasksMenu && TasksUI.windowRect.Contains(mousePosition)) ||
-                 (CheatToggles.showWardrobeOverlay && InventoryOutfitsUI.windowRect.Contains(mousePosition)));
+                 (hydraRect != Rect.zero && hydraRect.Contains(mousePosition)) ||
+                 (subwindowsOpen && CheatToggles.showConsole && ConsoleUI.windowRect.Contains(mousePosition)) ||
+                 (subwindowsOpen && CheatToggles.showDoorsMenu && DoorsUI.windowRect.Contains(mousePosition)) ||
+                 (subwindowsOpen && CheatToggles.showProtectMenu && ProtectUI.windowRect.Contains(mousePosition)) ||
+                 (subwindowsOpen && CheatToggles.showRolesMenu && RolesUI.windowRect.Contains(mousePosition)) ||
+                 (subwindowsOpen && CheatToggles.showTasksMenu && TasksUI.windowRect.Contains(mousePosition)) ||
+                 (isWardrobeVisible && InventoryOutfitsUI.windowRect.Contains(mousePosition)));
     }
 }
 
