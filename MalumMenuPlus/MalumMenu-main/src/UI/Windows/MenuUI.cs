@@ -33,6 +33,7 @@ public class MenuUI : MonoBehaviour
         _tabs.Add(new ConsoleTab());
         _tabs.Add(new HostOnlyTab());
         _tabs.Add(new ConfigTab());
+        _tabs.Add(new ThemesTab());
         _tabs.Add(new InfoTab());
         _tabs.Add(new DebugTab());
         _tabs.Add(new PhysicsTab());
