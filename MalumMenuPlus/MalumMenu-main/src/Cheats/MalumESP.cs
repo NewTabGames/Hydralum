@@ -70,6 +70,33 @@ public static class MalumESP
         return false;
     }
 
+    private static bool IsMatchInfoGuideActive()
+    {
+        try
+        {
+            var guideType = System.Type.GetType("MatchInfoGuide, Assembly-CSharp") ?? System.Type.GetType("MatchInfoGuide");
+            if (guideType != null)
+            {
+                var instanceProp = guideType.GetProperty("Instance");
+                if (instanceProp != null)
+                {
+                    var instance = instanceProp.GetValue(null, null);
+                    if (instance != null)
+                    {
+                        var activeProp = guideType.GetProperty("IsActive") ?? guideType.GetProperty("isActive");
+                        if (activeProp != null)
+                        {
+                            var val = activeProp.GetValue(instance, null);
+                            if (val is bool b) return b;
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+        return false;
+    }
+
     public static void ZoomOut(HudManager hudManager)
     {
         if (CheatToggles.zoomOut)
@@ -79,7 +106,7 @@ public static class MalumESP
                 (GameStartManager.Instance != null && GameStartManager.Instance.LobbyInfoPane != null && GameStartManager.Instance.LobbyInfoPane.LobbyViewSettingsPane != null && GameStartManager.Instance.LobbyInfoPane.LobbyViewSettingsPane.gameObject.active) ||
                 (GameStartManager.Instance != null && GameStartManager.Instance.RulesEditPanel)
             );
-            if (IsMouseOverActiveMenuGUI() || (hudManager != null && hudManager.Chat != null && hudManager.Chat.IsOpenOrOpening) || PlayerCustomizationMenu.Instance || lobbyBusy) return;
+            if (IsMouseOverActiveMenuGUI() || (hudManager != null && hudManager.Chat != null && hudManager.Chat.IsOpenOrOpening) || IsMatchInfoGuideActive() || PlayerCustomizationMenu.Instance || lobbyBusy) return;
 
             _resolutionChangeNeeded = true;
 

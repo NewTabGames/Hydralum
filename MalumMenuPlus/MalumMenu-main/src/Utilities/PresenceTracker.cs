@@ -82,7 +82,7 @@ namespace MalumMenu
                                 int active = 0;
                                 foreach (var entry in data)
                                 {
-                                    if (entry.Value != null && (now - entry.Value.last_seen) < 20)
+                                    if (entry.Value != null && (now - entry.Value.last_seen) < 45)
                                     {
                                         active++;
                                     }
@@ -110,7 +110,7 @@ namespace MalumMenu
 
                 try
                 {
-                    await Task.Delay(5000, token);
+                    await Task.Delay(15000, token);
                 }
                 catch (TaskCanceledException)
                 {
