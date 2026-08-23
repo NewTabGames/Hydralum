@@ -175,7 +175,8 @@ namespace MalumMenu
         {
             try
             {
-                var response = await HttpClient.GetAsync(FirebaseUrl, token);
+                string url = $"{FirebaseUrl}?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                var response = await HttpClient.GetAsync(url, token);
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync(token);
