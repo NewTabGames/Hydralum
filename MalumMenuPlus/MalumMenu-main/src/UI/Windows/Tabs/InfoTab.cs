@@ -13,8 +13,11 @@ public class InfoTab : ITab
 
     public void Draw()
     {
-        GUILayout.Label($"MalumMenu+ v{MalumMenu.malumVersion}", GUIStylePreset.TabSubtitle);
+        GUILayout.Label($"Hydralum - Malum Menu v{MalumMenu.malumVersion}", GUIStylePreset.TabSubtitle);
         GUILayout.Label("A fork of MalumMenu, with features drawn from Hydra.");
+        GUILayout.Space(6);
+        int online = PresenceTracker.GetOnlineCount();
+        GUILayout.Label($"<b>Live Users Online:</b> <color=#00FF88>{online} {(online == 1 ? "player" : "players")}</color>", GUIStylePreset.Hint);
 
         GUILayout.Space(12);
         GUILayout.Label("Credits & Community", GUIStylePreset.TabSubtitle);

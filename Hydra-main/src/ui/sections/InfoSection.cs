@@ -13,8 +13,11 @@ namespace HydraMenu.ui.sections
 
 		public override void Render()
 		{
-			GUILayout.Label("HydraMenu");
+			GUILayout.Label($"Hydralum - Hydra Menu v{MyPluginInfo.PLUGIN_VERSION}");
 			GUILayout.Label("A fork of Hydra, with features drawn from MalumMenu.");
+			GUILayout.Space(6);
+			int online = PresenceTracker.GetOnlineCount();
+			GUILayout.Label($"<b>Live Users Online:</b> <color=#00FF88>{online} {(online == 1 ? "player" : "players")}</color>");
 
 			GUILayout.Space(12);
 			GUILayout.Label("Credits & Community");

@@ -198,5 +198,13 @@ public partial class MalumMenu : BasePlugin
                 }
             }
         }));
+
+        PresenceTracker.Start();
+    }
+
+    public override bool Unload()
+    {
+        PresenceTracker.Stop();
+        return base.Unload();
     }
 }

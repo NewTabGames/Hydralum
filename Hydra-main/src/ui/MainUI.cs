@@ -32,7 +32,7 @@ namespace HydraMenu.ui
 		}
 
 		// UI Section Pane
-		private readonly ISection[] sections = { new GeneralSection(), new SelfSection(), new TrollSection(), new SabotageSection(), new HostSection(), new RolesSection(), new PlayersSection(), new MovementSection(), new VisualSection(), new ProtectionsSection(), new AnticheatSection(), new SpooferSection(), new MenuSection(), new InfoSection() };
+		private readonly ISection[] sections = { new GeneralSection(), new SelfSection(), new TrollSection(), new SabotageSection(), new HostSection(), new PlayersSection(), new MovementSection(), new VisualSection(), new ProtectionsSection(), new AnticheatSection(), new SpooferSection(), new MenuSection(), new InfoSection() };
 		public byte activeTab = 0;
 
 		public static Vector2 SectionListSize
@@ -69,6 +69,7 @@ namespace HydraMenu.ui
 				{
 					CloseMalumMenu();
 					visible = false;
+					HydraConfig.Save();
 				}
 				else
 				{
@@ -85,6 +86,10 @@ namespace HydraMenu.ui
 							float y = Mathf.Clamp(Screen.height - mousePos.y, 0, Mathf.Max(0, Screen.height - WindowSize.y));
 							windowPosition = new Vector2(x, y);
 						}
+					}
+					else
+					{
+						HydraConfig.Save();
 					}
 				}
 			}
@@ -107,6 +112,11 @@ namespace HydraMenu.ui
 			}
 		}
 
+		public void OnDisable()
+		{
+			HydraConfig.Save();
+		}
+
 		public void OnGUI()
 		{
 			// https://docs.unity3d.com/6000.3/Documentation/Manual/GUIScriptingGuide.html
@@ -117,7 +127,7 @@ namespace HydraMenu.ui
 				GUI.skin.label.fontSize = (int)(13 * scale);
 
 				// Render UI box
-				GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum - Hydra v{MyPluginInfo.PLUGIN_VERSION}", Styles.MainBox);
+				GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum - Hydra v{MyPluginInfo.PLUGIN_VERSION}  |  Online: {PresenceTracker.GetOnlineCount()}", Styles.MainBox);
 
 				// Switch button on top header matching the Hydralum mock design
 				Rect switchBtnRect = new Rect(windowPosition.x + WindowSize.x - 95 * scale, windowPosition.y + 2 * scale, 90 * scale, 20 * scale);
@@ -246,6 +256,7 @@ namespace HydraMenu.ui
 
 		public static void SwitchToMalum()
 		{
+			HydraConfig.Save();
 			visible = false;
 			try
 			{
