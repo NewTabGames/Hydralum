@@ -30,6 +30,23 @@ namespace MalumMenu
 
         public static AnnouncementData Current { get; private set; }
 
+        public static string SanitizeColor(string hex)
+        {
+            if (string.IsNullOrWhiteSpace(hex)) return "#00FFAA";
+            hex = hex.Trim().Replace("O", "0").Replace("o", "0");
+            if (!hex.StartsWith("#")) hex = "#" + hex;
+            if (hex.Length != 4 && hex.Length != 7 && hex.Length != 9) return "#00FFAA";
+            for (int i = 1; i < hex.Length; i++)
+            {
+                char c = hex[i];
+                if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+                {
+                    return "#00FFAA";
+                }
+            }
+            return hex;
+        }
+
         public static bool ShouldShow()
         {
             var data = Current ?? (AppDomain.CurrentDomain.GetData("HydralumAnnouncement") as AnnouncementData);
@@ -72,50 +89,58 @@ namespace MalumMenu
             if (ann == null || !ann.enabled || string.IsNullOrWhiteSpace(ann.title)) return;
 
             float width = 340f;
-            float height = 110f;
-            if (!string.IsNullOrEmpty(ann.link)) height += 30f;
+            bool hasLink = !string.IsNullOrWhiteSpace(ann.link);
+            float height = hasLink ? 120f : 90f;
 
             float x = Screen.width - width - 20f;
             float y = Screen.height - height - 20f;
 
-            GUI.Box(new Rect(x, y, width, height), GUIContent.none, GUI.skin.window);
+            // Background box
+            GUI.Box(new Rect(x, y, width, height), GUIContent.none, GUI.skin.box);
 
-            GUILayout.BeginArea(new Rect(x + 10f, y + 8f, width - 20f, height - 16f));
+            // Title Style
+            string colorHex = SanitizeColor(ann.color);
+            GUIStyle titleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 13,
+                fontStyle = FontStyle.Bold,
+                richText = true,
+                alignment = TextAnchor.MiddleLeft
+            };
+            titleStyle.normal.textColor = Color.white;
+            GUI.Label(new Rect(x + 10f, y + 6f, width - 45f, 22f), $"<color={colorHex}>📢 {ann.title}</color>", titleStyle);
 
-            GUILayout.BeginHorizontal();
-            string titleColor = !string.IsNullOrEmpty(ann.color) ? ann.color : "#00FFAA";
-            GUILayout.Label($"<b><color={titleColor}>📢 {ann.title}</color></b>");
-            GUILayout.FlexibleSpace();
-            if (GUILayout.Button("✕", GUILayout.Width(24), GUILayout.Height(20)))
+            // Dismiss Button [✕]
+            if (GUI.Button(new Rect(x + width - 30f, y + 6f, 22f, 20f), "✕"))
             {
                 Dismiss();
             }
-            GUILayout.EndHorizontal();
 
-            if (!string.IsNullOrEmpty(ann.message))
+            // Message Body
+            GUIStyle msgStyle = new GUIStyle(GUI.skin.label)
             {
-                GUILayout.Label($"<size=12>{ann.message}</size>");
-            }
+                fontSize = 11,
+                wordWrap = true,
+                richText = true,
+                alignment = TextAnchor.UpperLeft
+            };
+            msgStyle.normal.textColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+            float msgHeight = hasLink ? 42f : 50f;
+            GUI.Label(new Rect(x + 10f, y + 30f, width - 20f, msgHeight), ann.message ?? "", msgStyle);
 
-            if (!string.IsNullOrEmpty(ann.link))
+            // Action Button
+            if (hasLink)
             {
-                GUILayout.Space(2);
-                string btnText = !string.IsNullOrEmpty(ann.linkText) ? ann.linkText : "Open Link";
-                if (GUILayout.Button(btnText, GUILayout.Height(24)))
+                string btnText = !string.IsNullOrWhiteSpace(ann.linkText) ? ann.linkText : "Open Link";
+                if (GUI.Button(new Rect(x + 10f, y + 74f, width - 20f, 24f), btnText))
                 {
                     Application.OpenURL(ann.link);
                 }
             }
 
-            // Time remaining progress bar
-            GUILayout.FlexibleSpace();
+            // Time slider progress bar
             float progress = Mathf.Clamp01(ToastRemainingTime / ToastTotalDuration);
-            Rect progressRect = GUILayoutUtility.GetRect(width - 20f, 4f);
-            GUI.color = new Color(0f, 1f, 0.6f, 0.7f);
-            GUI.DrawTexture(new Rect(progressRect.x, progressRect.y, progressRect.width * progress, 3f), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-
-            GUILayout.EndArea();
+            GUI.HorizontalSlider(new Rect(x + 10f, y + height - 12f, width - 20f, 8f), progress, 0f, 1f);
         }
 
         public static async Task RefreshAsync(CancellationToken token = default)
