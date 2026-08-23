@@ -21,12 +21,6 @@ namespace MalumMenu
     {
         private const string FirebaseUrl = "https://hydralum-presence-default-rtdb.firebaseio.com/announcement.json";
         private static readonly HttpClient HttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
-        private static bool _dismissed = false;
-        private static string _lastDismissedTitle = "";
-        private static string _lastNotifiedTitle = "";
-
-        public static float ToastRemainingTime = 0f;
-        public const float ToastTotalDuration = 15f;
 
         public static AnnouncementData Current { get; private set; }
 
@@ -54,43 +48,25 @@ namespace MalumMenu
             {
                 return false;
             }
-            if (_dismissed && _lastDismissedTitle == data.title)
-            {
-                return false;
-            }
             Current = data;
             return true;
         }
 
-        public static void Dismiss()
-        {
-            _dismissed = true;
-            ToastRemainingTime = 0f;
-            if (Current != null)
-            {
-                _lastDismissedTitle = Current.title;
-            }
-        }
-
         public static void Update()
         {
-            if (ToastRemainingTime > 0f)
-            {
-                ToastRemainingTime -= Time.deltaTime;
-                if (ToastRemainingTime < 0f) ToastRemainingTime = 0f;
-            }
+            // Persistent announcement - controlled purely via Firebase toggle
         }
 
         public static void RenderToastGUI()
         {
-            if (ToastRemainingTime <= 0f) return;
+            if (!ShouldShow()) return;
 
-            var ann = Current ?? (AppDomain.CurrentDomain.GetData("HydralumAnnouncement") as AnnouncementData);
-            if (ann == null || !ann.enabled || string.IsNullOrWhiteSpace(ann.title)) return;
+            var ann = Current;
+            if (ann == null) return;
 
             float width = 340f;
             bool hasLink = !string.IsNullOrWhiteSpace(ann.link);
-            float height = hasLink ? 120f : 90f;
+            float height = hasLink ? 115f : 85f;
 
             float x = Screen.width - width - 20f;
             float y = Screen.height - height - 20f;
@@ -108,13 +84,7 @@ namespace MalumMenu
                 alignment = TextAnchor.MiddleLeft
             };
             titleStyle.normal.textColor = Color.white;
-            GUI.Label(new Rect(x + 10f, y + 6f, width - 45f, 22f), $"<color={colorHex}>📢 {ann.title}</color>", titleStyle);
-
-            // Dismiss Button [✕]
-            if (GUI.Button(new Rect(x + width - 30f, y + 6f, 22f, 20f), "✕"))
-            {
-                Dismiss();
-            }
+            GUI.Label(new Rect(x + 10f, y + 6f, width - 20f, 22f), $"<color={colorHex}>📢 {ann.title}</color>", titleStyle);
 
             // Message Body
             GUIStyle msgStyle = new GUIStyle(GUI.skin.label)
@@ -125,22 +95,18 @@ namespace MalumMenu
                 alignment = TextAnchor.UpperLeft
             };
             msgStyle.normal.textColor = new Color(0.9f, 0.9f, 0.9f, 1f);
-            float msgHeight = hasLink ? 42f : 50f;
+            float msgHeight = hasLink ? 45f : 50f;
             GUI.Label(new Rect(x + 10f, y + 30f, width - 20f, msgHeight), ann.message ?? "", msgStyle);
 
             // Action Button
             if (hasLink)
             {
                 string btnText = !string.IsNullOrWhiteSpace(ann.linkText) ? ann.linkText : "Open Link";
-                if (GUI.Button(new Rect(x + 10f, y + 74f, width - 20f, 24f), btnText))
+                if (GUI.Button(new Rect(x + 10f, y + 78f, width - 20f, 24f), btnText))
                 {
                     Application.OpenURL(ann.link);
                 }
             }
-
-            // Time slider progress bar
-            float progress = Mathf.Clamp01(ToastRemainingTime / ToastTotalDuration);
-            GUI.HorizontalSlider(new Rect(x + 10f, y + height - 12f, width - 20f, 8f), progress, 0f, 1f);
         }
 
         public static async Task RefreshAsync(CancellationToken token = default)
@@ -157,18 +123,6 @@ namespace MalumMenu
                         var data = JsonSerializer.Deserialize<AnnouncementData>(json, options);
                         if (data != null)
                         {
-                            if (Current == null || Current.title != data.title)
-                            {
-                                _dismissed = false; // Reset dismissal on new announcement
-                            }
-
-                            // Trigger toast notification if this is a fresh announcement
-                            if (data.enabled && _lastNotifiedTitle != data.title)
-                            {
-                                _lastNotifiedTitle = data.title;
-                                ToastRemainingTime = ToastTotalDuration;
-                            }
-
                             Current = data;
                             AppDomain.CurrentDomain.SetData("HydralumAnnouncement", data);
                         }

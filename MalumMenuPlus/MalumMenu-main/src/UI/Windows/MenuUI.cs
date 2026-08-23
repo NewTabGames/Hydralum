@@ -310,15 +310,8 @@ public class MenuUI : MonoBehaviour
                 if (ann != null)
                 {
                     GUILayout.BeginVertical(GUI.skin.box);
-                    GUILayout.BeginHorizontal();
-                    string titleColor = !string.IsNullOrEmpty(ann.color) ? ann.color : "#00FFAA";
+                    string titleColor = !string.IsNullOrEmpty(ann.color) ? AnnouncementManager.SanitizeColor(ann.color) : "#00FFAA";
                     GUILayout.Label($"<b><color={titleColor}>📢 {ann.title}</color></b>");
-                    GUILayout.FlexibleSpace();
-                    if (GUILayout.Button("✕", GUIStylePreset.NormalButton, GUILayout.Width(24), GUILayout.Height(20)))
-                    {
-                        AnnouncementManager.Dismiss();
-                    }
-                    GUILayout.EndHorizontal();
 
                     if (!string.IsNullOrEmpty(ann.message))
                     {
