@@ -76,7 +76,7 @@ namespace MalumMenu
             if (!string.IsNullOrEmpty(ann.link)) height += 30f;
 
             float x = Screen.width - width - 20f;
-            float y = 20f;
+            float y = Screen.height - height - 20f;
 
             GUI.Box(new Rect(x, y, width, height), GUIContent.none, GUI.skin.window);
 
