@@ -18,6 +18,10 @@ namespace MalumMenu
 
         public static int OnlineCount { get; private set; } = 1;
 
+        // Set of active Hydralum user identifiers in the current lobby/game
+        private static readonly HashSet<string> _currentRoomPeers = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<byte> _currentRoomPeerIds = new();
+
         public static int GetOnlineCount()
         {
             var val = AppDomain.CurrentDomain.GetData("HydralumOnlineCount");
@@ -26,6 +30,34 @@ namespace MalumMenu
                 return count;
             }
             return Math.Max(1, OnlineCount);
+        }
+
+        public static bool IsHydralumUser(NetworkedPlayerInfo playerInfo)
+        {
+            if (playerInfo == null) return false;
+
+            // Local player is always running Hydralum
+            if (PlayerControl.LocalPlayer != null && playerInfo == PlayerControl.LocalPlayer.Data)
+            {
+                return true;
+            }
+
+            lock (_currentRoomPeers)
+            {
+                if (!string.IsNullOrEmpty(playerInfo.PlayerName) && _currentRoomPeers.Contains(playerInfo.PlayerName))
+                    return true;
+
+                if (!string.IsNullOrEmpty(playerInfo.FriendCode) && _currentRoomPeers.Contains(playerInfo.FriendCode))
+                    return true;
+
+                if (!string.IsNullOrEmpty(playerInfo.Puid) && _currentRoomPeers.Contains(playerInfo.Puid))
+                    return true;
+
+                if (_currentRoomPeerIds.Contains(playerInfo.PlayerId))
+                    return true;
+            }
+
+            return false;
         }
 
         public static void Start()
@@ -54,6 +86,19 @@ namespace MalumMenu
             catch { }
         }
 
+        private static string GetCurrentRoomCode()
+        {
+            try
+            {
+                if (AmongUsClient.Instance != null && AmongUsClient.Instance.GameId != 0)
+                {
+                    return InnerNet.GameCode.IntToGameName(AmongUsClient.Instance.GameId);
+                }
+            }
+            catch { }
+            return "";
+        }
+
         private static async Task RunPresenceLoopAsync(CancellationToken token)
         {
             while (!token.IsCancellationRequested)
@@ -61,16 +106,41 @@ namespace MalumMenu
                 try
                 {
                     long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    string roomCode = GetCurrentRoomCode();
+                    string pName = "";
+                    int pId = -1;
+                    string friendCode = "";
+                    string puid = "";
+
+                    if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null)
+                    {
+                        pName = PlayerControl.LocalPlayer.Data.PlayerName ?? "";
+                        pId = PlayerControl.LocalPlayer.PlayerId;
+                        friendCode = PlayerControl.LocalPlayer.Data.FriendCode ?? "";
+                        puid = PlayerControl.LocalPlayer.Data.Puid ?? "";
+                    }
 
                     // 1. Send heartbeat
-                    var payload = $"{{\"last_seen\":{now},\"version\":\"{MalumMenu.malumVersion}\"}}";
+                    var payloadObj = new PresenceNode
+                    {
+                        last_seen = now,
+                        version = MalumMenu.malumVersion,
+                        room = roomCode,
+                        name = pName,
+                        p_id = pId,
+                        friend_code = friendCode,
+                        puid = puid
+                    };
+
+                    string payload = JsonSerializer.Serialize(payloadObj);
                     using (var content = new StringContent(payload, Encoding.UTF8, "application/json"))
                     {
                         await HttpClient.PutAsync($"{FirebaseUrl}/{SessionId}.json", content, token);
                     }
 
                     // 2. Fetch active presence nodes
-                    var response = await HttpClient.GetAsync($"{FirebaseUrl}.json", token);
+                    string fetchUrl = $"{FirebaseUrl}.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                    var response = await HttpClient.GetAsync(fetchUrl, token);
                     if (response.IsSuccessStatusCode)
                     {
                         var json = await response.Content.ReadAsStringAsync(token);
@@ -80,13 +150,40 @@ namespace MalumMenu
                             if (data != null)
                             {
                                 int active = 0;
+                                var matchedPeers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                                var matchedPeerIds = new HashSet<byte>();
+
                                 foreach (var entry in data)
                                 {
                                     if (entry.Value != null && (now - entry.Value.last_seen) < 45)
                                     {
                                         active++;
+
+                                        // Match peers in the same lobby
+                                        if (!string.IsNullOrEmpty(roomCode) &&
+                                            string.Equals(entry.Value.room, roomCode, StringComparison.OrdinalIgnoreCase) &&
+                                            entry.Key != SessionId)
+                                        {
+                                            if (!string.IsNullOrEmpty(entry.Value.name))
+                                                matchedPeers.Add(entry.Value.name);
+                                            if (!string.IsNullOrEmpty(entry.Value.friend_code))
+                                                matchedPeers.Add(entry.Value.friend_code);
+                                            if (!string.IsNullOrEmpty(entry.Value.puid))
+                                                matchedPeers.Add(entry.Value.puid);
+                                            if (entry.Value.p_id >= 0 && entry.Value.p_id <= 255)
+                                                matchedPeerIds.Add((byte)entry.Value.p_id);
+                                        }
                                     }
                                 }
+
+                                lock (_currentRoomPeers)
+                                {
+                                    _currentRoomPeers.Clear();
+                                    foreach (var p in matchedPeers) _currentRoomPeers.Add(p);
+                                    _currentRoomPeerIds.Clear();
+                                    foreach (var id in matchedPeerIds) _currentRoomPeerIds.Add(id);
+                                }
+
                                 OnlineCount = Math.Max(1, active);
                                 AppDomain.CurrentDomain.SetData("HydralumOnlineCount", OnlineCount);
 
@@ -119,10 +216,15 @@ namespace MalumMenu
             }
         }
 
-        private class PresenceNode
+        public class PresenceNode
         {
             public long last_seen { get; set; }
             public string version { get; set; }
+            public string room { get; set; }
+            public string name { get; set; }
+            public int p_id { get; set; } = -1;
+            public string friend_code { get; set; }
+            public string puid { get; set; }
         }
     }
 }

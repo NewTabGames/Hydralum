@@ -199,14 +199,18 @@ public static class MalumESP
 
             playerPhysics.myPlayer.cosmetics.SetName(Utils.GetNameTag(playerPhysics.myPlayer.Data, playerName));
 
-            // Move the nameText up to prevent it overlapping with colorblind text
+            // Move the nameText up to prevent it overlapping with colorblind text or character sprite
             if (playerPhysics.myPlayer.cosmetics.nameText != null)
             {
+                bool isHydralum = PresenceTracker.IsHydralumUser(playerPhysics.myPlayer.Data);
+                bool isLocal = PlayerControl.LocalPlayer != null && playerPhysics.myPlayer.Data == PlayerControl.LocalPlayer.Data;
+                bool showingGem = isHydralum && !CheatToggles.hideAllGems && !(isLocal && CheatToggles.hideMyGem);
+
                 if (CheatToggles.seeRoles && CheatToggles.seePlayerInfo)
                 {
                     playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.186f, 0f);
                 }
-                else if (CheatToggles.seeRoles || CheatToggles.seePlayerInfo)
+                else if (CheatToggles.seeRoles || CheatToggles.seePlayerInfo || showingGem)
                 {
                     playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.093f, 0f);
                 }

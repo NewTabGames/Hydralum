@@ -54,6 +54,8 @@ public struct CheatToggles
     public static bool taskArrows;
     public static bool revealVotes;
     public static bool seeLobbyInfo;
+    public static bool hideMyGem;
+    public static bool hideAllGems;
 
     // Camera
     public static bool spectate;

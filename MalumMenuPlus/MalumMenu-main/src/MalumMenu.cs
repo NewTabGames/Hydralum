@@ -51,6 +51,8 @@ public partial class MalumMenu : BasePlugin
     public static ConfigEntry<byte> colorSniperTargetColor;
     public static ConfigEntry<bool> colorSniperEnabled;
     public static ConfigEntry<bool> showWardrobeOverlay;
+    public static ConfigEntry<bool> hideMyGem;
+    public static ConfigEntry<bool> hideAllGems;
 
     public override void Load()
     {
@@ -143,9 +145,21 @@ public partial class MalumMenu : BasePlugin
                                 true,
                                 "When enabled, the outfit presets menu overlay will automatically appear when opening your Wardrobe/Inventory");
 
+        hideMyGem = Config.Bind("MalumMenu.ESP",
+                                "HideMyGem",
+                                false,
+                                "When enabled, your own gem emoji will be hidden on your screen (other Hydralum users can still see it)");
+
+        hideAllGems = Config.Bind("MalumMenu.ESP",
+                                "HideAllGems",
+                                false,
+                                "When enabled, all gem emojis will be hidden on your screen (other Hydralum users can still see them)");
+
         CheatToggles.colorSniperTargetColor = colorSniperTargetColor.Value;
         CheatToggles.colorSniper = colorSniperEnabled.Value;
         CheatToggles.showWardrobeOverlay = showWardrobeOverlay.Value;
+        CheatToggles.hideMyGem = hideMyGem.Value;
+        CheatToggles.hideAllGems = hideAllGems.Value;
 
         // Enabled by default
         CheatToggles.unlockFeatures = true;

@@ -509,6 +509,22 @@ public static class Utils
             var host = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetHost() : null;
             var level = playerInfo.PlayerLevel + 1;
 
+            bool isHydralum = PresenceTracker.IsHydralumUser(playerInfo);
+            bool isLocal = PlayerControl.LocalPlayer != null && playerInfo == PlayerControl.LocalPlayer.Data;
+
+            bool showGem = isHydralum;
+            if (CheatToggles.hideAllGems)
+            {
+                showGem = false;
+            }
+            else if (isLocal && CheatToggles.hideMyGem)
+            {
+                showGem = false;
+            }
+
+            string gemTop = showGem ? "<color=#00E5FF>💎</color>\r\n" : "";
+            string gemInline = showGem ? "<color=#00E5FF>💎</color> " : "";
+
             var platform = "Unknown";
             if (!isLocalGame && client != null && client.PlatformData != null)
             {
@@ -533,19 +549,19 @@ public static class Utils
                 {
                     if (isChat)
                     {
-                        return $"<color=#{roleColor}>{nameTag} <size=65%>{roleName}</size></color> <size=65%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
+                        return $"{gemInline}<color=#{roleColor}>{nameTag} <size=65%>{roleName}</size></color> <size=65%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
                     }
 
-                    return $"<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{roleColor}><size=70%>{roleName}</size>\r\n{nameTag}</color>";
+                    return $"{gemTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{roleColor}><size=70%>{roleName}</size>\r\n{nameTag}</color>";
                 }
                 else
                 {
                     if (isChat)
                     {
-                        return $"<color=#{roleColor}>{nameTag} <size=70%>{roleName}</size></color>";
+                        return $"{gemInline}<color=#{roleColor}>{nameTag} <size=70%>{roleName}</size></color>";
                     }
 
-                    return $"<color=#{roleColor}><size=70%>{roleName}</size>\r\n{nameTag}</color>";
+                    return $"{gemTop}<color=#{roleColor}><size=70%>{roleName}</size>\r\n{nameTag}</color>";
                 }
             }
             else
@@ -559,28 +575,41 @@ public static class Utils
                         string nameColorHex = ColorUtility.ToHtmlStringRGB(role.NameColor);
                         if (isChat)
                         {
-                            return $"<color=#{nameColorHex}>{nameTag}</color> <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
+                            return $"{gemInline}<color=#{nameColorHex}>{nameTag}</color> <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
                         }
 
-                        return $"<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{nameColorHex}>{nameTag}</color>";
+                        return $"{gemTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{nameColorHex}>{nameTag}</color>";
                     }
                     else
                     {
                         if (isChat)
                         {
-                            return $"{nameTag} <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
+                            return $"{gemInline}{nameTag} <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
                         }
 
-                        return $"<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n{nameTag}";
+                        return $"{gemTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n{nameTag}";
                     }
                 }
                 else
                 {
                     bool isSameTeam = PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.Role != null && role != null && PlayerControl.LocalPlayer.Data.Role.NameColor == role.NameColor;
 
-                    if (isSameTeam && role != null && !isChat)
+                    if (isSameTeam && role != null)
                     {
-                        return $"<color=#{ColorUtility.ToHtmlStringRGB(role.NameColor)}>{nameTag}</color>";
+                        string nameColorHex = ColorUtility.ToHtmlStringRGB(role.NameColor);
+                        if (isChat)
+                        {
+                            return $"{gemInline}<color=#{nameColorHex}>{nameTag}</color>";
+                        }
+                        return $"{gemTop}<color=#{nameColorHex}>{nameTag}</color>";
+                    }
+                    else
+                    {
+                        if (isChat)
+                        {
+                            return $"{gemInline}{nameTag}";
+                        }
+                        return $"{gemTop}{nameTag}";
                     }
                 }
             }

@@ -200,6 +200,48 @@ public static class MeetingHud_CheckForEndVoting
             var allPlayers = GameData.Instance?.AllPlayers?.ToArray();
             var exiled = allPlayers?.FirstOrDefault(v => !tie && v.PlayerId == max.Key);
 
+            bool wasOverruled = false;
+            ushort overruleNonce = 0;
+
+            try
+            {
+                var tryOverruleMethod = typeof(MeetingHud).GetMethod("TryGetWinningOverrule");
+                if (tryOverruleMethod != null)
+                {
+                    object[] overruleArgs = new object[3];
+                    var hasWinningOverrule = (bool)tryOverruleMethod.Invoke(__instance, overruleArgs);
+                    if (hasWinningOverrule && overruleArgs[0] != null)
+                    {
+                        wasOverruled = true;
+                        var judgeOverrule = overruleArgs[0];
+                        var p1 = overruleArgs[1] as NetworkedPlayerInfo;
+                        var p2 = overruleArgs[2] as NetworkedPlayerInfo;
+
+                        var nonceProp = judgeOverrule.GetType().GetProperty("OverruleNonce");
+                        if (nonceProp != null)
+                        {
+                            var nVal = nonceProp.GetValue(judgeOverrule);
+                            if (nVal is ushort us) overruleNonce = us;
+                        }
+
+                        if (p2 != null && p2.Role != null && p2.Role.TeamType == RoleTeamTypes.Impostor)
+                        {
+                            var ovProp = judgeOverrule.GetType().GetProperty("OverruledPlayerId");
+                            if (ovProp != null)
+                            {
+                                var ovVal = ovProp.GetValue(judgeOverrule);
+                                if (ovVal is byte bId) exiled = GameData.Instance?.GetPlayerById(bId);
+                            }
+                        }
+                        else
+                        {
+                            exiled = p1;
+                        }
+                    }
+                }
+            }
+            catch { }
+
             // This is the only change from the original method - make sure local player is not exiled
             if (exiled != null && PlayerControl.LocalPlayer != null && exiled == PlayerControl.LocalPlayer.Data)
             {
@@ -227,7 +269,7 @@ public static class MeetingHud_CheckForEndVoting
                 var pars = rpcMethod.GetParameters();
                 if (pars.Length >= 5)
                 {
-                    rpcMethod.Invoke(__instance, new object[] { states, exiled, tie, false, (ushort)0 });
+                    rpcMethod.Invoke(__instance, new object[] { states, exiled, tie, wasOverruled, overruleNonce });
                 }
                 else
                 {

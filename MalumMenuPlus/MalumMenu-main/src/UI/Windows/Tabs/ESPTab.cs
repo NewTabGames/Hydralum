@@ -31,6 +31,29 @@ public class ESPTab : ITab
         GUILayout.EndVertical();
 
         GUILayout.EndHorizontal();
+
+        GUILayout.Space(14);
+
+        DrawHydralumUsers();
+    }
+
+    private void DrawHydralumUsers()
+    {
+        GUILayout.Label("Hydralum Users", GUIStylePreset.TabSubtitle);
+
+        bool newHideMy = GUILayout.Toggle(CheatToggles.hideMyGem, " Disable My Gem (Only for you, others still see it)");
+        if (newHideMy != CheatToggles.hideMyGem)
+        {
+            CheatToggles.hideMyGem = newHideMy;
+            if (MalumMenu.hideMyGem != null) MalumMenu.hideMyGem.Value = newHideMy;
+        }
+
+        bool newHideAll = GUILayout.Toggle(CheatToggles.hideAllGems, " Disable All Gems (Only for you, others still see all gems)");
+        if (newHideAll != CheatToggles.hideAllGems)
+        {
+            CheatToggles.hideAllGems = newHideAll;
+            if (MalumMenu.hideAllGems != null) MalumMenu.hideAllGems.Value = newHideAll;
+        }
     }
 
     private void DrawGeneral()

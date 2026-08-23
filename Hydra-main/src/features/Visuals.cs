@@ -16,6 +16,16 @@ namespace HydraMenu.features
             }
         }
 
+        public static class HideMyGem
+        {
+            public static bool Enabled { get; set; } = false;
+        }
+
+        public static class HideAllGems
+        {
+            public static bool Enabled { get; set; } = false;
+        }
+
 		[HarmonyPatch(typeof(LightSource), nameof(LightSource.Update))]
 		public static class Fullbright
 		{

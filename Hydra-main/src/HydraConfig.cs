@@ -28,6 +28,8 @@ namespace HydraMenu
         public static ConfigEntry<bool> NoSeekerAnimation;
         public static ConfigEntry<bool> AccurateDisconnectReasons;
         public static ConfigEntry<bool> ShowProtections;
+        public static ConfigEntry<bool> HideMyGem;
+        public static ConfigEntry<bool> HideAllGems;
 
         // Protections
         public static ConfigEntry<bool> ForceDTLS;
@@ -111,6 +113,8 @@ namespace HydraMenu
             NoSeekerAnimation = config.Bind("Visuals", "NoSeekerAnimation", false, "Skip Hide & Seek seeker animation");
             AccurateDisconnectReasons = config.Bind("Visuals", "AccurateDisconnectReasons", true, "Show accurate disconnection reasons");
             ShowProtections = config.Bind("Visuals", "ShowProtections", false, "Show Guardian Angel Protections");
+            HideMyGem = config.Bind("Visuals", "HideMyGem", false, "Hide your own gem on your screen");
+            HideAllGems = config.Bind("Visuals", "HideAllGems", false, "Hide all gems on your screen");
 
             // Protections
             ForceDTLS = config.Bind("Protections", "ForceDTLS", true, "Force enable DTLS network encryption");
@@ -187,6 +191,8 @@ namespace HydraMenu
             Visuals.NoSeekerAnimationPatch.Enabled = NoSeekerAnimation.Value;
             Visuals.AccurateDisconnectReasons.Enabled = AccurateDisconnectReasons.Value;
             Visuals.ShowProtections.Enabled = ShowProtections.Value;
+            Visuals.HideMyGem.Enabled = HideMyGem.Value;
+            Visuals.HideAllGems.Enabled = HideAllGems.Value;
 
             // Apply Protections
             Protections.ForceDTLS.Enabled = ForceDTLS.Value;
@@ -269,6 +275,8 @@ namespace HydraMenu
             if (NoSeekerAnimation != null) NoSeekerAnimation.Value = Visuals.NoSeekerAnimationPatch.Enabled;
             if (AccurateDisconnectReasons != null) AccurateDisconnectReasons.Value = Visuals.AccurateDisconnectReasons.Enabled;
             if (ShowProtections != null) ShowProtections.Value = Visuals.ShowProtections.Enabled;
+            if (HideMyGem != null) HideMyGem.Value = Visuals.HideMyGem.Enabled;
+            if (HideAllGems != null) HideAllGems.Value = Visuals.HideAllGems.Enabled;
 
             // Protections
             if (ForceDTLS != null) ForceDTLS.Value = Protections.ForceDTLS.Enabled;

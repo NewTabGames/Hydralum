@@ -40,6 +40,17 @@ namespace HydraMenu.ui.sections
 			bool prevGhostChat = Chat.OnChat.ShowMessagesByGhosts;
 			Chat.OnChat.ShowMessagesByGhosts = GUILayout.Toggle(Chat.OnChat.ShowMessagesByGhosts, "Show messages by ghosts");
 			if (Chat.OnChat.ShowMessagesByGhosts != prevGhostChat) HydraConfig.Save();
+
+			GUILayout.Space(8);
+			GUILayout.Label("<b>Hydralum Users</b>");
+
+			bool prevHideMy = Visuals.HideMyGem.Enabled;
+			Visuals.HideMyGem.Enabled = GUILayout.Toggle(Visuals.HideMyGem.Enabled, "Disable My Gem (Only for you)");
+			if (Visuals.HideMyGem.Enabled != prevHideMy) HydraConfig.Save();
+
+			bool prevHideAll = Visuals.HideAllGems.Enabled;
+			Visuals.HideAllGems.Enabled = GUILayout.Toggle(Visuals.HideAllGems.Enabled, "Disable All Gems (Only for you)");
+			if (Visuals.HideAllGems.Enabled != prevHideAll) HydraConfig.Save();
 		}
 	}
 }
