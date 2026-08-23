@@ -213,10 +213,14 @@ public class MenuUI : MonoBehaviour
             CheatToggles.skipMeeting = false;
             CheatToggles.ejectPlayer = false;
         }
+
+        AnnouncementManager.Update();
     }
 
     public void OnGUI()
     {
+        AnnouncementManager.RenderToastGUI();
+
         if (!isGUIActive || MalumMenu.isPanicked) return;
 
         InitStyles();

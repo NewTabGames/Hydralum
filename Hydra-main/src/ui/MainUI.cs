@@ -110,6 +110,8 @@ namespace HydraMenu.ui
 
 				sections[activeTab].HandleSubsectionMove(offset);
 			}
+
+			AnnouncementManager.Update();
 		}
 
 		public void OnDisable()
@@ -119,6 +121,8 @@ namespace HydraMenu.ui
 
 		public void OnGUI()
 		{
+			AnnouncementManager.RenderToastGUI();
+
 			// https://docs.unity3d.com/6000.3/Documentation/Manual/GUIScriptingGuide.html
 			if(!visible) return;
 
