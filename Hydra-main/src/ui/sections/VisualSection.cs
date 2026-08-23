@@ -45,11 +45,11 @@ namespace HydraMenu.ui.sections
 			GUILayout.Label("<b>Hydralum Users</b> <size=11><color=#888888>(Client-sided)</color></size>");
 
 			bool prevHideMy = Visuals.HideMyGem.Enabled;
-			Visuals.HideMyGem.Enabled = GUILayout.Toggle(Visuals.HideMyGem.Enabled, "Disable My Gem (Client-sided: only hides on your screen)");
+			Visuals.HideMyGem.Enabled = GUILayout.Toggle(Visuals.HideMyGem.Enabled, "Disable My Gem");
 			if (Visuals.HideMyGem.Enabled != prevHideMy) HydraConfig.Save();
 
 			bool prevHideAll = Visuals.HideAllGems.Enabled;
-			Visuals.HideAllGems.Enabled = GUILayout.Toggle(Visuals.HideAllGems.Enabled, "Disable All Gems (Client-sided: only hides on your screen)");
+			Visuals.HideAllGems.Enabled = GUILayout.Toggle(Visuals.HideAllGems.Enabled, "Disable All Gems");
 			if (Visuals.HideAllGems.Enabled != prevHideAll) HydraConfig.Save();
 		}
 	}
