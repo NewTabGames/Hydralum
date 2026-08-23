@@ -298,20 +298,26 @@ public static class MalumPPMCheats
                     playerDataList.Add(PlayerPickMenu.CustomPPMChoice("Impostor", OutfitPreset.Impostor, Utils.GetBehaviourByRoleType(RoleTypes.Impostor)));
                 }
 
+                // Judge role can only be used if it was already assigned at the start of the game
+                // This is done to prevent the anticheat from kicking players
+                if (_oldRole == (RoleTypes)19 || Utils.isFreePlay)
+                {
+                    try
+                    {
+                        var judgeRole = Utils.GetBehaviourByRoleType((RoleTypes)19);
+                        if (judgeRole != null)
+                        {
+                            playerDataList.Add(PlayerPickMenu.CustomPPMChoice("Judge", OutfitPreset.Judge, judgeRole));
+                        }
+                    }
+                    catch { }
+                }
+
                 playerDataList.Add(PlayerPickMenu.CustomPPMChoice("Tracker", OutfitPreset.Tracker, Utils.GetBehaviourByRoleType(RoleTypes.Tracker)));
                 playerDataList.Add(PlayerPickMenu.CustomPPMChoice("Noisemaker", OutfitPreset.Noisemaker, Utils.GetBehaviourByRoleType(RoleTypes.Noisemaker)));
                 playerDataList.Add(PlayerPickMenu.CustomPPMChoice("Engineer", OutfitPreset.Engineer, Utils.GetBehaviourByRoleType(RoleTypes.Engineer)));
                 playerDataList.Add(PlayerPickMenu.CustomPPMChoice("Scientist", OutfitPreset.Scientist, Utils.GetBehaviourByRoleType(RoleTypes.Scientist)));
                 playerDataList.Add(PlayerPickMenu.CustomPPMChoice("Detective", OutfitPreset.Detective, Utils.GetBehaviourByRoleType(RoleTypes.Detective)));
-                try
-                {
-                    var judgeRole = Utils.GetBehaviourByRoleType((RoleTypes)19);
-                    if (judgeRole != null)
-                    {
-                        playerDataList.Add(PlayerPickMenu.CustomPPMChoice("Judge", OutfitPreset.Crewmate, judgeRole));
-                    }
-                }
-                catch { }
                 playerDataList.Add(PlayerPickMenu.CustomPPMChoice("Crewmate", OutfitPreset.Crewmate, Utils.GetBehaviourByRoleType(RoleTypes.Crewmate)));
 
                 // Player pick menu made for changing your roles with a custom choice list

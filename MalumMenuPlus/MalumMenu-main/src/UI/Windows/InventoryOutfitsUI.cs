@@ -8,7 +8,7 @@ public class InventoryOutfitsUI : MonoBehaviour
 {
     public static int windowWidth = 285;
     public static int windowHeight = 510;
-    private Rect _windowRect;
+    public static Rect windowRect;
 
     private string _customOutfitName = "Outfit 1";
     private int _presetTemplateIndex = 0;
@@ -38,7 +38,7 @@ public class InventoryOutfitsUI : MonoBehaviour
 
     private void Start()
     {
-        _windowRect = new Rect(
+        windowRect = new Rect(
             Mathf.Max(10, Screen.width - windowWidth - 25),
             55,
             windowWidth,
@@ -70,7 +70,7 @@ public class InventoryOutfitsUI : MonoBehaviour
             RefreshOutfits();
         }
 
-        _windowRect = GUI.Window((int)WindowId.InventoryOutfitsUI, _windowRect, (GUI.WindowFunction)DrawWindow, "Wardrobe Outfit Presets");
+        windowRect = GUI.Window((int)WindowId.InventoryOutfitsUI, windowRect, (GUI.WindowFunction)DrawWindow, "Wardrobe Outfit Presets");
     }
 
     private void DrawWindow(int windowId)

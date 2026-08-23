@@ -9,6 +9,7 @@ public class MenuUI : MonoBehaviour
     public static int windowHeight = 590;
     public static int windowWidth = 700;
     public static Rect _windowRect;
+    public static Rect windowRect => _windowRect;
 
     public static bool isGUIActive = false;
     public static bool lastOpenedWasHydra = false;
