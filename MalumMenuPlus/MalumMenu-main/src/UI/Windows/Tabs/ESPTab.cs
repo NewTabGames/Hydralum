@@ -39,16 +39,16 @@ public class ESPTab : ITab
 
     private void DrawHydralumUsers()
     {
-        GUILayout.Label("Hydralum Users", GUIStylePreset.TabSubtitle);
+        GUILayout.Label("Hydralum Users <size=11><color=#888888>(Client-sided)</color></size>", GUIStylePreset.TabSubtitle);
 
-        bool newHideMy = GUILayout.Toggle(CheatToggles.hideMyGem, " Disable My Gem (Only for you, others still see it)");
+        bool newHideMy = GUILayout.Toggle(CheatToggles.hideMyGem, " Disable My Gem <color=#888888>(Client-sided: only hides on your screen)</color>");
         if (newHideMy != CheatToggles.hideMyGem)
         {
             CheatToggles.hideMyGem = newHideMy;
             if (MalumMenu.hideMyGem != null) MalumMenu.hideMyGem.Value = newHideMy;
         }
 
-        bool newHideAll = GUILayout.Toggle(CheatToggles.hideAllGems, " Disable All Gems (Only for you, others still see all gems)");
+        bool newHideAll = GUILayout.Toggle(CheatToggles.hideAllGems, " Disable All Gems <color=#888888>(Client-sided: only hides on your screen)</color>");
         if (newHideAll != CheatToggles.hideAllGems)
         {
             CheatToggles.hideAllGems = newHideAll;
