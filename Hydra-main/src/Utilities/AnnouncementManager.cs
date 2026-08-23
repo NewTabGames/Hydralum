@@ -21,6 +21,7 @@ namespace HydraMenu
     {
         private const string FirebaseUrl = "https://hydralum-presence-default-rtdb.firebaseio.com/announcement.json";
         private static readonly HttpClient HttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+        private static string _lastSyncedJson = null;
 
         public static AnnouncementData Current { get; private set; }
 
@@ -41,20 +42,46 @@ namespace HydraMenu
             return hex;
         }
 
+        public static void SyncFromAppDomain()
+        {
+            var raw = AppDomain.CurrentDomain.GetData("HydralumAnnouncementJson") as string;
+            if (raw != _lastSyncedJson)
+            {
+                _lastSyncedJson = raw;
+                if (!string.IsNullOrWhiteSpace(raw) && raw != "null")
+                {
+                    try
+                    {
+                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                        Current = JsonSerializer.Deserialize<AnnouncementData>(raw, options);
+                    }
+                    catch
+                    {
+                        Current = null;
+                    }
+                }
+                else
+                {
+                    Current = null;
+                }
+            }
+        }
+
         public static bool ShouldShow()
         {
-            var data = Current ?? (AppDomain.CurrentDomain.GetData("HydralumAnnouncement") as AnnouncementData);
+            SyncFromAppDomain();
+            var data = Current;
             if (data == null || !data.enabled || string.IsNullOrWhiteSpace(data.title))
             {
                 return false;
             }
-            Current = data;
             return true;
         }
 
         public static void Update()
         {
-            // Persistent announcement - controlled purely via Firebase toggle
+            // Sync any new announcement state from AppDomain on frame update
+            SyncFromAppDomain();
         }
 
         public static void RenderToastGUI()
@@ -117,21 +144,8 @@ namespace HydraMenu
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync(token);
-                    if (!string.IsNullOrWhiteSpace(json) && json != "null")
-                    {
-                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                        var data = JsonSerializer.Deserialize<AnnouncementData>(json, options);
-                        if (data != null)
-                        {
-                            Current = data;
-                            AppDomain.CurrentDomain.SetData("HydralumAnnouncement", data);
-                        }
-                    }
-                    else
-                    {
-                        Current = null;
-                        AppDomain.CurrentDomain.SetData("HydralumAnnouncement", null);
-                    }
+                    AppDomain.CurrentDomain.SetData("HydralumAnnouncementJson", json);
+                    SyncFromAppDomain();
                 }
             }
             catch
