@@ -46,6 +46,8 @@ public class PhysicsTab : ITab
 
         CheatToggles.makeTyGamer4WorkHarder = GUILayout.Toggle(CheatToggles.makeTyGamer4WorkHarder, " Make TyGamer4 Work Harder");
 
+        CheatToggles.goonToFortegreenFeet = GUILayout.Toggle(CheatToggles.goonToFortegreenFeet, " Goon to Fortegreen Feet");
+
         GUILayout.Space(8);
         if (GUILayout.Button("When The Imposter Is Gay", GUIStylePreset.NormalButton, GUILayout.Height(26)))
         {

@@ -217,6 +217,7 @@ public struct CheatToggles
     public static bool letTyGamer4Rest;
     public static bool sayGex;
     public static bool makeTyGamer4WorkHarder;
+    public static bool goonToFortegreenFeet;
     public static bool showStuffTab;
 
     // Config
