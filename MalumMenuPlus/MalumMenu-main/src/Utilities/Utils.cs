@@ -522,8 +522,8 @@ public static class Utils
                 showGem = false;
             }
 
-            string gemTop = showGem ? "<color=#00E5FF>💎</color>\r\n" : "";
-            string gemInline = showGem ? "<color=#00E5FF>💎</color> " : "";
+            string gemTop = showGem ? "<color=#00E5FF>◆</color>\r\n" : "";
+            string gemInline = showGem ? "<color=#00E5FF>◆</color> " : "";
 
             var platform = "Unknown";
             if (!isLocalGame && client != null && client.PlatformData != null)

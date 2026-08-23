@@ -112,6 +112,7 @@ namespace HydraMenu.ui
 			}
 
 			AnnouncementManager.Update();
+			PresenceTracker.UpdateMainThread();
 		}
 
 		public void OnDisable()

@@ -18,6 +18,16 @@ namespace HydraMenu
 
         public static int OnlineCount { get; private set; } = 1;
 
+        // Thread-safe cached local player and lobby state (updated on Unity main thread)
+        public static string CurrentRoomCode { get; private set; } = "";
+        public static string LocalPlayerName { get; private set; } = "";
+        public static int LocalPlayerId { get; private set; } = -1;
+        public static string LocalFriendCode { get; private set; } = "";
+        public static string LocalPuid { get; private set; } = "";
+
+        private static string _lastRoomCode = "";
+        private static volatile bool _forceRefresh = false;
+
         // Set of active Hydralum user identifiers in the current lobby/game
         private static readonly HashSet<string> _currentRoomPeers = new(StringComparer.OrdinalIgnoreCase);
         private static readonly HashSet<byte> _currentRoomPeerIds = new();
@@ -30,6 +40,45 @@ namespace HydraMenu
                 return count;
             }
             return Math.Max(1, OnlineCount);
+        }
+
+        // Called on Unity Main Thread (e.g. MainUI.Update)
+        public static void UpdateMainThread()
+        {
+            try
+            {
+                string room = "";
+                if (AmongUsClient.Instance != null && AmongUsClient.Instance.GameId != 0)
+                {
+                    try { room = InnerNet.GameCode.IntToGameName(AmongUsClient.Instance.GameId); } catch { }
+                }
+
+                string name = "";
+                int id = -1;
+                string fc = "";
+                string puid = "";
+
+                if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null)
+                {
+                    name = PlayerControl.LocalPlayer.Data.PlayerName ?? "";
+                    id = PlayerControl.LocalPlayer.PlayerId;
+                    fc = PlayerControl.LocalPlayer.Data.FriendCode ?? "";
+                    puid = PlayerControl.LocalPlayer.Data.Puid ?? "";
+                }
+
+                CurrentRoomCode = room ?? "";
+                LocalPlayerName = name ?? "";
+                LocalPlayerId = id;
+                LocalFriendCode = fc ?? "";
+                LocalPuid = puid ?? "";
+
+                if (CurrentRoomCode != _lastRoomCode)
+                {
+                    _lastRoomCode = CurrentRoomCode;
+                    _forceRefresh = true;
+                }
+            }
+            catch { }
         }
 
         public static bool IsHydralumUser(NetworkedPlayerInfo playerInfo)
@@ -86,19 +135,6 @@ namespace HydraMenu
             catch { }
         }
 
-        private static string GetCurrentRoomCode()
-        {
-            try
-            {
-                if (AmongUsClient.Instance != null && AmongUsClient.Instance.GameId != 0)
-                {
-                    return InnerNet.GameCode.IntToGameName(AmongUsClient.Instance.GameId);
-                }
-            }
-            catch { }
-            return "";
-        }
-
         private static async Task RunPresenceLoopAsync(CancellationToken token)
         {
             while (!token.IsCancellationRequested)
@@ -106,19 +142,11 @@ namespace HydraMenu
                 try
                 {
                     long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                    string roomCode = GetCurrentRoomCode();
-                    string pName = "";
-                    int pId = -1;
-                    string friendCode = "";
-                    string puid = "";
-
-                    if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null)
-                    {
-                        pName = PlayerControl.LocalPlayer.Data.PlayerName ?? "";
-                        pId = PlayerControl.LocalPlayer.PlayerId;
-                        friendCode = PlayerControl.LocalPlayer.Data.FriendCode ?? "";
-                        puid = PlayerControl.LocalPlayer.Data.Puid ?? "";
-                    }
+                    string roomCode = CurrentRoomCode;
+                    string pName = LocalPlayerName;
+                    int pId = LocalPlayerId;
+                    string friendCode = LocalFriendCode;
+                    string puid = LocalPuid;
 
                     // 1. Send heartbeat
                     var payloadObj = new PresenceNode
@@ -205,13 +233,22 @@ namespace HydraMenu
                     // Ignore network fluctuations
                 }
 
-                try
+                // Wait 15 seconds, or wake up sooner if room changed
+                for (int i = 0; i < 30; i++)
                 {
-                    await Task.Delay(15000, token);
-                }
-                catch (TaskCanceledException)
-                {
-                    break;
+                    if (_forceRefresh)
+                    {
+                        _forceRefresh = false;
+                        break;
+                    }
+                    try
+                    {
+                        await Task.Delay(500, token);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        return;
+                    }
                 }
             }
         }

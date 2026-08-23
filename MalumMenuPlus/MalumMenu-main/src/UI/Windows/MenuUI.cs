@@ -217,6 +217,7 @@ public class MenuUI : MonoBehaviour
         }
 
         AnnouncementManager.Update();
+        PresenceTracker.UpdateMainThread();
     }
 
     public void OnGUI()
