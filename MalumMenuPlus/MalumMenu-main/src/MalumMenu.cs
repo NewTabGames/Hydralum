@@ -50,11 +50,15 @@ public partial class MalumMenu : BasePlugin
     public static ConfigEntry<string> configEditor;
     public static ConfigEntry<byte> colorSniperTargetColor;
     public static ConfigEntry<bool> colorSniperEnabled;
+    public static ConfigEntry<bool> showWardrobeOverlay;
 
     public override void Load()
     {
         Log = base.Log;
         Plugin = this;
+
+        // Force Stuff tab to be always disabled on launch
+        CheatToggles.showStuffTab = false;
 
         // Loads config settings
         menuKeybind = Config.Bind("MalumMenu.GUI",
@@ -134,8 +138,14 @@ public partial class MalumMenu : BasePlugin
                                 false,
                                 "When enabled, Color Sniper will automatically snipe your target color in lobbies");
 
+        showWardrobeOverlay = Config.Bind("MalumMenu.Outfits",
+                                "ShowWardrobeOverlay",
+                                true,
+                                "When enabled, the outfit presets menu overlay will automatically appear when opening your Wardrobe/Inventory");
+
         CheatToggles.colorSniperTargetColor = colorSniperTargetColor.Value;
         CheatToggles.colorSniper = colorSniperEnabled.Value;
+        CheatToggles.showWardrobeOverlay = showWardrobeOverlay.Value;
 
         // Enabled by default
         CheatToggles.unlockFeatures = true;

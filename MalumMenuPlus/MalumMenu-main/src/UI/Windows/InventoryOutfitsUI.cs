@@ -57,6 +57,7 @@ public class InventoryOutfitsUI : MonoBehaviour
     private void OnGUI()
     {
         if (MalumMenu.isPanicked) return;
+        if (!CheatToggles.showWardrobeOverlay) return;
 
         // Display whenever player is in the Inventory / Wardrobe customization menu
         bool isInventoryOpen = PlayerCustomizationMenu.Instance != null && PlayerCustomizationMenu.Instance.isActiveAndEnabled;
@@ -78,9 +79,21 @@ public class InventoryOutfitsUI : MonoBehaviour
         {
             GUILayout.BeginVertical();
 
-            // 1. Save Section
+            // 1. Save Section with Close (X) button
+            GUILayout.BeginHorizontal();
             GUILayout.Label("Save Current Outfit", GUIStylePreset.TabSubtitle);
-        GUILayout.Label($"Preset Name: <b>{_customOutfitName}</b>", GUIStylePreset.Hint);
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("✕", GUIStylePreset.NormalButton, GUILayout.Width(24), GUILayout.Height(20)))
+            {
+                CheatToggles.showWardrobeOverlay = false;
+                if (MalumMenu.showWardrobeOverlay != null)
+                {
+                    MalumMenu.showWardrobeOverlay.Value = false;
+                }
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Label($"Preset Name: <b>{_customOutfitName}</b>", GUIStylePreset.Hint);
 
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("<", GUIStylePreset.NormalButton, GUILayout.Width(28), GUILayout.Height(22)))

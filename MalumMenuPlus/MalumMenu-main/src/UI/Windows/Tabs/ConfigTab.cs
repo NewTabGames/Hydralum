@@ -140,6 +140,16 @@ public class ConfigTab : ITab
 
         MalumMenu.showVersionWarning.Value =
             GUILayout.Toggle(MalumMenu.showVersionWarning.Value, " Version Warning Popup");
+
+        bool newOverlay = GUILayout.Toggle(CheatToggles.showWardrobeOverlay, " Wardrobe Overlay on Inventory");
+        if (newOverlay != CheatToggles.showWardrobeOverlay)
+        {
+            CheatToggles.showWardrobeOverlay = newOverlay;
+            if (MalumMenu.showWardrobeOverlay != null)
+            {
+                MalumMenu.showWardrobeOverlay.Value = newOverlay;
+            }
+        }
     }
 
     private void DrawAccount()
@@ -172,6 +182,9 @@ public class ConfigTab : ITab
         {
             Utils.Eject();
         }
+
+        GUILayout.Space(6);
+        CheatToggles.showStuffTab = GUILayout.Toggle(CheatToggles.showStuffTab, " Are you sure you want to view this tab? its stupid...");
     }
 
     private void DrawThemes()

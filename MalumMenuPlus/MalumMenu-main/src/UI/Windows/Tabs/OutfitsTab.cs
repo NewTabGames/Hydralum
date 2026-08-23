@@ -304,6 +304,18 @@ public class OutfitsTab : ITab
             SetStatus("<color=white>Restored default.</color>");
         }
         GUILayout.EndHorizontal();
+
+        GUILayout.Space(4);
+
+        bool newOverlay = GUILayout.Toggle(CheatToggles.showWardrobeOverlay, " Show Wardrobe Overlay on Inventory");
+        if (newOverlay != CheatToggles.showWardrobeOverlay)
+        {
+            CheatToggles.showWardrobeOverlay = newOverlay;
+            if (MalumMenu.showWardrobeOverlay != null)
+            {
+                MalumMenu.showWardrobeOverlay.Value = newOverlay;
+            }
+        }
     }
 
     private void DrawLibrarySection()

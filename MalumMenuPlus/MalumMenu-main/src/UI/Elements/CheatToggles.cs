@@ -187,6 +187,7 @@ public struct CheatToggles
     // Outfits & Avatar
     public static bool colorSniper;
     public static byte colorSniperTargetColor;
+    public static bool showWardrobeOverlay = true;
 
     // Passive
     public static bool unlockFps;
@@ -199,6 +200,24 @@ public struct CheatToggles
     // Modes
     public static bool rgbMode;
     public static bool panicMode;
+    public static bool jigglePhysics;
+    public static bool waterPouringPhysics;
+    public static bool installGta6;
+    public static bool nukeCyberleek;
+    public static bool longWeeWeePhysics;
+    public static bool sex;
+    public static bool launchFirework;
+    public static bool cokeCanPhysics;
+    public static bool sussy;
+    public static bool duelingForHonour;
+    public static bool musketLineBattles;
+    public static bool sexWithCyberleek;
+    public static bool ricky;
+    public static bool CreamPie;
+    public static bool letTyGamer4Rest;
+    public static bool sayGex;
+    public static bool makeTyGamer4WorkHarder;
+    public static bool showStuffTab;
 
     // Config
     public static bool reloadConfig;
@@ -220,6 +239,7 @@ public struct CheatToggles
         foreach (var field in fields)
         {
             if (field.FieldType != typeof(bool)) continue;
+            if (field.Name == nameof(showStuffTab)) continue;
 
             ToggleFields[field.Name] = field;
             Keybinds[field.Name] = KeyCode.None;

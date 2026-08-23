@@ -35,6 +35,7 @@ public class MenuUI : MonoBehaviour
         _tabs.Add(new ConfigTab());
         _tabs.Add(new InfoTab());
         _tabs.Add(new DebugTab());
+        _tabs.Add(new PhysicsTab());
 
         // Instantiate 2D area of MenuUI
         _windowRect = new(
@@ -225,7 +226,7 @@ public class MenuUI : MonoBehaviour
         var previousColor = GUI.color;
         GUI.color = new Color(1f, 1f, 1f, uiOpacity);
 
-        _windowRect = GUI.Window((int)WindowId.MenuUI, _windowRect, (GUI.WindowFunction)WindowFunction, "Hydralum - Malum v" + MalumMenu.malumVersion);
+        _windowRect = GUI.Window((int)WindowId.MenuUI, _windowRect, (GUI.WindowFunction)WindowFunction, "Hydralum - Malum Menu v" + MalumMenu.malumVersion);
 
         GUI.color = previousColor;
     }
@@ -241,6 +242,12 @@ public class MenuUI : MonoBehaviour
         _tabScroll = GUILayout.BeginScrollView(_tabScroll, false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUILayout.ExpandHeight(true));
         for (var i = 0; i < _tabs.Count; i++)
         {
+            if (_tabs[i] is PhysicsTab && !CheatToggles.showStuffTab)
+            {
+                if (_selectedTab == i) _selectedTab = 0;
+                continue;
+            }
+
             Color standardColor = GUI.backgroundColor;
 
             if (_selectedTab == i)
@@ -271,6 +278,11 @@ public class MenuUI : MonoBehaviour
         // Tab-specific content
         if (_selectedTab >= 0 && _selectedTab < _tabs.Count)
         {
+            if (_tabs[_selectedTab] is PhysicsTab && !CheatToggles.showStuffTab)
+            {
+                _selectedTab = 0;
+            }
+
             GUILayout.BeginHorizontal();
             GUILayout.Label(_tabs[_selectedTab].name, GUIStylePreset.TabTitle);
             GUILayout.FlexibleSpace();
