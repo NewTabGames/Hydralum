@@ -19,6 +19,7 @@ namespace MalumMenu;
 
 public static class Utils
 {
+    public static bool isPastingInput;
     public static ReferenceDataManager ReferenceDataManager = DestroyableSingleton<ReferenceDataManager>.Instance; // Useful for getting full lists of all the Among Us cosmetics IDs
     public static SabotageSystemType SabotageSystem => ShipStatus.Instance.Systems[SystemTypes.Sabotage].Cast<SabotageSystemType>();
     public static bool isShip => ShipStatus.Instance;
@@ -250,6 +251,19 @@ public static class Utils
 
         lineRenderer.SetPosition(0, sourceObject.transform.position);
         lineRenderer.SetPosition(1, targetObject.transform.position);
+    }
+
+    // Returns whether the ChatUI should be active or not
+    public static bool IsChatUiActive()
+    {
+        try
+        {
+            return CheatToggles.enableChat || MeetingHud.Instance || !ShipStatus.Instance || PlayerControl.LocalPlayer.Data.IsDead;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     // Returns the max number of nested RPCs that can be in a GameData message
