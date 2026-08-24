@@ -42,7 +42,6 @@ internal class Hydra : BasePlugin
 		}
 
 		PresenceTracker.Start();
-		ChatManager.Start();
 
 		Log.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} has loaded!");
 	}
@@ -50,7 +49,6 @@ internal class Hydra : BasePlugin
 	public static void Eject()
 	{
 		PresenceTracker.Stop();
-		ChatManager.Stop();
 
 		harmony.UnpatchSelf();
 

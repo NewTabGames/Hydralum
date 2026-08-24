@@ -87,15 +87,6 @@ public static class HudManager_Update
 				__instance.ShadowQuad.gameObject.SetActive(!MalumESP.IsFullbrightActive()); // Fullbright
 			}
 
-			// Only intervene with chat when the user has explicitly enabled the "Enable Chat" cheat
-			if (CheatToggles.enableChat)
-			{
-				if (__instance.Chat != null && __instance.Chat.gameObject != null && !__instance.Chat.gameObject.activeSelf)
-				{
-					__instance.Chat.gameObject.SetActive(true);
-				}
-			}
-
 			MalumCheats.UseVentCheat(__instance);
 			MalumESP.ZoomOut(__instance);
 			MalumESP.FreecamCheat();

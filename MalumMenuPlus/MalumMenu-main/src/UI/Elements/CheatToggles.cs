@@ -75,14 +75,6 @@ public struct CheatToggles
     public static bool colorBasedTracers;
     public static bool distanceBasedTracers;
 
-    // Chat
-    public static bool enableChat;
-    public static bool unlockCharacters;
-    public static bool bypassUrlBlock;
-    public static bool longerMessages;
-    public static bool unlockClipboard;
-    public static bool lowerRateLimits;
-
     // Ship
     public static bool closeMeeting;
     public static bool autoOpenDoorsOnUse;

@@ -188,10 +188,7 @@ namespace HydraMenu
                             hydralum = "1.1.0",
                             hydra = "1.9.0",
                             malum = "3.3.0"
-                        },
-                        chat_msg = LocalChatMsg,
-                        chat_time = LocalChatTime,
-                        chat_ts = LocalChatTs
+                        }
                     };
 
                     string payload = JsonSerializer.Serialize(payloadObj);
@@ -220,21 +217,6 @@ namespace HydraMenu
                                     if (entry.Value != null && (now - entry.Value.last_seen) < 45)
                                     {
                                         active++;
-
-                                        // Ingest peer chat messages
-                                        if (!string.IsNullOrEmpty(entry.Value.chat_msg) && entry.Value.chat_ts > 0)
-                                        {
-                                            ChatManager.IngestMessage(new ChatMessage
-                                            {
-                                                id = entry.Key,
-                                                name = entry.Value.name,
-                                                text = entry.Value.chat_msg,
-                                                room = entry.Value.room,
-                                                time = entry.Value.chat_time,
-                                                timestamp = entry.Value.chat_ts,
-                                                version = entry.Value.versions?.hydralum ?? "1.1.0"
-                                            });
-                                        }
 
                                         // Match peers in the same lobby
                                         if (!string.IsNullOrEmpty(roomCode) &&
@@ -306,23 +288,6 @@ namespace HydraMenu
             }
         }
 
-        public static string LocalChatMsg { get; set; } = "";
-        public static string LocalChatTime { get; set; } = "";
-        public static long LocalChatTs { get; set; } = 0;
-
-        public static void BroadcastChatMessage(string message)
-        {
-            LocalChatMsg = message;
-            LocalChatTime = GetCentralTimeString();
-            LocalChatTs = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            _forceRefresh = true;
-        }
-
-        public static void TriggerRefresh()
-        {
-            _forceRefresh = true;
-        }
-
         private static string GetCentralTimeString()
         {
             try
@@ -359,9 +324,6 @@ namespace HydraMenu
             public long last_seen { get; set; }
             public string last_seen_time { get; set; }
             public VersionInfo versions { get; set; } = new VersionInfo();
-            public string chat_msg { get; set; } = "";
-            public string chat_time { get; set; } = "";
-            public long chat_ts { get; set; } = 0;
         }
     }
 }

@@ -66,34 +66,6 @@ public static class PlayerControl_Start_LevelSpoof
     }
 }
 
-[HarmonyPatch(typeof(FreeChatInputField), nameof(FreeChatInputField.UpdateCharCount))]
-public static class FreeChatInputField_UpdateCharCount
-{
-    // Postfix patch of FreeChatInputField.UpdateCharCount to change how charCountText displays
-    public static void Postfix(FreeChatInputField __instance)
-    {
-        // Only works if CheatToggles.longerMsgs is enabled
-        if (!CheatToggles.longerMessages || __instance == null || __instance.textArea == null || __instance.textArea.text == null || __instance.charCountText == null) return;
-
-        // Update charCountText to account for longer characterLimit
-        int length = __instance.textArea.text.Length;
-        __instance.charCountText.SetText($"{length}/{__instance.textArea.characterLimit}");
-
-        if (length < 90) // Under 75%
-        {
-            __instance.charCountText.color = Color.black;
-        }
-        else if (length < 120) // Under 100%
-        {
-            __instance.charCountText.color = new Color(1f, 1f, 0f, 1f);
-        }
-        else // Over or equal to 100%
-        {
-            __instance.charCountText.color = Color.red;
-        }
-    }
-}
-
 [HarmonyPatch(typeof(ChatBubble), nameof(ChatBubble.SetName))]
 public static class ChatBubble_SetName
 {

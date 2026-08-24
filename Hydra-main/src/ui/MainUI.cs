@@ -32,7 +32,7 @@ namespace HydraMenu.ui
 		}
 
 		// UI Section Pane
-		private readonly ISection[] sections = { new GeneralSection(), new SelfSection(), new TrollSection(), new SabotageSection(), new HostSection(), new ChatSection(), new PlayersSection(), new MovementSection(), new VisualSection(), new ProtectionsSection(), new AnticheatSection(), new SpooferSection(), new MenuSection(), new InfoSection() };
+		private readonly ISection[] sections = { new GeneralSection(), new SelfSection(), new TrollSection(), new SabotageSection(), new HostSection(), new PlayersSection(), new MovementSection(), new VisualSection(), new ProtectionsSection(), new AnticheatSection(), new SpooferSection(), new MenuSection(), new InfoSection() };
 		public byte activeTab = 0;
 
 		public static Vector2 SectionListSize
@@ -65,7 +65,6 @@ namespace HydraMenu.ui
 		{
 			AnnouncementManager.Update();
 			PresenceTracker.UpdateMainThread();
-			ChatManager.UpdateMainThread();
 
 			if(Input.GetKeyDown(KeyCode.F6))
 			{
