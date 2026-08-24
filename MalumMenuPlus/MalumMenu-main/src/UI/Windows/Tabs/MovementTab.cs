@@ -38,10 +38,6 @@ public class MovementTab : ITab
     {
         CheatToggles.becomeImmortal = GUILayout.Toggle(CheatToggles.becomeImmortal, " Become Immortal");
 
-        CheatToggles.noLadderCd = GUILayout.Toggle(CheatToggles.noLadderCd, " No Ladder Cooldown");
-
-        CheatToggles.unlimitedMeetings = GUILayout.Toggle(CheatToggles.unlimitedMeetings, " Unlimited Meetings");
-
         CheatToggles.noClip = GUILayout.Toggle(CheatToggles.noClip, " NoClip");
 
         CheatToggles.invertControls = GUILayout.Toggle(CheatToggles.invertControls, " Invert Controls");

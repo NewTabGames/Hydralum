@@ -180,7 +180,10 @@ namespace HydraMenu
                     {
                         last_seen = now,
                         last_seen_time = DateTime.Now.ToString("h:mm:ss tt"),
-                        version = MyPluginInfo.PLUGIN_VERSION,
+                        version = "1.0.0",
+                        hydralum_version = "1.0.0",
+                        hydra_version = "1.9.0",
+                        malum_version = "3.3.0",
                         room = roomCode,
                         name = pName,
                         p_id = pId
@@ -287,7 +290,10 @@ namespace HydraMenu
         {
             public long last_seen { get; set; }
             public string last_seen_time { get; set; }
-            public string version { get; set; }
+            public string version { get; set; } = "1.0.0";
+            public string hydralum_version { get; set; } = "1.0.0";
+            public string hydra_version { get; set; } = "1.9.0";
+            public string malum_version { get; set; } = "3.3.0";
             public string room { get; set; }
             public string name { get; set; }
             public int p_id { get; set; } = -1;

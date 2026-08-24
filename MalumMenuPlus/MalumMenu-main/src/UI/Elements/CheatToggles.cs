@@ -17,8 +17,6 @@ public struct CheatToggles
 
     // Self (ported from Hydra)
     public static bool becomeImmortal;
-    public static bool noLadderCd;
-    public static bool unlimitedMeetings;
 
     // Roles
     public static bool setFakeRole;
