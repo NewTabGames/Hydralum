@@ -29,12 +29,12 @@ public class MenuUI : MonoBehaviour
         _tabs.Add(new RolesTab());
         _tabs.Add(new ShipTab());
         _tabs.Add(new ChatTab());
+        _tabs.Add(new GlobalChatTab());
         _tabs.Add(new PlayersTab());
         _tabs.Add(new OutfitsTab());
         _tabs.Add(new ConsoleTab());
         _tabs.Add(new HostOnlyTab());
         _tabs.Add(new ConfigTab());
-        _tabs.Add(new GlobalChatTab());
         _tabs.Add(new ThemesTab());
         _tabs.Add(new InfoTab());
         _tabs.Add(new DebugTab());
@@ -235,7 +235,7 @@ public class MenuUI : MonoBehaviour
         var previousColor = GUI.color;
         GUI.color = new Color(1f, 1f, 1f, uiOpacity);
 
-        _windowRect = GUI.Window((int)WindowId.MenuUI, _windowRect, (GUI.WindowFunction)WindowFunction, $"Hydralum v1.0.0 - Malum Menu v{MalumMenu.malumVersion}  |  Online: {PresenceTracker.GetOnlineCount()}");
+        _windowRect = GUI.Window((int)WindowId.MenuUI, _windowRect, (GUI.WindowFunction)WindowFunction, $"Hydralum v1.1.0 - Malum Menu v{MalumMenu.malumVersion}  |  Online: {PresenceTracker.GetOnlineCount()}");
 
         GUI.color = previousColor;
     }

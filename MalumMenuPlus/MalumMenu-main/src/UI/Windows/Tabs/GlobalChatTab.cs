@@ -70,9 +70,8 @@ public class GlobalChatTab : ITab
 
         // Header info
         GUILayout.BeginHorizontal();
-        GUILayout.Label("<b>Hydralum Chat</b>", GUIStylePreset.TabSubtitle, GUILayout.ExpandWidth(true));
         int online = PresenceTracker.GetOnlineCount();
-        GUILayout.Label($"<color=#00FF88>● {online} online</color>", GUIStylePreset.Hint, GUILayout.Width(90));
+        GUILayout.Label($"<color=#00FF88>● {online} online</color>", GUIStylePreset.Hint, GUILayout.ExpandWidth(true));
         if (GUILayout.Button("Refresh", GUIStylePreset.NormalButton, GUILayout.Width(65), GUILayout.Height(20)))
         {
             ChatManager.Refresh();

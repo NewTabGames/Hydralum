@@ -17,7 +17,7 @@ namespace HydraMenu.ui
 		public static Vector2 windowPosition = new Vector2(250, 100);
 		public static Vector2 WindowSize
 		{
-			get { return new Vector2(500, 470) * scale; }
+			get { return new Vector2(520, 470) * scale; }
 		}
 
 		// UI Header
@@ -32,12 +32,12 @@ namespace HydraMenu.ui
 		}
 
 		// UI Section Pane
-		private readonly ISection[] sections = { new GeneralSection(), new SelfSection(), new TrollSection(), new SabotageSection(), new HostSection(), new PlayersSection(), new MovementSection(), new VisualSection(), new ProtectionsSection(), new AnticheatSection(), new SpooferSection(), new MenuSection(), new ChatSection(), new InfoSection() };
+		private readonly ISection[] sections = { new GeneralSection(), new SelfSection(), new TrollSection(), new SabotageSection(), new HostSection(), new ChatSection(), new PlayersSection(), new MovementSection(), new VisualSection(), new ProtectionsSection(), new AnticheatSection(), new SpooferSection(), new MenuSection(), new InfoSection() };
 		public byte activeTab = 0;
 
 		public static Vector2 SectionListSize
 		{
-			get { return new Vector2(100 * scale, WindowSize.y - HeaderSize.y); }
+			get { return new Vector2(120 * scale, WindowSize.y - HeaderSize.y); }
 		}
 
 		public static Vector2 SectionListPosition
@@ -133,7 +133,7 @@ namespace HydraMenu.ui
 				GUI.skin.label.fontSize = (int)(13 * scale);
 
 				// Render UI box
-				GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum v1.0.0 - Hydra v{MyPluginInfo.PLUGIN_VERSION}  |  Online: {PresenceTracker.GetOnlineCount()}", Styles.MainBox);
+				GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum v1.1.0 - Hydra v{MyPluginInfo.PLUGIN_VERSION}  |  Online: {PresenceTracker.GetOnlineCount()}", Styles.MainBox);
 
 				// Switch button on top header matching the Hydralum mock design
 				Rect switchBtnRect = new Rect(windowPosition.x + WindowSize.x - 95 * scale, windowPosition.y + 2 * scale, 90 * scale, 20 * scale);

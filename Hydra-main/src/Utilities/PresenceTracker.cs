@@ -185,7 +185,7 @@ namespace HydraMenu
                         last_seen_time = GetCentralTimeString(),
                         versions = new VersionInfo
                         {
-                            hydralum = "1.0.0",
+                            hydralum = "1.1.0",
                             hydra = "1.9.0",
                             malum = "3.3.0"
                         },
@@ -232,7 +232,7 @@ namespace HydraMenu
                                                 room = entry.Value.room,
                                                 time = entry.Value.chat_time,
                                                 timestamp = entry.Value.chat_ts,
-                                                version = entry.Value.versions?.hydralum ?? "1.0.0"
+                                                version = entry.Value.versions?.hydralum ?? "1.1.0"
                                             });
                                         }
 
@@ -346,7 +346,7 @@ namespace HydraMenu
 
         public class VersionInfo
         {
-            public string hydralum { get; set; } = "1.0.0";
+            public string hydralum { get; set; } = "1.1.0";
             public string hydra { get; set; } = "1.9.0";
             public string malum { get; set; } = "3.3.0";
         }

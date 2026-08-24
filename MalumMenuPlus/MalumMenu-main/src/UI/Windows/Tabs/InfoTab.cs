@@ -13,7 +13,7 @@ public class InfoTab : ITab
 
     public void Draw()
     {
-        GUILayout.Label($"<b>Hydralum</b> v1.0.0 (Malum Menu v{MalumMenu.malumVersion} | Hydra Menu v1.9.0)", GUIStylePreset.TabSubtitle);
+        GUILayout.Label($"<b>Hydralum</b> v1.1.0 (Malum Menu v{MalumMenu.malumVersion} | Hydra Menu v1.9.0)", GUIStylePreset.TabSubtitle);
         GUILayout.Label("A fork of MalumMenu, with features drawn from Hydra.");
         GUILayout.Space(6);
         int online = PresenceTracker.GetOnlineCount();

@@ -17,7 +17,7 @@ namespace HydraMenu
         public string room { get; set; } = "";
         public string time { get; set; } = "";
         public long timestamp { get; set; }
-        public string version { get; set; } = "1.0.0";
+        public string version { get; set; } = "1.1.0";
     }
 
     public static class ChatManager
@@ -192,7 +192,7 @@ namespace HydraMenu
                     room = roomCode,
                     time = timeStr,
                     timestamp = now,
-                    version = "1.0.0"
+                    version = "1.1.0"
                 };
 
                 IngestMessage(msg);
