@@ -28,9 +28,40 @@ namespace HydraMenu.ui.sections
             }
 
             // Keyboard input processing for IL2CPP safety
-            if (Event.current != null && Event.current.type == EventType.KeyDown && _isInputFocused)
+            if (_isInputFocused)
             {
-                if (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter)
+                string typed = Input.inputString;
+                if (!string.IsNullOrEmpty(typed))
+                {
+                    foreach (char c in typed)
+                    {
+                        if (c == '\b') // Backspace
+                        {
+                            if (_inputText.Length > 0)
+                            {
+                                _inputText = _inputText.Substring(0, _inputText.Length - 1);
+                            }
+                        }
+                        else if (c == '\n' || c == '\r') // Enter
+                        {
+                            if (!string.IsNullOrWhiteSpace(_inputText))
+                            {
+                                string toSend = _inputText;
+                                _inputText = "";
+                                _ = ChatManager.SendMessageAsync(toSend);
+                            }
+                        }
+                        else if (!char.IsControl(c))
+                        {
+                            if (_inputText.Length < 140)
+                            {
+                                _inputText += c;
+                            }
+                        }
+                    }
+                }
+
+                if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
                 {
                     if (!string.IsNullOrWhiteSpace(_inputText))
                     {
@@ -38,17 +69,17 @@ namespace HydraMenu.ui.sections
                         _inputText = "";
                         _ = ChatManager.SendMessageAsync(toSend);
                     }
-                    Event.current.Use();
                 }
-                else if (Event.current.keyCode == KeyCode.Backspace)
+
+                if (Input.GetKeyDown(KeyCode.Backspace))
                 {
-                    if (_inputText.Length > 0)
+                    if (_inputText.Length > 0 && string.IsNullOrEmpty(typed))
                     {
                         _inputText = _inputText.Substring(0, _inputText.Length - 1);
                     }
-                    Event.current.Use();
                 }
-                else if (Event.current.keyCode == KeyCode.V && (Event.current.control || Event.current.command || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
+
+                if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.V))
                 {
                     string clip = GUIUtility.systemCopyBuffer;
                     if (!string.IsNullOrEmpty(clip))
@@ -56,15 +87,6 @@ namespace HydraMenu.ui.sections
                         _inputText += clip;
                         if (_inputText.Length > 140) _inputText = _inputText.Substring(0, 140);
                     }
-                    Event.current.Use();
-                }
-                else if (Event.current.character != '\0' && !char.IsControl(Event.current.character))
-                {
-                    if (_inputText.Length < 140)
-                    {
-                        _inputText += Event.current.character;
-                    }
-                    Event.current.Use();
                 }
             }
 

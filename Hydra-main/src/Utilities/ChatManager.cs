@@ -218,65 +218,15 @@ namespace HydraMenu
             _statusMessageTimer = 2f;
         }
 
-        public static async Task RefreshMessagesAsync(CancellationToken token = default)
-        {
-            try
-            {
-                string url = $"{FirebaseChatUrl}.json?orderBy=\"$key\"&limitToLast=50&t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-                var response = await HttpClient.GetAsync(url, token);
-                if (response.IsSuccessStatusCode)
-                {
-                    var json = await response.Content.ReadAsStringAsync(token);
-                    if (!string.IsNullOrEmpty(json) && json != "null")
-                    {
-                        var dict = JsonSerializer.Deserialize<Dictionary<string, ChatMessage>>(json);
-                        if (dict != null)
-                        {
-                            var list = new List<ChatMessage>();
-                            foreach (var kv in dict)
-                            {
-                                if (kv.Value != null)
-                                {
-                                    kv.Value.id = kv.Key;
-                                    list.Add(kv.Value);
-                                }
-                            }
-                            list.Sort((a, b) => a.timestamp.CompareTo(b.timestamp));
-
-                            lock (_lock)
-                            {
-                                if (list.Count > 0 && _messages.Count > 0)
-                                {
-                                    long newest = list[list.Count - 1].timestamp;
-                                    if (newest > _lastSeenTimestamp)
-                                    {
-                                        _unreadCount++;
-                                    }
-                                }
-                                _messages = list;
-                            }
-
-                            string listJson = JsonSerializer.Serialize(list);
-                            AppDomain.CurrentDomain.SetData("HydralumChatMessagesJson", listJson);
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                // Ignore transient network errors
-            }
-        }
-
         private static async Task WorkerLoop(CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
-                await RefreshMessagesAsync(token);
+                PresenceTracker.TriggerRefresh();
 
                 try
                 {
-                    await Task.Delay(2500, token);
+                    await Task.Delay(3000, token);
                 }
                 catch (TaskCanceledException)
                 {
