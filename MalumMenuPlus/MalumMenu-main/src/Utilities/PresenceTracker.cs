@@ -178,15 +178,17 @@ namespace MalumMenu
                     // 1. Send heartbeat
                     var payloadObj = new PresenceNode
                     {
+                        name = pName,
+                        room = roomCode,
+                        p_id = pId,
                         last_seen = now,
                         last_seen_time = DateTime.Now.ToString("h:mm:ss tt"),
-                        version = "1.0.0",
-                        hydralum_version = "1.0.0",
-                        hydra_version = "1.9.0",
-                        malum_version = "3.3.0",
-                        room = roomCode,
-                        name = pName,
-                        p_id = pId
+                        versions = new VersionInfo
+                        {
+                            hydralum = "1.0.0",
+                            hydra = "1.9.0",
+                            malum = "3.3.0"
+                        }
                     };
 
                     string payload = JsonSerializer.Serialize(payloadObj);
@@ -286,17 +288,21 @@ namespace MalumMenu
             }
         }
 
+        public class VersionInfo
+        {
+            public string hydralum { get; set; } = "1.0.0";
+            public string hydra { get; set; } = "1.9.0";
+            public string malum { get; set; } = "3.3.0";
+        }
+
         public class PresenceNode
         {
+            public string name { get; set; }
+            public string room { get; set; }
+            public int p_id { get; set; } = -1;
             public long last_seen { get; set; }
             public string last_seen_time { get; set; }
-            public string version { get; set; } = "1.0.0";
-            public string hydralum_version { get; set; } = "1.0.0";
-            public string hydra_version { get; set; } = "1.9.0";
-            public string malum_version { get; set; } = "3.3.0";
-            public string room { get; set; }
-            public string name { get; set; }
-            public int p_id { get; set; } = -1;
+            public VersionInfo versions { get; set; } = new VersionInfo();
         }
     }
 }
