@@ -249,16 +249,19 @@ public partial class MalumMenu : BasePlugin
         }));
 
         PresenceTracker.Start();
+        ChatManager.Start();
     }
 
     public override bool Unload()
     {
         PresenceTracker.Stop();
+        ChatManager.Stop();
         return base.Unload();
     }
 
     public void OnApplicationQuit()
     {
         PresenceTracker.Stop();
+        ChatManager.Stop();
     }
 }

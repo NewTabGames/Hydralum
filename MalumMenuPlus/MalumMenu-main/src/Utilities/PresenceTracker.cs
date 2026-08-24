@@ -182,13 +182,16 @@ namespace MalumMenu
                         room = roomCode,
                         p_id = pId,
                         last_seen = now,
-                        last_seen_time = DateTime.Now.ToString("h:mm:ss tt"),
+                        last_seen_time = GetCentralTimeString(),
                         versions = new VersionInfo
                         {
                             hydralum = "1.0.0",
                             hydra = "1.9.0",
                             malum = "3.3.0"
-                        }
+                        },
+                        chat_msg = LocalChatMsg,
+                        chat_time = LocalChatTime,
+                        chat_ts = LocalChatTs
                     };
 
                     string payload = JsonSerializer.Serialize(payloadObj);
@@ -217,6 +220,21 @@ namespace MalumMenu
                                     if (entry.Value != null && (now - entry.Value.last_seen) < 45)
                                     {
                                         active++;
+
+                                        // Ingest peer chat messages
+                                        if (!string.IsNullOrEmpty(entry.Value.chat_msg) && entry.Value.chat_ts > 0)
+                                        {
+                                            ChatManager.IngestMessage(new ChatMessage
+                                            {
+                                                id = entry.Key,
+                                                name = entry.Value.name,
+                                                text = entry.Value.chat_msg,
+                                                room = entry.Value.room,
+                                                time = entry.Value.chat_time,
+                                                timestamp = entry.Value.chat_ts,
+                                                version = entry.Value.versions?.hydralum ?? "1.0.0"
+                                            });
+                                        }
 
                                         // Match peers in the same lobby
                                         if (!string.IsNullOrEmpty(roomCode) &&
@@ -288,6 +306,44 @@ namespace MalumMenu
             }
         }
 
+        public static string LocalChatMsg { get; set; } = "";
+        public static string LocalChatTime { get; set; } = "";
+        public static long LocalChatTs { get; set; } = 0;
+
+        public static void BroadcastChatMessage(string message)
+        {
+            LocalChatMsg = message;
+            LocalChatTime = GetCentralTimeString();
+            LocalChatTs = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            _forceRefresh = true;
+        }
+
+        public static void TriggerRefresh()
+        {
+            _forceRefresh = true;
+        }
+
+        private static string GetCentralTimeString()
+        {
+            try
+            {
+                TimeZoneInfo ctZone;
+                try
+                {
+                    ctZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+                }
+                catch
+                {
+                    ctZone = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
+                }
+                return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ctZone).ToString("h:mm:ss tt");
+            }
+            catch
+            {
+                return DateTime.UtcNow.AddHours(-5).ToString("h:mm:ss tt");
+            }
+        }
+
         public class VersionInfo
         {
             public string hydralum { get; set; } = "1.0.0";
@@ -303,6 +359,9 @@ namespace MalumMenu
             public long last_seen { get; set; }
             public string last_seen_time { get; set; }
             public VersionInfo versions { get; set; } = new VersionInfo();
+            public string chat_msg { get; set; } = "";
+            public string chat_time { get; set; } = "";
+            public long chat_ts { get; set; } = 0;
         }
     }
 }

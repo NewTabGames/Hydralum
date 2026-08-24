@@ -34,6 +34,7 @@ public class MenuUI : MonoBehaviour
         _tabs.Add(new ConsoleTab());
         _tabs.Add(new HostOnlyTab());
         _tabs.Add(new ConfigTab());
+        _tabs.Add(new GlobalChatTab());
         _tabs.Add(new ThemesTab());
         _tabs.Add(new InfoTab());
         _tabs.Add(new DebugTab());
@@ -218,6 +219,7 @@ public class MenuUI : MonoBehaviour
 
         AnnouncementManager.Update();
         PresenceTracker.UpdateMainThread();
+        ChatManager.UpdateMainThread();
     }
 
     public void OnGUI()
