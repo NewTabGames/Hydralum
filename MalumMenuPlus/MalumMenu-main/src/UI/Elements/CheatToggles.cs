@@ -13,6 +13,7 @@ public struct CheatToggles
     public static bool teleportPlayer;
     public static bool teleportCursor;
     public static bool invertControls;
+    public static bool useSnapToRpc = true;
 
     // Self (ported from Hydra)
     public static bool becomeImmortal;
@@ -301,7 +302,11 @@ public struct CheatToggles
         writer.WriteLine($"FpsLimit = {FpsUnlocker.TargetFps}");
 
         writer.WriteLine();
-        writer.WriteLine("# Menu appearance (scale 0.80 - 1.50, opacity 0.30 - 1.00)");
+        writer.WriteLine("# Outfits / Color Sniper");
+        writer.WriteLine($"ColorSniperTargetColor = {CheatToggles.colorSniperTargetColor}");
+
+        writer.WriteLine();
+        writer.WriteLine("# Menu appearance (scale 0.50 - 2.00, opacity 0.10 - 1.00)");
         writer.WriteLine($"MenuScale = {MenuUI.uiScale.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
         writer.WriteLine($"MenuOpacity = {MenuUI.uiOpacity.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
 
@@ -339,7 +344,20 @@ public struct CheatToggles
             if (name == "FpsLimit")
             {
                 if (int.TryParse(parts[1].Trim(), out var fps))
+                {
                     FpsUnlocker.TargetFps = Mathf.Clamp(fps, FpsUnlocker.MinFps, FpsUnlocker.MaxFps);
+                    if (MalumMenu.fpsLimit != null) MalumMenu.fpsLimit.Value = FpsUnlocker.TargetFps;
+                }
+                continue;
+            }
+
+            if (name == "ColorSniperTargetColor")
+            {
+                if (byte.TryParse(parts[1].Trim(), out var col))
+                {
+                    CheatToggles.colorSniperTargetColor = col;
+                    if (MalumMenu.colorSniperTargetColor != null) MalumMenu.colorSniperTargetColor.Value = col;
+                }
                 continue;
             }
 
@@ -347,14 +365,20 @@ public struct CheatToggles
             if (name == "MenuScale")
             {
                 if (float.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var scale))
-                    MenuUI.uiScale = Mathf.Clamp(scale, 0.8f, 1.5f);
+                {
+                    MenuUI.uiScale = Mathf.Clamp(scale, 0.5f, 2.0f);
+                    if (MalumMenu.menuScale != null) MalumMenu.menuScale.Value = MenuUI.uiScale;
+                }
                 continue;
             }
 
             if (name == "MenuOpacity")
             {
                 if (float.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var opacity))
-                    MenuUI.uiOpacity = Mathf.Clamp(opacity, 0.3f, 1f);
+                {
+                    MenuUI.uiOpacity = Mathf.Clamp(opacity, 0.1f, 1f);
+                    if (MalumMenu.menuOpacity != null) MalumMenu.menuOpacity.Value = MenuUI.uiOpacity;
+                }
                 continue;
             }
 

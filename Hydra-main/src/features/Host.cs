@@ -1,4 +1,4 @@
-﻿using AmongUs.GameOptions;
+using AmongUs.GameOptions;
 using HarmonyLib;
 using Hazel;
 using HydraMenu.network;
@@ -87,7 +87,7 @@ namespace HydraMenu.features
 
 			static void Prefix(PlayerControl __instance, uint level)
 			{
-				if(!Enabled || !AmongUsClient.Instance.AmHost || __instance == PlayerControl.LocalPlayer || level > MinLevel) return;
+				if(!Enabled || AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost || __instance == null || __instance.Data == null || __instance == PlayerControl.LocalPlayer || level > MinLevel) return;
 
 				Hydra.notifications.Send("Block Low Levels", $"{__instance.Data.PlayerName} is level {level}, which is below the level threshold. They will be kicked from the game.");
 				AmongUsClient.Instance.KickPlayer(__instance.OwnerId, false);
@@ -103,7 +103,7 @@ namespace HydraMenu.features
 			{
 				if(!Enabled) return true;
 
-				__result = __instance.AmHost;
+				__result = __instance != null && __instance.AmHost;
 				return false;
 			}
 		}
@@ -117,7 +117,7 @@ namespace HydraMenu.features
 
 			static void Postfix(PlayerControl player, MessageReader msgReader)
 			{
-				if(!Enabled || !AmongUsClient.Instance.AmHost || player.OwnerId == AmongUsClient.Instance.HostId) return;
+				if(!Enabled || AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost || player == null || player.Data == null || player.OwnerId == AmongUsClient.Instance.HostId) return;
 
 				// Prevent an exploit where if the comms sabotage is active, someone could enter and leave the security cameras to remove the comms effect from themselves
 				if(Sabotage.IsSabotageActive(SystemTypes.Comms))
@@ -134,6 +134,8 @@ namespace HydraMenu.features
 				msgReader.Position--;
 				// 1 = Player started to watch cameras, 2 (and every other value) = Player stopped watching cameras
 				byte operation = msgReader.ReadByte();
+
+				if (ShipStatus.Instance == null) return;
 
 				MessageWriter systemUpdate = MessageWriter.Get(SendOption.Reliable);
 				systemUpdate.StartMessage((byte)SystemTypes.Comms);
@@ -167,12 +169,14 @@ namespace HydraMenu.features
 			// Make sure List<T> is imported from Il2CppSystem otherwise things will go terribly wrong!
 			static void Prefix(ref List<NetworkedPlayerInfo> players, ref List<RoleTypes> roleList, ref int rolesAssigned)
 			{
-				if(!Enabled || !AmongUsClient.Instance.AmHost) return;
+				if(!Enabled || AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null || players == null || roleList == null) return;
 
 				Hydra.Log.LogInfo($"Attempting to assign ourselves the {assignedRole} role");
 
+				byte localPlayerId = PlayerControl.LocalPlayer.Data.PlayerId;
+
 				// Stupid shenanigans to deal with IL2Cpp interop
-				Il2CppSystem.Predicate<NetworkedPlayerInfo> predicate = (Il2CppSystem.Predicate<NetworkedPlayerInfo>)(player => player == PlayerControl.LocalPlayer.Data);
+				Il2CppSystem.Predicate<NetworkedPlayerInfo> predicate = (Il2CppSystem.Predicate<NetworkedPlayerInfo>)(player => player != null && player.PlayerId == localPlayerId);
 				int playerIndex = players.FindIndex(predicate);
 
 				// The AssignRolesFromList function is called multiple times each with different list of players

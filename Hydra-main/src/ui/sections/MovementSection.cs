@@ -13,6 +13,7 @@ namespace HydraMenu.ui.sections
 			if(PlayerControl.LocalPlayer == null)
 			{
 				GUILayout.Label("You are not currently in a game, these options will not work.");
+				return;
 			}
 			else
 			{
@@ -22,7 +23,12 @@ namespace HydraMenu.ui.sections
 				GUILayout.Label($"Current Map: {Utilities.GetCurrentMap()}\nCurrent Position:\nX: {position.x:F2}\nY: {position.y:F2}");
 			}
 
+			bool prevSnap = Teleporter.UseSnapToRPC;
 			Teleporter.UseSnapToRPC = GUILayout.Toggle(Teleporter.UseSnapToRPC, "Use SnapTo RPC For Teleports");
+			if (Teleporter.UseSnapToRPC != prevSnap)
+			{
+				HydraConfig.Save();
+			}
 			GUILayout.Label("Teleport To Location:");
 
 			Dictionary<string, Vector2> teleportLocations = Teleporter.GetTeleportLocations();

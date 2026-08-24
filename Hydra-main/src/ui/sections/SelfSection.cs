@@ -1,4 +1,4 @@
-﻿using AmongUs.Data;
+using AmongUs.Data;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using HydraMenu.assets;
 using HydraMenu.features;
@@ -24,21 +24,48 @@ namespace HydraMenu.ui.sections
 				GUILayout.Label($"Role: {PlayerControl.LocalPlayer.Data.RoleType}");
 			}
 
-			// Self.BypassIntentionalDisconnectionBlocks.Enabled = GUILayout.Toggle(Self.BypassIntentionalDisconnectionBlocks.Enabled, "Bypass intentional disconnection temp bans");
+			bool prevFreeplay = Self.UpdateStatsFreeplay.Enabled;
 			Self.UpdateStatsFreeplay.Enabled = GUILayout.Toggle(Self.UpdateStatsFreeplay.Enabled, "Update Stats in Freeplay");
+			if (Self.UpdateStatsFreeplay.Enabled != prevFreeplay) HydraConfig.Save();
+
+			bool prevImmortal = Immortality.Enabled;
 			Immortality.Enabled = GUILayout.Toggle(Immortality.Enabled, "Become Immortal");
+			if (Immortality.Enabled != prevImmortal) HydraConfig.Save();
+
+			bool prevTaskAnim = Self.AlwaysShowTaskAnimations;
 			Self.AlwaysShowTaskAnimations = GUILayout.Toggle(Self.AlwaysShowTaskAnimations, "Always Show Task Animations");
+			if (Self.AlwaysShowTaskAnimations != prevTaskAnim) HydraConfig.Save();
+
+			bool prevLadder = Self.NoLadderCooldown.Enabled;
 			Self.NoLadderCooldown.Enabled = GUILayout.Toggle(Self.NoLadderCooldown.Enabled, "No Ladder Cooldown");
+			if (Self.NoLadderCooldown.Enabled != prevLadder) HydraConfig.Save();
+
+			bool prevMeetings = Self.UnlimitedMeetings.enabled;
 			Self.UnlimitedMeetings.enabled = GUILayout.Toggle(Self.UnlimitedMeetings.enabled, "Unlimited Meetings");
+			if (Self.UnlimitedMeetings.enabled != prevMeetings) HydraConfig.Save();
+
+			bool prevSniper = Self.ColorSniper.Enabled;
+			Self.ColorSniper.Enabled = GUILayout.Toggle(Self.ColorSniper.Enabled, "Color Sniper");
+			if (Self.ColorSniper.Enabled != prevSniper) HydraConfig.Save();
+
+			if (Self.ColorSniper.Enabled)
+			{
+				GUILayout.Label($"Sniper Target: {(Controls.PlayerColors)Self.ColorSniper.TargetColor}");
+				byte prevCol = Self.ColorSniper.TargetColor;
+				Self.ColorSniper.TargetColor = (byte)Controls.HorizontalColorSlider((Controls.PlayerColors)Self.ColorSniper.TargetColor);
+				if (Self.ColorSniper.TargetColor != prevCol) HydraConfig.Save();
+			}
 
 			if(GUILayout.Button("Call Meeting"))
 			{
-				Utilities.AttemptStartMeeting(PlayerControl.LocalPlayer, null);
+				if (PlayerControl.LocalPlayer != null)
+					Utilities.AttemptStartMeeting(PlayerControl.LocalPlayer, null);
 			}
 
 			if(GUILayout.Button("Complete All Tasks"))
 			{
-				PlayerControl.LocalPlayer.StartCoroutine(CompleteAllTasks().WrapToIl2Cpp());
+				if (PlayerControl.LocalPlayer != null)
+					PlayerControl.LocalPlayer.StartCoroutine(CompleteAllTasks().WrapToIl2Cpp());
 			}
 
 			GUILayout.Label("Task Animations:");
@@ -61,7 +88,7 @@ namespace HydraMenu.ui.sections
 			GUILayout.Label("Avatar Controls:");
 			if(GUILayout.Button("Randomize Avatar"))
 			{
-				if(AmongUsClient.Instance.AmConnected)
+				if(AmongUsClient.Instance != null && AmongUsClient.Instance.AmConnected)
 				{
 					Utilities.RandomizePlayer(true);
 
@@ -77,21 +104,26 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Randomize Color"))
 			{
-				PlayerControl.LocalPlayer.CmdCheckColor((byte)Utilities.GetRandomUnusedColor());
+				if (PlayerControl.LocalPlayer != null)
+					PlayerControl.LocalPlayer.CmdCheckColor((byte)Utilities.GetRandomUnusedColor());
 			}
 
 			if(GUILayout.Button("Restore Avatar"))
 			{
-				PlayerControl.LocalPlayer.CmdCheckColor(DataManager.Player.Customization.Color);
-				PlayerControl.LocalPlayer.RpcSetHat(DataManager.Player.Customization.Hat);
-				PlayerControl.LocalPlayer.RpcSetVisor(DataManager.Player.Customization.Visor);
-				PlayerControl.LocalPlayer.RpcSetSkin(DataManager.Player.Customization.Skin);
-				PlayerControl.LocalPlayer.RpcSetPet(DataManager.Player.Customization.Pet);
+				if (PlayerControl.LocalPlayer != null)
+				{
+					PlayerControl.LocalPlayer.CmdCheckColor(DataManager.Player.Customization.Color);
+					PlayerControl.LocalPlayer.RpcSetHat(DataManager.Player.Customization.Hat);
+					PlayerControl.LocalPlayer.RpcSetVisor(DataManager.Player.Customization.Visor);
+					PlayerControl.LocalPlayer.RpcSetSkin(DataManager.Player.Customization.Skin);
+					PlayerControl.LocalPlayer.RpcSetPet(DataManager.Player.Customization.Pet);
+				}
 			}
 		}
 
 		public IEnumerator CompleteAllTasks()
 		{
+			if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.myTasks == null) yield break;
 			Il2CppSystem.Collections.Generic.List<PlayerTask> allTasks = PlayerControl.LocalPlayer.myTasks;
 
 			Hydra.Log.LogInfo("Completing all tasks...");

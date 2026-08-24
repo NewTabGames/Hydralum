@@ -171,16 +171,19 @@ namespace HydraMenu.network
 
 			if((IsGlobal || AmTarget) && MeetingHud.Instance != null)
 			{
-				// VotingComplete changed from 3 params to 5 in v18s (2026.8.18)
-				var vcMethod = typeof(MeetingHud).GetMethod(nameof(MeetingHud.VotingComplete));
-				if (vcMethod != null)
+				try
 				{
-					var vcParams = vcMethod.GetParameters();
-					if (vcParams.Length >= 5)
-						vcMethod.Invoke(MeetingHud.Instance, new object[] { voteStates, ejectedPlayer, isTie, wasOverruled, overruleNonce });
-					else
-						vcMethod.Invoke(MeetingHud.Instance, new object[] { voteStates, ejectedPlayer, isTie });
+					var vcMethod = typeof(MeetingHud).GetMethod(nameof(MeetingHud.VotingComplete));
+					if (vcMethod != null)
+					{
+						var vcParams = vcMethod.GetParameters();
+						if (vcParams.Length >= 5)
+							vcMethod.Invoke(MeetingHud.Instance, new object[] { voteStates, ejectedPlayer, isTie, wasOverruled, overruleNonce });
+						else
+							vcMethod.Invoke(MeetingHud.Instance, new object[] { voteStates, ejectedPlayer, isTie });
+					}
 				}
+				catch { }
 				if(AmTarget) return;
 			}
 

@@ -311,11 +311,16 @@ public static class IntroCutscene_CoBegin
         var roleManager = DestroyableSingleton<RoleManager>.Instance;
         if (roleManager != null)
         {
+            // Cache the original role before overwriting it for the swap target
+            RoleTypes originalRole = RoleTypes.Crewmate;
+            if (PlayerControl.LocalPlayer.Data != null)
+                originalRole = PlayerControl.LocalPlayer.Data.RoleType;
+
             roleManager.SetRole(PlayerControl.LocalPlayer, forcedRole);
 
-            if (roleSwapTarget != null && PlayerControl.LocalPlayer.Data != null)
+            if (roleSwapTarget != null)
             {
-                roleManager.SetRole(roleSwapTarget, PlayerControl.LocalPlayer.Data.RoleType);
+                roleManager.SetRole(roleSwapTarget, originalRole);
             }
         }
     }
@@ -421,23 +426,47 @@ public static class PassiveUiElement_Patches
         // Convert it to a top-left origin by flipping the Y coordinate
         Vector2 mousePosition = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
 
-        bool subwindowsOpen = MenuUI.isGUIActive || (MalumMenu.menuKeepSubwindowsOpen != null && MalumMenu.menuKeepSubwindowsOpen.Value);
-
-        bool isWardrobeVisible = CheatToggles.showWardrobeOverlay &&
-                                 PlayerCustomizationMenu.Instance != null &&
-                                 PlayerCustomizationMenu.Instance.isActiveAndEnabled;
+        if (MenuUI.isGUIActive && MenuUI.windowRect.Contains(mousePosition))
+            return false;
 
         Rect hydraRect = MenuUI.GetHydraRect();
+        if (hydraRect != Rect.zero && hydraRect.Contains(mousePosition))
+            return false;
 
-        // Rect.Contains() uses GUI coordinates (top-left origin)
-        return !((MenuUI.isGUIActive && MenuUI.windowRect.Contains(mousePosition)) ||
-                 (hydraRect != Rect.zero && hydraRect.Contains(mousePosition)) ||
-                 (subwindowsOpen && CheatToggles.showConsole && ConsoleUI.windowRect.Contains(mousePosition)) ||
-                 (subwindowsOpen && CheatToggles.showDoorsMenu && DoorsUI.windowRect.Contains(mousePosition)) ||
-                 (subwindowsOpen && CheatToggles.showProtectMenu && ProtectUI.windowRect.Contains(mousePosition)) ||
-                 (subwindowsOpen && CheatToggles.showRolesMenu && RolesUI.windowRect.Contains(mousePosition)) ||
-                 (subwindowsOpen && CheatToggles.showTasksMenu && TasksUI.windowRect.Contains(mousePosition)) ||
-                 (isWardrobeVisible && InventoryOutfitsUI.windowRect.Contains(mousePosition)));
+        bool subwindowsAllowed = MenuUI.isGUIActive || (MalumMenu.menuKeepSubwindowsOpen != null && MalumMenu.menuKeepSubwindowsOpen.Value);
+        if (subwindowsAllowed)
+        {
+            if (CheatToggles.showConsole && ConsoleUI.windowRect.Contains(mousePosition))
+                return false;
+
+            if (CheatToggles.showDoorsMenu && Utils.isShip && DoorsUI.windowRect.Contains(mousePosition))
+                return false;
+
+            if (CheatToggles.showProtectMenu && (Utils.isInGame || Utils.isLobby) && ProtectUI.windowRect.Contains(mousePosition))
+                return false;
+
+            if (CheatToggles.showRolesMenu && Utils.isHost && RolesUI.windowRect.Contains(mousePosition))
+                return false;
+
+            if (CheatToggles.showTasksMenu && Utils.isPlayer && TasksUI.windowRect.Contains(mousePosition))
+                return false;
+        }
+
+        try
+        {
+            if (CheatToggles.showWardrobeOverlay)
+            {
+                var wardrobe = PlayerCustomizationMenu.Instance;
+                if (wardrobe != null && wardrobe.gameObject != null && wardrobe.gameObject.activeInHierarchy)
+                {
+                    if (InventoryOutfitsUI.windowRect.Contains(mousePosition))
+                        return false;
+                }
+            }
+        }
+        catch { }
+
+        return true;
     }
 }
 

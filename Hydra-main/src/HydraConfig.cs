@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using BepInEx.Configuration;
 using HydraMenu.anticheat;
 using HydraMenu.features;
@@ -69,17 +71,25 @@ namespace HydraMenu
         public static ConfigEntry<bool> BlockLowLevels;
         public static ConfigEntry<uint> BlockLowLevelsMinLevel;
         public static ConfigEntry<bool> AlwaysImposter;
+        public static ConfigEntry<int> AlwaysImposterRole;
         public static ConfigEntry<bool> DisableMeetings;
+        public static ConfigEntry<bool> ReportBodySpamEnabled;
+        public static ConfigEntry<float> DiscoHostDelay;
 
         // Troll
         public static ConfigEntry<bool> BlockSabotages;
         public static ConfigEntry<bool> BlockVenting;
+        public static ConfigEntry<bool> AutoTriggerSporesEnabled;
+        public static ConfigEntry<bool> TeleportSpammerEnabled;
+        public static ConfigEntry<bool> DoorTrollerEnabled;
+        public static ConfigEntry<float> DoorTrollerDelay;
 
         // Sabotage
         public static ConfigEntry<bool> UpdateSystemsDirectly;
 
         // Spoofer
         public static ConfigEntry<bool> EnableVersionSpoofing;
+        public static ConfigEntry<int> SpoofedVersionIndex;
         public static ConfigEntry<bool> UseModdedProtocol;
 
         // Anticheat
@@ -88,6 +98,7 @@ namespace HydraMenu
         public static ConfigEntry<bool> SendAnticheatNotification;
         public static ConfigEntry<bool> DiscardAnticheatRpc;
         public static ConfigEntry<int> AnticheatPunishment;
+        public static readonly Dictionary<RpcCalls, ConfigEntry<bool>> AnticheatRpcChecks = new();
         private static ConfigFile _config;
 
         public static void Init(ConfigFile config)
@@ -154,17 +165,25 @@ namespace HydraMenu
             BlockLowLevels = config.Bind("Host", "BlockLowLevels", false, "Kick players below minimum level");
             BlockLowLevelsMinLevel = config.Bind("Host", "BlockLowLevelsMinLevel", 0u, "Minimum level required to join");
             AlwaysImposter = config.Bind("Host", "AlwaysImposter", false, "Always become impostor as host");
+            AlwaysImposterRole = config.Bind("Host", "AlwaysImposterRole", (int)AmongUs.GameOptions.RoleTypes.Viper, "Role assigned when Always Imposter is enabled");
             DisableMeetings = config.Bind("Host", "DisableMeetings", false, "Disable emergency meetings");
+            ReportBodySpamEnabled = config.Bind("Host", "ReportBodySpam", false, "Spam report dead bodies");
+            DiscoHostDelay = config.Bind("Host", "DiscoHostDelay", 0.5f, "Color change delay for Disco Party (0.1 to 2.0s)");
 
             // Troll
             BlockSabotages = config.Bind("Troll", "BlockSabotages", false, "Block all sabotages");
             BlockVenting = config.Bind("Troll", "BlockVenting", false, "Disable vents for other players");
+            AutoTriggerSporesEnabled = config.Bind("Troll", "AutoTriggerSpores", false, "Automatically trigger spores on Fungle");
+            TeleportSpammerEnabled = config.Bind("Troll", "TeleportSpammer", false, "Spam teleport players to vents");
+            DoorTrollerEnabled = config.Bind("Troll", "DoorTroller", false, "Automatically cycle door locking");
+            DoorTrollerDelay = config.Bind("Troll", "DoorTrollerDelay", 0.5f, "Delay between locking and unlocking doors (0.1 to 2.0s)");
 
             // Sabotage
             UpdateSystemsDirectly = config.Bind("Sabotage", "UpdateSystemsDirectly", false, "Update sabotage systems directly");
 
             // Spoofer
             EnableVersionSpoofing = config.Bind("Spoofer", "EnableVersionSpoofing", false, "Enable broadcast version spoofing");
+            SpoofedVersionIndex = config.Bind("Spoofer", "SpoofedVersionIndex", 0, "Selected spoofed version preset index");
             UseModdedProtocol = config.Bind("Spoofer", "UseModdedProtocol", false, "Use modded handshake protocol");
 
             // Anticheat
@@ -173,6 +192,11 @@ namespace HydraMenu
             SendAnticheatNotification = config.Bind("Anticheat", "SendNotification", true, "Send notification when cheater detected");
             DiscardAnticheatRpc = config.Bind("Anticheat", "DiscardRpc", true, "Discard malicious RPCs");
             AnticheatPunishment = config.Bind("Anticheat", "Punishment", (int)Anticheat.Punishments.None, "Punishment mode (0=None, 1=Kick, 2=ErrorKick, 3=Ban)");
+
+            foreach (var rpc in Anticheat.RpcHandlers.Keys)
+            {
+                AnticheatRpcChecks[rpc] = config.Bind("AnticheatRPC", $"Check_{rpc}", true, $"Enable anticheat validation for {rpc} RPC");
+            }
 
             // Apply loaded config values
             MainUI.scale = Mathf.Clamp(MenuScale.Value, 0.5f, 2.0f);
@@ -232,6 +256,7 @@ namespace HydraMenu
             Host.BlockLowLevels.Enabled = BlockLowLevels.Value;
             Host.BlockLowLevels.MinLevel = BlockLowLevelsMinLevel.Value;
             Host.AlwaysImposter.Enabled = AlwaysImposter.Value;
+            Host.AlwaysImposter.assignedRole = (AmongUs.GameOptions.RoleTypes)AlwaysImposterRole.Value;
             Host.DisableMeetings.Enabled = DisableMeetings.Value;
 
             // Apply Troll
@@ -243,7 +268,8 @@ namespace HydraMenu
 
             // Apply Spoofer
             Spoofer.shouldSpoofVersion = EnableVersionSpoofing.Value;
-            Spoofer.useModdedProtocol = UseModdedProtocol.Value;
+            ui.sections.SpooferSection.versionSelection = Mathf.Clamp(SpoofedVersionIndex.Value, 0, 8);
+            UseModdedProtocol = config.Bind("Spoofer", "UseModdedProtocol", false, "Use modded handshake protocol");
 
             // Apply Anticheat
             Anticheat.Enabled = AnticheatEnabled.Value;
@@ -251,6 +277,14 @@ namespace HydraMenu
             Anticheat.sendNotification = SendAnticheatNotification.Value;
             Anticheat.discardRpc = DiscardAnticheatRpc.Value;
             Anticheat.punishment = (Anticheat.Punishments)Mathf.Clamp(AnticheatPunishment.Value, 0, 3);
+
+            foreach (var (rpc, entry) in AnticheatRpcChecks)
+            {
+                if (Anticheat.RpcHandlers.TryGetValue(rpc, out var handler))
+                {
+                    handler.Enabled = entry.Value;
+                }
+            }
         }
 
         public static void Save()
@@ -316,17 +350,25 @@ namespace HydraMenu
             if (BlockLowLevels != null) BlockLowLevels.Value = Host.BlockLowLevels.Enabled;
             if (BlockLowLevelsMinLevel != null) BlockLowLevelsMinLevel.Value = Host.BlockLowLevels.MinLevel;
             if (AlwaysImposter != null) AlwaysImposter.Value = Host.AlwaysImposter.Enabled;
+            if (AlwaysImposterRole != null) AlwaysImposterRole.Value = (int)Host.AlwaysImposter.assignedRole;
             if (DisableMeetings != null) DisableMeetings.Value = Host.DisableMeetings.Enabled;
+            if (ReportBodySpamEnabled != null && Hydra.routines != null) ReportBodySpamEnabled.Value = Hydra.routines.reportBodySpam.Enabled;
+            if (DiscoHostDelay != null && Hydra.routines != null) DiscoHostDelay.Value = Hydra.routines.discoHost.randomizationDelay;
 
             // Troll
             if (BlockSabotages != null) BlockSabotages.Value = Troll.BlockSabotages.Enabled;
             if (BlockVenting != null) BlockVenting.Value = Troll.BlockVenting.Enabled;
+            if (AutoTriggerSporesEnabled != null && Hydra.routines != null) AutoTriggerSporesEnabled.Value = Hydra.routines.autoTriggerSpores.Enabled;
+            if (TeleportSpammerEnabled != null && Hydra.routines != null) TeleportSpammerEnabled.Value = Hydra.routines.teleportSpammer.Enabled;
+            if (DoorTrollerEnabled != null && Hydra.routines != null) DoorTrollerEnabled.Value = Hydra.routines.doorTroller.Enabled;
+            if (DoorTrollerDelay != null && Hydra.routines != null) DoorTrollerDelay.Value = Hydra.routines.doorTroller.lockAndUnlockDelay;
 
             // Sabotage
             if (UpdateSystemsDirectly != null) UpdateSystemsDirectly.Value = Sabotage.UpdateSystemsDirectly;
 
             // Spoofer
             if (EnableVersionSpoofing != null) EnableVersionSpoofing.Value = Spoofer.shouldSpoofVersion;
+            if (SpoofedVersionIndex != null) SpoofedVersionIndex.Value = ui.sections.SpooferSection.versionSelection;
             if (UseModdedProtocol != null) UseModdedProtocol.Value = Spoofer.useModdedProtocol;
 
             // Anticheat
@@ -335,6 +377,14 @@ namespace HydraMenu
             if (SendAnticheatNotification != null) SendAnticheatNotification.Value = Anticheat.sendNotification;
             if (DiscardAnticheatRpc != null) DiscardAnticheatRpc.Value = Anticheat.discardRpc;
             if (AnticheatPunishment != null) AnticheatPunishment.Value = (int)Anticheat.punishment;
+
+            foreach (var (rpc, entry) in AnticheatRpcChecks)
+            {
+                if (Anticheat.RpcHandlers.TryGetValue(rpc, out var handler) && entry != null)
+                {
+                    entry.Value = handler.Enabled;
+                }
+            }
 
             _config?.Save();
         }

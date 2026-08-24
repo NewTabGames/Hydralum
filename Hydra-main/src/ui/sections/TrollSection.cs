@@ -22,12 +22,22 @@ namespace HydraMenu.ui.sections
 			if(PlayerControl.LocalPlayer == null)
 			{
 				GUILayout.Label("You are not currently in a game, these options will not work.");
+				return;
 			}
 
 			Troll.AutoReportBodies.Enabled = Controls.PlayerSpecificToggle("Auto Report Bodies", PlayerControl.LocalPlayer, ref Troll.AutoReportBodies.source);
+
+			bool prevSpores = Hydra.routines.autoTriggerSpores.Enabled;
 			Hydra.routines.autoTriggerSpores.Enabled = GUILayout.Toggle(Hydra.routines.autoTriggerSpores.Enabled, "Auto Trigger Spores");
+			if (Hydra.routines.autoTriggerSpores.Enabled != prevSpores) HydraConfig.Save();
+
+			bool prevSab = Troll.BlockSabotages.Enabled;
 			Troll.BlockSabotages.Enabled = GUILayout.Toggle(Troll.BlockSabotages.Enabled, "Block Sabotages");
+			if (Troll.BlockSabotages.Enabled != prevSab) HydraConfig.Save();
+
+			bool prevVent = Troll.BlockVenting.Enabled;
 			Troll.BlockVenting.Enabled = GUILayout.Toggle(Troll.BlockVenting.Enabled, "Disable Vents");
+			if (Troll.BlockVenting.Enabled != prevVent) HydraConfig.Save();
 
 			if(GUILayout.Button("Kick All Players"))
 			{
@@ -92,7 +102,9 @@ namespace HydraMenu.ui.sections
 
 			GUILayout.Space(5);
 			GUILayout.Label($"Vent TP:");
+			bool prevTpFlood = Hydra.routines.teleportSpammer.Enabled;
 			Hydra.routines.teleportSpammer.Enabled = GUILayout.Toggle(Hydra.routines.teleportSpammer.Enabled, "Teleport Flooder");
+			if (Hydra.routines.teleportSpammer.Enabled != prevTpFlood) HydraConfig.Save();
 
 			int ventCount = vents != null && vents.Count > 0 ? vents.Count : (ShipStatus.Instance != null && ShipStatus.Instance.AllVents != null ? ShipStatus.Instance.AllVents.Count : 0);
 			string ventName = vents != null && vents.ContainsKey(selectedVent) ? vents[selectedVent] : selectedVent.ToString();
@@ -122,10 +134,14 @@ namespace HydraMenu.ui.sections
 			GUILayout.Space(5);
 			// Automatically close and open all doors at a set interval
 			GUILayout.Label("Door Troller:");
+			bool prevDoorTroll = Hydra.routines.doorTroller.Enabled;
 			Hydra.routines.doorTroller.Enabled = GUILayout.Toggle(Hydra.routines.doorTroller.Enabled, "Enabled");
+			if (Hydra.routines.doorTroller.Enabled != prevDoorTroll) HydraConfig.Save();
 
 			GUILayout.Label($"Lock and Unlock Delay: {Hydra.routines.doorTroller.lockAndUnlockDelay:F2}s");
+			float prevDoorDelay = Hydra.routines.doorTroller.lockAndUnlockDelay;
 			Hydra.routines.doorTroller.lockAndUnlockDelay = GUILayout.HorizontalSlider(Hydra.routines.doorTroller.lockAndUnlockDelay, 0.1f, 2.0f);
+			if (Math.Abs(Hydra.routines.doorTroller.lockAndUnlockDelay - prevDoorDelay) > 0.001f) HydraConfig.Save();
 		}
 
 		// In Hide and Seek, completing a task will reduce the HnS hide timer depending on the length of the task (short, common, or long)

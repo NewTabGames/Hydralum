@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace HydraMenu.routines
 {
@@ -12,7 +12,7 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
-			if(ShipStatus.Instance == null) return;
+			if(ShipStatus.Instance == null || ShipStatus.Instance.AllVents == null || ShipStatus.Instance.AllVents.Count == 0 || PlayerControl.AllPlayerControls == null) return;
 
 			timeElapsed += Time.deltaTime;
 			if(timeElapsed < teleportDelay) return;
@@ -20,7 +20,7 @@ namespace HydraMenu.routines
 
 			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
-				if(player == PlayerControl.LocalPlayer) continue;
+				if(player == null || player == PlayerControl.LocalPlayer) continue;
 
 				int ventId = rnd.Next(0, ShipStatus.Instance.AllVents.Count);
 

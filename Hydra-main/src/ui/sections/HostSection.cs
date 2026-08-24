@@ -1,4 +1,4 @@
-﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 using HydraMenu.features;
 using HydraMenu.network;
 using InnerNet;
@@ -22,25 +22,49 @@ namespace HydraMenu.ui.sections
 			if(PlayerControl.LocalPlayer == null)
 			{
 				GUILayout.Label("You are not currently in a game, these options will not work.");
+				return;
 			}
 			else if(!AmongUsClient.Instance.AmHost)
 			{
 				GUILayout.Label("You are not the host of the current lobby. Using these options will either do nothing or get you banned by the anticheat");
 			}
 
+			bool prevBan = Host.BanMidGame.Enabled;
 			Host.BanMidGame.Enabled = GUILayout.Toggle(Host.BanMidGame.Enabled, "Be able to ban players mid-game");
+			if (Host.BanMidGame.Enabled != prevBan) HydraConfig.Save();
 
+			bool prevFlip = Host.FlippedSkeld;
 			Host.FlippedSkeld = GUILayout.Toggle(Host.FlippedSkeld, "Use Flipped Skeld Map");
+			if (Host.FlippedSkeld != prevFlip) HydraConfig.Save();
 
+			bool prevSab = Host.DisableSabotages.Enabled;
 			Host.DisableSabotages.Enabled = GUILayout.Toggle(Host.DisableSabotages.Enabled, "Disable Sabotages");
+			if (Host.DisableSabotages.Enabled != prevSab) HydraConfig.Save();
+
+			bool prevDoors = Host.DisableCloseDoors.Enabled;
 			Host.DisableCloseDoors.Enabled = GUILayout.Toggle(Host.DisableCloseDoors.Enabled, "Disable Close Doors");
+			if (Host.DisableCloseDoors.Enabled != prevDoors) HydraConfig.Save();
+
+			bool prevCams = Host.DisableCameras.Enabled;
 			Host.DisableCameras.Enabled = GUILayout.Toggle(Host.DisableCameras.Enabled, "Disable Security Cameras");
+			if (Host.DisableCameras.Enabled != prevCams) HydraConfig.Save();
+
+			bool prevEnd = Host.DisableGameEnd.Enabled;
 			Host.DisableGameEnd.Enabled = GUILayout.Toggle(Host.DisableGameEnd.Enabled, "Disable Game End");
+			if (Host.DisableGameEnd.Enabled != prevEnd) HydraConfig.Save();
+
+			bool prevKillCd = Host.NoKillCooldown.Enabled;
 			Host.NoKillCooldown.Enabled = GUILayout.Toggle(Host.NoKillCooldown.Enabled, "No Kill Cooldown");
+			if (Host.NoKillCooldown.Enabled != prevKillCd) HydraConfig.Save();
 
 			GUILayout.BeginHorizontal();
+			bool prevLowLevels = Host.BlockLowLevels.Enabled;
 			Host.BlockLowLevels.Enabled = GUILayout.Toggle(Host.BlockLowLevels.Enabled, $"Kick players with less than {Host.BlockLowLevels.MinLevel} levels");
+			if (Host.BlockLowLevels.Enabled != prevLowLevels) HydraConfig.Save();
+
+			uint prevMinLvl = Host.BlockLowLevels.MinLevel;
 			Host.BlockLowLevels.MinLevel = (uint)GUILayout.HorizontalSlider(Host.BlockLowLevels.MinLevel, 0, 100);
+			if (Host.BlockLowLevels.MinLevel != prevMinLvl) HydraConfig.Save();
 			GUILayout.EndHorizontal();
 
 			if(GUILayout.Button("Force Start Game"))
@@ -121,14 +145,24 @@ namespace HydraMenu.ui.sections
 
 			GUILayout.Space(5);
 			GUILayout.Label("Assign roles for next round:");
+			bool prevAlwaysImp = Host.AlwaysImposter.Enabled;
 			Host.AlwaysImposter.Enabled = GUILayout.Toggle(Host.AlwaysImposter.Enabled, "Enabled");
+			if (Host.AlwaysImposter.Enabled != prevAlwaysImp) HydraConfig.Save();
+
 			GUILayout.Label($"Role to assign: {Host.AlwaysImposter.assignedRole}");
+			AmongUs.GameOptions.RoleTypes prevRole = Host.AlwaysImposter.assignedRole;
 			Host.AlwaysImposter.assignedRole = Controls.HorizontalRoleSlider(Host.AlwaysImposter.assignedRole);
+			if (Host.AlwaysImposter.assignedRole != prevRole) HydraConfig.Save();
 
 			GUILayout.Space(5);
 			GUILayout.Label("Meeting Controls:");
+			bool prevDisMeet = Host.DisableMeetings.Enabled;
 			Host.DisableMeetings.Enabled = GUILayout.Toggle(Host.DisableMeetings.Enabled, "Disable Meetings");
+			if (Host.DisableMeetings.Enabled != prevDisMeet) HydraConfig.Save();
+
+			bool prevSpamRep = Hydra.routines.reportBodySpam.Enabled;
 			Hydra.routines.reportBodySpam.Enabled = GUILayout.Toggle(Hydra.routines.reportBodySpam.Enabled, "Spam Report Bodies");
+			if (Hydra.routines.reportBodySpam.Enabled != prevSpamRep) HydraConfig.Save();
 
 			if(GUILayout.Button("Close Meeting"))
 			{
@@ -186,7 +220,9 @@ namespace HydraMenu.ui.sections
 			Hydra.routines.discoHost.Enabled = Controls.GlobalPlayerSpecificToggle("Disco Party", ref Hydra.routines.discoHost.targets);
 
 			GUILayout.Label($"Color randomization delay: {Hydra.routines.discoHost.randomizationDelay:F2}s");
+			float prevDiscoDelay = Hydra.routines.discoHost.randomizationDelay;
 			Hydra.routines.discoHost.randomizationDelay = GUILayout.HorizontalSlider(Hydra.routines.discoHost.randomizationDelay, 0.1f, 2.0f);
+			if (Math.Abs(Hydra.routines.discoHost.randomizationDelay - prevDiscoDelay) > 0.001f) HydraConfig.Save();
 		}
 
 		private static void KillAllPlayers()

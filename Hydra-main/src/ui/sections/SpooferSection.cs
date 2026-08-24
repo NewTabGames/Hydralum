@@ -25,18 +25,25 @@ namespace HydraMenu.ui.sections
 			{ "17.4", 50656300 }
 		};
 
-		private int versionSelection = 0;
+		public static int versionSelection = 0;
 
 		public override void Render()
 		{
 			GUILayout.Label("Version Spoofer:");
+			bool prevSpoof = Spoofer.shouldSpoofVersion;
 			Spoofer.shouldSpoofVersion = GUILayout.Toggle(Spoofer.shouldSpoofVersion, "Enable Version Spoofing");
+			if (Spoofer.shouldSpoofVersion != prevSpoof) HydraConfig.Save();
 
+			if (versionSelection >= versions.Count) versionSelection = 0;
 			GUILayout.Label($"Spoofed Version: {versions.ElementAt(versionSelection).Key} ({Spoofer.spoofedVersion})");
+			int prevIdx = versionSelection;
 			versionSelection = (int)GUILayout.HorizontalSlider(versionSelection, 0, versions.Count - 1);
 			Spoofer.spoofedVersion = versions.ElementAt(versionSelection).Value;
+			if (versionSelection != prevIdx) HydraConfig.Save();
 
+			bool prevProto = Spoofer.useModdedProtocol;
 			Spoofer.useModdedProtocol = GUILayout.Toggle(Spoofer.useModdedProtocol, "Use Modded Protocol");
+			if (Spoofer.useModdedProtocol != prevProto) HydraConfig.Save();
 		}
 	}
 }

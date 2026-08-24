@@ -1,4 +1,4 @@
-﻿using HydraMenu.network;
+using HydraMenu.network;
 using UnityEngine;
 
 namespace HydraMenu.routines
@@ -12,19 +12,21 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
-			if(ShipStatus.Instance == null) return;
+			if(ShipStatus.Instance == null || PlayerControl.LocalPlayer == null || Utilities.GetCurrentMap() != MapNames.Fungle) return;
 
 			timeElapsed += Time.deltaTime;
 			if(timeElapsed < SPORE_TRIGGER_DURATION) return;
 			timeElapsed = 0f;
 
-			FungleShipStatus shipStatus = ShipStatus.Instance.Cast<FungleShipStatus>();
+			FungleShipStatus shipStatus = ShipStatus.Instance.TryCast<FungleShipStatus>();
+			if (shipStatus == null || shipStatus.sporeMushrooms == null) return;
 
 			BatchedMessage batch = new BatchedMessage();
 
 			foreach(Mushroom mushroom in shipStatus.sporeMushrooms.Values)
 			{
-				batch.QueueTriggerSpore(PlayerControl.LocalPlayer, mushroom);
+				if (mushroom != null)
+					batch.QueueTriggerSpore(PlayerControl.LocalPlayer, mushroom);
 			}
 
 			batch.FinishBatch();

@@ -8,9 +8,11 @@ namespace MalumMenu;
 // The per-map coordinates are Hydra's map data, used verbatim.
 public static class MalumTeleport
 {
-    // When true, teleports use the synced SnapTo RPC (everyone sees you move). When false, only your
-    // own client moves (can rubber-band back). Not persisted - a per-session mode preference.
-    public static bool UseSnapToRpc = true;
+    public static bool UseSnapToRpc
+    {
+        get => CheatToggles.useSnapToRpc;
+        set => CheatToggles.useSnapToRpc = value;
+    }
 
     private static readonly Dictionary<string, Vector2> SkeldLocations = new()
     {

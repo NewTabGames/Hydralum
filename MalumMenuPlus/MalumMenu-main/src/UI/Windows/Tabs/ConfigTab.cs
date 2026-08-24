@@ -71,10 +71,20 @@ public class ConfigTab : ITab
 
         GUILayout.Space(4);
         GUILayout.Label("Scale:");
+        float prevScale = MenuUI.uiScale;
         MenuUI.uiScale = GUILayout.HorizontalSlider(MenuUI.uiScale, 0.5f, 2f);
+        if (Math.Abs(MenuUI.uiScale - prevScale) > 0.001f && MalumMenu.menuScale != null)
+        {
+            MalumMenu.menuScale.Value = MenuUI.uiScale;
+        }
 
         GUILayout.Label("Opacity:");
+        float prevOpacity = MenuUI.uiOpacity;
         MenuUI.uiOpacity = GUILayout.HorizontalSlider(MenuUI.uiOpacity, 0.1f, 1f);
+        if (Math.Abs(MenuUI.uiOpacity - prevOpacity) > 0.001f && MalumMenu.menuOpacity != null)
+        {
+            MalumMenu.menuOpacity.Value = MenuUI.uiOpacity;
+        }
 
         MalumMenu.menuOpenOnMouse.Value =
             GUILayout.Toggle(MalumMenu.menuOpenOnMouse.Value, " Open on Cursor");
@@ -110,8 +120,13 @@ public class ConfigTab : ITab
         CheatToggles.spoofAprilFoolsDate = GUILayout.Toggle(CheatToggles.spoofAprilFoolsDate, " Spoof Date to April 1st");
         CheatToggles.unlockFps = GUILayout.Toggle(CheatToggles.unlockFps, " Unlock FPS");
 
+        int prevFps = FpsUnlocker.TargetFps;
         FpsUnlocker.TargetFps = Mathf.RoundToInt(
             GUILayout.HorizontalSlider(FpsUnlocker.TargetFps, FpsUnlocker.MinFps, FpsUnlocker.MaxFps));
+        if (FpsUnlocker.TargetFps != prevFps && MalumMenu.fpsLimit != null)
+        {
+            MalumMenu.fpsLimit.Value = FpsUnlocker.TargetFps;
+        }
 
         GUILayout.Label($"FPS Limit: {FpsUnlocker.TargetFps}");
     }

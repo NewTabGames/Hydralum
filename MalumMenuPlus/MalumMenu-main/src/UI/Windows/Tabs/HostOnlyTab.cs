@@ -43,11 +43,21 @@ public class HostOnlyTab : ITab
 
         CheatToggles.noKillCd = GUILayout.Toggle(CheatToggles.noKillCd, " No Kill Cooldown");
 
+        CheatToggles.banMidGame = GUILayout.Toggle(CheatToggles.banMidGame, " Ban Mid-Game");
+
+        CheatToggles.disableCloseDoors = GUILayout.Toggle(CheatToggles.disableCloseDoors, " Disable Close Doors");
+
+        CheatToggles.disableSecurityCameras = GUILayout.Toggle(CheatToggles.disableSecurityCameras, " Disable Security Cameras");
+
         CheatToggles.showProtectMenu = GUILayout.Toggle(CheatToggles.showProtectMenu, " Show Protect Menu");
 
         CheatToggles.showRolesMenu = GUILayout.Toggle(CheatToggles.showRolesMenu, " Show Roles Menu");
 
+        CheatToggles.assignRolesNextRound = GUILayout.Toggle(CheatToggles.assignRolesNextRound, " Assign Roles Next Round");
+
         CheatToggles.noOptionsLimits = GUILayout.Toggle(CheatToggles.noOptionsLimits, " No Options Limits");
+
+        CheatToggles.discoParty = GUILayout.Toggle(CheatToggles.discoParty, " Disco Party");
     }
 
     private void DrawMurder()
@@ -77,6 +87,10 @@ public class HostOnlyTab : ITab
     private void DrawMeetings()
     {
         GUILayout.Label("Meetings", GUIStylePreset.TabSubtitle);
+
+        CheatToggles.disableMeetings = GUILayout.Toggle(CheatToggles.disableMeetings, " Disable Meetings");
+
+        CheatToggles.spamReportBodies = GUILayout.Toggle(CheatToggles.spamReportBodies, " Spam Report Bodies");
 
         CheatToggles.skipMeeting = GUILayout.Toggle(CheatToggles.skipMeeting, " Skip Meeting");
 

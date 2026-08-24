@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace HydraMenu.routines
 {
@@ -18,6 +18,7 @@ namespace HydraMenu.routines
 			timeElapsed = 0f;
 
 			PlayerControl player = Utilities.GetRandomPlayer(false, false, false, false);
+			if (player == null || player.Data == null || PlayerControl.LocalPlayer == null) return;
 
 			if(MeetingHud.Instance == null)
 			{

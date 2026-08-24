@@ -99,14 +99,17 @@ public static class MalumESP
 
     public static void ZoomOut(HudManager hudManager)
     {
+        if (Camera.main == null || hudManager == null) return;
+
         if (CheatToggles.zoomOut)
         {
             bool lobbyBusy = Utils.isLobby && (
                 (FriendsListUI.Instance != null && FriendsListUI.Instance.IsOpen) ||
-                (GameStartManager.Instance != null && GameStartManager.Instance.LobbyInfoPane != null && GameStartManager.Instance.LobbyInfoPane.LobbyViewSettingsPane != null && GameStartManager.Instance.LobbyInfoPane.LobbyViewSettingsPane.gameObject.active) ||
-                (GameStartManager.Instance != null && GameStartManager.Instance.RulesEditPanel)
+                (GameStartManager.Instance != null && GameStartManager.Instance.LobbyInfoPane != null && GameStartManager.Instance.LobbyInfoPane.LobbyViewSettingsPane != null && GameStartManager.Instance.LobbyInfoPane.LobbyViewSettingsPane.gameObject.activeSelf) ||
+                (GameStartManager.Instance != null && GameStartManager.Instance.RulesEditPanel != null && GameStartManager.Instance.RulesEditPanel.gameObject.activeSelf)
             );
-            if (IsMouseOverActiveMenuGUI() || (hudManager != null && hudManager.Chat != null && hudManager.Chat.IsOpenOrOpening) || IsMatchInfoGuideActive() || PlayerCustomizationMenu.Instance || lobbyBusy) return;
+            bool isWardrobeOpen = PlayerCustomizationMenu.Instance != null && PlayerCustomizationMenu.Instance.gameObject != null && PlayerCustomizationMenu.Instance.gameObject.activeInHierarchy;
+            if (IsMouseOverActiveMenuGUI() || (hudManager.Chat != null && hudManager.Chat.IsOpenOrOpening) || IsMatchInfoGuideActive() || isWardrobeOpen || lobbyBusy) return;
 
             _resolutionChangeNeeded = true;
 

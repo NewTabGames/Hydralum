@@ -36,6 +36,12 @@ public class MovementTab : ITab
 
     private void DrawGeneral()
     {
+        CheatToggles.becomeImmortal = GUILayout.Toggle(CheatToggles.becomeImmortal, " Become Immortal");
+
+        CheatToggles.noLadderCd = GUILayout.Toggle(CheatToggles.noLadderCd, " No Ladder Cooldown");
+
+        CheatToggles.unlimitedMeetings = GUILayout.Toggle(CheatToggles.unlimitedMeetings, " Unlimited Meetings");
+
         CheatToggles.noClip = GUILayout.Toggle(CheatToggles.noClip, " NoClip");
 
         CheatToggles.invertControls = GUILayout.Toggle(CheatToggles.invertControls, " Invert Controls");
@@ -86,7 +92,7 @@ public class MovementTab : ITab
 
         CheatToggles.teleportPlayer = GUILayout.Toggle(CheatToggles.teleportPlayer, " to Player");
 
-        MalumTeleport.UseSnapToRpc = GUILayout.Toggle(MalumTeleport.UseSnapToRpc, " Use SnapTo RPC");
+        CheatToggles.useSnapToRpc = GUILayout.Toggle(CheatToggles.useSnapToRpc, " Use SnapTo RPC");
     }
 
     private void DrawTeleportLocations()

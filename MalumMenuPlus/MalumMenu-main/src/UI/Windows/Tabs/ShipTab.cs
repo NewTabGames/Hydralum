@@ -47,6 +47,8 @@ public class ShipTab : ITab
 
         CheatToggles.animCamsInUse = GUILayout.Toggle(CheatToggles.animCamsInUse, " Cams In Use");
 
+        CheatToggles.animPet = GUILayout.Toggle(CheatToggles.animPet, " Pet Animation");
+
         CheatToggles.moonWalk = GUILayout.Toggle(CheatToggles.moonWalk, " Moonwalk (Client-Sided)");
     }
 

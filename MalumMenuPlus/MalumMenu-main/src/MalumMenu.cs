@@ -37,6 +37,8 @@ public partial class MalumMenu : BasePlugin
 
     public static ConfigEntry<string> menuKeybind;
     public static ConfigEntry<string> menuHtmlColor;
+    public static ConfigEntry<float> menuScale;
+    public static ConfigEntry<float> menuOpacity;
     public static ConfigEntry<bool> menuOpenOnMouse;
     public static ConfigEntry<bool> menuKeepSubwindowsOpen;
     public static ConfigEntry<bool> menuAllowClickThrough;
@@ -49,11 +51,13 @@ public partial class MalumMenu : BasePlugin
     public static ConfigEntry<bool> guestMode;
     public static ConfigEntry<bool> autoLoadProfile;
     public static ConfigEntry<string> configEditor;
+    public static ConfigEntry<int> fpsLimit;
     public static ConfigEntry<byte> colorSniperTargetColor;
     public static ConfigEntry<bool> colorSniperEnabled;
     public static ConfigEntry<bool> showWardrobeOverlay;
     public static ConfigEntry<bool> hideMyGem;
     public static ConfigEntry<bool> hideAllGems;
+    public static ConfigEntry<bool> useSnapToRpc;
 
     public override void Load()
     {
@@ -73,6 +77,16 @@ public partial class MalumMenu : BasePlugin
                                 "Color",
                                 "",
                                 "A custom color for your MalumMenu GUI. Supports html color codes");
+
+        menuScale = Config.Bind("MalumMenu.GUI",
+                                "Scale",
+                                1.0f,
+                                "Menu scale multiplier (0.5 to 2.0)");
+
+        menuOpacity = Config.Bind("MalumMenu.GUI",
+                                "Opacity",
+                                1.0f,
+                                "Menu opacity (0.1 to 1.0)");
 
         menuOpenOnMouse = Config.Bind("MalumMenu.GUI",
                                 "OpenOnMouse",
@@ -103,6 +117,21 @@ public partial class MalumMenu : BasePlugin
                                 "ConfigEditor",
                                 "notepad.exe",
                                 "The program used to open the config file when using the Open Config toggle. Can be any executable, but using a text editor is recommended");
+
+        fpsLimit = Config.Bind("MalumMenu.Account",
+                                "FpsLimit",
+                                60,
+                                "Target FPS for Unlock FPS toggle (30 to 240)");
+
+        useSnapToRpc = Config.Bind("MalumMenu.Movement",
+                                "UseSnapToRpc",
+                                true,
+                                "Use SnapTo RPC for teleports");
+
+        MenuUI.uiScale = menuScale.Value;
+        MenuUI.uiOpacity = menuOpacity.Value;
+        FpsUnlocker.TargetFps = fpsLimit.Value;
+        CheatToggles.useSnapToRpc = useSnapToRpc.Value;
 
         // GuestMode config settings are commented out as the cheats are broken in latest updates
 

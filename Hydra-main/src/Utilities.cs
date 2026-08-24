@@ -201,11 +201,11 @@ namespace HydraMenu
 
 		public static void AttemptStartMeeting(PlayerControl reporter, NetworkedPlayerInfo target)
 		{
-			Hydra.Log.LogInfo($"Attempting to start a meeting for {reporter.Data.PlayerName}");
+			if (AmongUsClient.Instance == null || reporter == null || reporter.Data == null) return;
+
+			Hydra.Log?.LogInfo($"Attempting to start a meeting for {reporter.Data.PlayerName}");
 
 			bool hasAnticheat = IsAnticheatPresent();
-
-			if (AmongUsClient.Instance == null || reporter == null || reporter.Data == null) return;
 
 			if(hasAnticheat && AmongUsClient.Instance.GameState != InnerNetClient.GameStates.Started)
 			{

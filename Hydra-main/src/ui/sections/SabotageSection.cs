@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace HydraMenu.ui.sections
@@ -9,12 +9,15 @@ namespace HydraMenu.ui.sections
 
 		public override void Render()
 		{
+			bool prevDirect = Sabotage.UpdateSystemsDirectly;
+			Sabotage.UpdateSystemsDirectly = GUILayout.Toggle(Sabotage.UpdateSystemsDirectly, "Update Sabotage Systems Directly");
+			if (Sabotage.UpdateSystemsDirectly != prevDirect) HydraConfig.Save();
+
 			if(ShipStatus.Instance == null)
 			{
 				GUILayout.Label("You are not currently in a game, or the game has not started yet. These options will not work.");
+				return;
 			}
-
-			Sabotage.UpdateSystemsDirectly = GUILayout.Toggle(Sabotage.UpdateSystemsDirectly, "Update Sabotage Systems Directly");
 
 			Dictionary<string, SystemTypes> sabotages = Sabotage.GetSabotages();
 			Dictionary<string, SystemTypes> doors = Sabotage.GetDoors();
