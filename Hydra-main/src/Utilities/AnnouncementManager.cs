@@ -142,15 +142,32 @@ namespace HydraMenu
             var ann = Current;
             if (ann == null) return;
 
-            float width = 340f;
+            float width = 360f;
+            float textWidth = width - 20f;
             bool hasLink = !string.IsNullOrWhiteSpace(ann.link);
-            float height = hasLink ? 115f : 85f;
+
+            // Message Body Style
+            GUIStyle msgStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 11,
+                wordWrap = true,
+                richText = true,
+                alignment = TextAnchor.UpperLeft
+            };
+            msgStyle.normal.textColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+
+            // Dynamically calculate the required height for the message
+            float calculatedTextHeight = msgStyle.CalcHeight(new GUIContent(ann.message ?? ""), textWidth);
+            float msgHeight = Mathf.Clamp(calculatedTextHeight, 20f, 250f);
+
+            // Total box height based on header (32px), message height, link button (32px if present), and padding
+            float totalHeight = 32f + msgHeight + (hasLink ? 34f : 8f);
 
             float x = Screen.width - width - 20f;
-            float y = Screen.height - height - 20f;
+            float y = Screen.height - totalHeight - 20f;
 
             // Background box
-            GUI.Box(new Rect(x, y, width, height), GUIContent.none, GUI.skin.box);
+            GUI.Box(new Rect(x, y, width, totalHeight), GUIContent.none, GUI.skin.box);
 
             // Title Style
             string colorHex = SanitizeColor(ann.color);
@@ -177,22 +194,13 @@ namespace HydraMenu
             }
 
             // Message Body
-            GUIStyle msgStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 11,
-                wordWrap = true,
-                richText = true,
-                alignment = TextAnchor.UpperLeft
-            };
-            msgStyle.normal.textColor = new Color(0.9f, 0.9f, 0.9f, 1f);
-            float msgHeight = hasLink ? 45f : 50f;
-            GUI.Label(new Rect(x + 10f, y + 30f, width - 20f, msgHeight), ann.message ?? "", msgStyle);
+            GUI.Label(new Rect(x + 10f, y + 30f, textWidth, msgHeight + 4f), ann.message ?? "", msgStyle);
 
             // Action Button
             if (hasLink)
             {
                 string btnText = !string.IsNullOrWhiteSpace(ann.linkText) ? ann.linkText : "Open Link";
-                if (GUI.Button(new Rect(x + 10f, y + 78f, width - 20f, 24f), btnText))
+                if (GUI.Button(new Rect(x + 10f, y + 32f + msgHeight + 4f, textWidth, 24f), btnText))
                 {
                     Application.OpenURL(ann.link);
                 }
