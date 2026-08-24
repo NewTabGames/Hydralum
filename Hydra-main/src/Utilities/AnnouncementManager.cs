@@ -110,7 +110,23 @@ namespace HydraMenu
             {
                 return false;
             }
+
+            string dismissed = AppDomain.CurrentDomain.GetData("HydralumDismissedAnnouncement") as string;
+            if (!string.IsNullOrEmpty(dismissed) && dismissed == $"{data.title}|{data.message}")
+            {
+                return false;
+            }
+
             return true;
+        }
+
+        public static void Dismiss()
+        {
+            var data = Current;
+            if (data != null)
+            {
+                AppDomain.CurrentDomain.SetData("HydralumDismissedAnnouncement", $"{data.title}|{data.message}");
+            }
         }
 
         public static void Update()
@@ -146,7 +162,19 @@ namespace HydraMenu
                 alignment = TextAnchor.MiddleLeft
             };
             titleStyle.normal.textColor = Color.white;
-            GUI.Label(new Rect(x + 10f, y + 6f, width - 20f, 22f), $"<color={colorHex}>📢 {ann.title}</color>", titleStyle);
+            GUI.Label(new Rect(x + 10f, y + 6f, width - 45f, 22f), $"<color={colorHex}>📢 {ann.title}</color>", titleStyle);
+
+            // Close 'X' Button
+            GUIStyle closeBtnStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = 12,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter
+            };
+            if (GUI.Button(new Rect(x + width - 28f, y + 6f, 20f, 20f), "✕", closeBtnStyle))
+            {
+                Dismiss();
+            }
 
             // Message Body
             GUIStyle msgStyle = new GUIStyle(GUI.skin.label)
