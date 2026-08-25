@@ -24,6 +24,7 @@ namespace HydraMenu
         public static string LocalPlayerName { get; private set; } = "";
         public static int LocalPlayerId { get; private set; } = -1;
         public static string LocalFriendCode { get; private set; } = "";
+        public static string LocalPuid { get; private set; } = "";
 
         private static string _lastRoomCode = "";
         private static volatile bool _forceRefresh = false;
@@ -56,6 +57,7 @@ namespace HydraMenu
                 string name = "";
                 int id = -1;
                 string friendCode = "";
+                string puid = "";
 
                 if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null)
                 {
@@ -79,6 +81,32 @@ namespace HydraMenu
                     try { friendCode = EOSManager.Instance?.FriendCode ?? ""; } catch { }
                 }
 
+                if (AmongUsClient.Instance != null)
+                {
+                    try
+                    {
+                        var localClient = PlayerControl.LocalPlayer != null ? AmongUsClient.Instance.GetClientFromCharacter(PlayerControl.LocalPlayer) : null;
+                        if (localClient != null && !string.IsNullOrEmpty(localClient.ProductUserId))
+                        {
+                            puid = localClient.ProductUserId;
+                        }
+                        else if (AmongUsClient.Instance.ClientId >= 0)
+                        {
+                            var c = AmongUsClient.Instance.GetClient(AmongUsClient.Instance.ClientId);
+                            if (c != null && !string.IsNullOrEmpty(c.ProductUserId))
+                            {
+                                puid = c.ProductUserId;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                if (string.IsNullOrEmpty(puid))
+                {
+                    try { puid = EOSManager.Instance?.ProductUserId ?? ""; } catch { }
+                }
+
                 if (!string.IsNullOrEmpty(room))
                 {
                     CurrentRoomCode = room;
@@ -99,6 +127,7 @@ namespace HydraMenu
                 }
 
                 LocalFriendCode = friendCode ?? "";
+                LocalPuid = puid ?? "";
 
                 if (CurrentRoomCode != _lastRoomCode)
                 {
@@ -122,24 +151,34 @@ namespace HydraMenu
             string targetName = playerInfo.PlayerName ?? "";
             int targetId = playerInfo.PlayerId;
             string targetFriendCode = playerInfo.FriendCode ?? "";
+            string targetPuid = "";
 
-            if (string.IsNullOrEmpty(targetFriendCode))
+            try
             {
-                try
+                if (AmongUsClient.Instance != null)
                 {
-                    var client = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetClientFromPlayerInfo(playerInfo) : null;
-                    if (client != null && !string.IsNullOrEmpty(client.FriendCode))
+                    var client = AmongUsClient.Instance.GetClientFromPlayerInfo(playerInfo);
+                    if (client != null)
                     {
-                        targetFriendCode = client.FriendCode;
+                        if (!string.IsNullOrEmpty(client.ProductUserId)) targetPuid = client.ProductUserId;
+                        if (string.IsNullOrEmpty(targetFriendCode) && !string.IsNullOrEmpty(client.FriendCode)) targetFriendCode = client.FriendCode;
+                    }
+                    if (string.IsNullOrEmpty(targetPuid) && playerInfo.Object != null)
+                    {
+                        var charClient = AmongUsClient.Instance.GetClientFromCharacter(playerInfo.Object);
+                        if (charClient != null && !string.IsNullOrEmpty(charClient.ProductUserId))
+                        {
+                            targetPuid = charClient.ProductUserId;
+                        }
                     }
                 }
-                catch { }
             }
+            catch { }
 
             // Check in-process cache
             lock (_peerLock)
             {
-                if (CheckPeerMatch(_currentRoomPeers, targetName, targetId, targetFriendCode))
+                if (CheckPeerMatch(_currentRoomPeers, targetName, targetId, targetFriendCode, targetPuid))
                     return true;
             }
 
@@ -149,7 +188,7 @@ namespace HydraMenu
                 if (AppDomain.CurrentDomain.GetData("HydralumPeersJson") is string peersJson && !string.IsNullOrEmpty(peersJson))
                 {
                     var domainPeers = JsonSerializer.Deserialize<List<PeerData>>(peersJson);
-                    if (domainPeers != null && CheckPeerMatch(domainPeers, targetName, targetId, targetFriendCode))
+                    if (domainPeers != null && CheckPeerMatch(domainPeers, targetName, targetId, targetFriendCode, targetPuid))
                         return true;
                 }
             }
@@ -158,7 +197,7 @@ namespace HydraMenu
             return false;
         }
 
-        private static bool CheckPeerMatch(List<PeerData> peers, string targetName, int targetId, string targetFriendCode)
+        private static bool CheckPeerMatch(List<PeerData> peers, string targetName, int targetId, string targetFriendCode, string targetPuid)
         {
             if (peers == null || peers.Count == 0) return false;
 
@@ -166,14 +205,21 @@ namespace HydraMenu
             {
                 if (peer == null) continue;
 
-                // Primary: Pinpoint match on unique Friend Code if available on both ends
+                // 1. Pinpoint Match via PUID (EOS Product User ID)
+                if (!string.IsNullOrWhiteSpace(peer.Puid) && !string.IsNullOrWhiteSpace(targetPuid))
+                {
+                    if (string.Equals(peer.Puid.Trim(), targetPuid.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+
+                // 2. Pinpoint Match via Friend Code
                 if (!string.IsNullOrWhiteSpace(peer.FriendCode) && !string.IsNullOrWhiteSpace(targetFriendCode))
                 {
                     if (string.Equals(peer.FriendCode.Trim(), targetFriendCode.Trim(), StringComparison.OrdinalIgnoreCase))
                         return true;
                 }
 
-                // Strict Fallback: Both exact Name AND PlayerId must match simultaneously (never name-alone or id-alone)
+                // 3. Strict Fallback: Both exact Name AND PlayerId must match simultaneously (never name-alone or id-alone)
                 if (!string.IsNullOrWhiteSpace(peer.Name) && !string.IsNullOrWhiteSpace(targetName))
                 {
                     if (string.Equals(peer.Name, targetName, StringComparison.Ordinal) && peer.PlayerId == targetId && targetId >= 0)
@@ -223,6 +269,7 @@ namespace HydraMenu
                     string pName = LocalPlayerName;
                     int pId = LocalPlayerId;
                     string pFriendCode = LocalFriendCode;
+                    string pPuid = LocalPuid;
 
                     // 1. Send heartbeat
                     var payloadObj = new PresenceNode
@@ -231,6 +278,7 @@ namespace HydraMenu
                         room = roomCode,
                         p_id = pId,
                         friend_code = pFriendCode,
+                        puid = pPuid,
                         last_seen = now,
                         last_seen_time = GetCentralTimeString(),
                         versions = new VersionInfo
@@ -276,7 +324,8 @@ namespace HydraMenu
                                             {
                                                 Name = entry.Value.name ?? "",
                                                 PlayerId = entry.Value.p_id,
-                                                FriendCode = entry.Value.friend_code ?? ""
+                                                FriendCode = entry.Value.friend_code ?? "",
+                                                Puid = entry.Value.puid ?? ""
                                             });
                                         }
                                     }
@@ -374,6 +423,7 @@ namespace HydraMenu
             public string Name { get; set; } = "";
             public int PlayerId { get; set; } = -1;
             public string FriendCode { get; set; } = "";
+            public string Puid { get; set; } = "";
         }
 
         public class PresenceNode
@@ -382,6 +432,7 @@ namespace HydraMenu
             public string room { get; set; } = "";
             public int p_id { get; set; } = -1;
             public string friend_code { get; set; } = "";
+            public string puid { get; set; } = "";
             public long last_seen { get; set; }
             public string last_seen_time { get; set; } = "";
             public VersionInfo versions { get; set; } = new VersionInfo();

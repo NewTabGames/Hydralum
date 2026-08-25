@@ -138,7 +138,6 @@ public class PlayersTab : ITab
             }
 
             GUILayout.Label($"Friend Code: {Blank(data.FriendCode)}");
-            GUILayout.Label($"PUID: {Blank(data.Puid)}");
 
             GUILayout.Space(8);
 

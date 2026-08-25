@@ -199,10 +199,11 @@ namespace HydraMenu.ui.sections
 			{
 				var platform = clientData.PlatformData;
 				bool streamerMode = DataManager.Settings.Gameplay.StreamerMode;
+				string friendCodeStr = !string.IsNullOrEmpty(target.Data.FriendCode) ? target.Data.FriendCode : (clientData.FriendCode ?? "-");
+				string puidStr = !string.IsNullOrEmpty(clientData.ProductUserId) ? clientData.ProductUserId : "-";
 
 				playerInfo +=
-					$"\nFriendcode: " + (streamerMode ? "REDACTED" : target.Data.FriendCode) +
-					$"\nPUID: " + (streamerMode ? "REDACTED" : target.Data.Puid) +
+					$"\nFriendcode: " + (streamerMode ? "REDACTED" : friendCodeStr) +
 					$"\nLevel: {target.Data.PlayerLevel + 1}" +
 					$"\nDevice: {platform?.Platform}" +
 					(AmongUsClient.Instance != null && target.OwnerId == AmongUsClient.Instance.HostId ? "\nHost: true" : "");
