@@ -21,7 +21,7 @@ public static class Utils
 {
     public static bool isPastingInput;
     public static ReferenceDataManager ReferenceDataManager => DestroyableSingleton<ReferenceDataManager>.Instance; // Useful for getting full lists of all the Among Us cosmetics IDs
-    public static SabotageSystemType SabotageSystem => ShipStatus.Instance.Systems[SystemTypes.Sabotage].Cast<SabotageSystemType>();
+    public static SabotageSystemType SabotageSystem => ShipStatus.Instance != null && ShipStatus.Instance.Systems != null && ShipStatus.Instance.Systems.TryGetValue(SystemTypes.Sabotage, out var s) ? s.Cast<SabotageSystemType>() : null;
     public static bool isShip => ShipStatus.Instance;
     public static bool isClient => AmongUsClient.Instance;
     public static bool isLobby => AmongUsClient.Instance && AmongUsClient.Instance.GameState == InnerNetClient.GameStates.Joined && !isFreePlay;
@@ -35,9 +35,9 @@ public static class Utils
     public static bool isMeetingVoting => isMeeting && MeetingHud.Instance.resultsStartedAt <= 0f;
     public static bool isMeetingProceeding => isMeeting && MeetingHud.Instance.resultsStartedAt > 0f;
     public static bool isExiling => ExileController.Instance && !(isAirshipMap && SpawnInMinigame.Instance.isActiveAndEnabled);
-    public static bool isAnySabotageActive => ShipStatus.Instance && SabotageSystem.AnyActive;
-    public static bool isNormalGame => GameOptionsManager.Instance.CurrentGameOptions.GameMode == GameModes.Normal;
-    public static bool isHideNSeek => GameOptionsManager.Instance.CurrentGameOptions.GameMode == GameModes.HideNSeek;
+    public static bool isAnySabotageActive => SabotageSystem != null && SabotageSystem.AnyActive;
+    public static bool isNormalGame => GameOptionsManager.Instance != null && GameOptionsManager.Instance.CurrentGameOptions != null && GameOptionsManager.Instance.CurrentGameOptions.GameMode == GameModes.Normal;
+    public static bool isHideNSeek => GameOptionsManager.Instance != null && GameOptionsManager.Instance.CurrentGameOptions != null && GameOptionsManager.Instance.CurrentGameOptions.GameMode == GameModes.HideNSeek;
     public static bool isSkeldMap => (MapNames)GetCurrentMapID() == MapNames.Skeld;
     public static bool isMiraHQMap => (MapNames)GetCurrentMapID() == MapNames.MiraHQ;
     public static bool isPolusMap => (MapNames)GetCurrentMapID() == MapNames.Polus;
@@ -101,16 +101,21 @@ public static class Utils
     // Checks whether a player is a valid target depending on whether killAnyone cheat is enabled or not
     public static bool IsValidTarget(NetworkedPlayerInfo target)
     {
-        var killAnyoneRequirements = target && !target.Disconnected && target.Object.Visible && target.PlayerId != PlayerControl.LocalPlayer.PlayerId && target.Role && target.Object;
+        if (target == null || target.Disconnected || target.Object == null || target.Role == null || PlayerControl.LocalPlayer == null)
+            return false;
 
-        var fullRequirements = killAnyoneRequirements && !target.IsDead && !target.Object.inVent && !target.Object.inMovingPlat && target.Role.CanBeKilled;
+        if (target.PlayerId == PlayerControl.LocalPlayer.PlayerId || !target.Object.Visible)
+            return false;
 
-        return CheatToggles.killAnyone ? killAnyoneRequirements : fullRequirements;
+        var fullRequirements = !target.IsDead && !target.Object.inVent && !target.Object.inMovingPlat && target.Role.CanBeKilled;
+
+        return CheatToggles.killAnyone ? true : fullRequirements;
     }
 
     public static List<NetworkedPlayerInfo> GetAllPlayerData()
     {
         var playerDataList = new List<NetworkedPlayerInfo>();
+        if (PlayerControl.AllPlayerControls == null) return playerDataList;
         foreach (var player in PlayerControl.AllPlayerControls)
         {
             if (player != null && player.Data != null)
@@ -133,7 +138,8 @@ public static class Utils
     // Gets RoleBehaviour from a RoleType
     public static RoleBehaviour GetBehaviourByRoleType(RoleTypes roleType)
     {
-        return RoleManager.Instance.AllRoles.ToArray().First(r => r.Role == roleType);
+        if (RoleManager.Instance == null || RoleManager.Instance.AllRoles == null) return null;
+        return RoleManager.Instance.AllRoles.ToArray().FirstOrDefault(r => r != null && r.Role == roleType);
     }
 
     // Gets RoleBehaviour from a TeamType
@@ -661,20 +667,40 @@ public static class Utils
     // Found here: https://github.com/NuclearPowered/Reactor/blob/6eb0bf19c30733b78532dada41db068b2b247742/Reactor/Networking/Patches/HttpPatches.cs
     public static void ShowPopup(string text)
     {
-        var popup = UnityEngine.Object.Instantiate(DiscordManager.Instance.discordPopup, Camera.main!.transform);
+        try
+        {
+            if (DiscordManager.Instance == null || DiscordManager.Instance.discordPopup == null || Camera.main == null) return;
+            var popup = UnityEngine.Object.Instantiate(DiscordManager.Instance.discordPopup, Camera.main.transform);
+            if (popup == null) return;
 
-        var background = popup.transform.Find("Background").GetComponent<SpriteRenderer>();
-        var size = background.size;
-        size.x *= 2.5f;
-        background.size = size;
+            var bgTrans = popup.transform.Find("Background");
+            if (bgTrans != null)
+            {
+                var background = bgTrans.GetComponent<SpriteRenderer>();
+                if (background != null)
+                {
+                    var size = background.size;
+                    size.x *= 2.5f;
+                    background.size = size;
+                }
+            }
 
-        popup.TextAreaTMP.fontSizeMin = 2;
-        popup.Show(text);
+            if (popup.TextAreaTMP != null) popup.TextAreaTMP.fontSizeMin = 2;
+            popup.Show(text);
+        }
+        catch { }
     }
 
     public static void ShowNewPopup(string text)
     {
-        DestroyableSingleton<DisconnectPopup>.Instance.ShowCustom(text);
+        try
+        {
+            if (DestroyableSingleton<DisconnectPopup>.Instance != null)
+            {
+                DestroyableSingleton<DisconnectPopup>.Instance.ShowCustom(text);
+            }
+        }
+        catch { }
     }
 
     // Loads sprites from manifest resources

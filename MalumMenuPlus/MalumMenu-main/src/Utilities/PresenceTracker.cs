@@ -23,13 +23,14 @@ namespace MalumMenu
         public static string CurrentRoomCode { get; private set; } = "";
         public static string LocalPlayerName { get; private set; } = "";
         public static int LocalPlayerId { get; private set; } = -1;
+        public static string LocalFriendCode { get; private set; } = "";
 
         private static string _lastRoomCode = "";
         private static volatile bool _forceRefresh = false;
 
-        // Set of active Hydralum user identifiers in the current lobby/game
-        private static readonly HashSet<string> _currentRoomPeers = new(StringComparer.OrdinalIgnoreCase);
-        private static readonly HashSet<byte> _currentRoomPeerIds = new();
+        // Structured list of active Hydralum peers in the current lobby
+        private static readonly List<PeerData> _currentRoomPeers = new();
+        private static readonly object _peerLock = new();
 
         public static int GetOnlineCount()
         {
@@ -54,11 +55,13 @@ namespace MalumMenu
 
                 string name = "";
                 int id = -1;
+                string friendCode = "";
 
                 if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null)
                 {
                     name = PlayerControl.LocalPlayer.Data.PlayerName ?? "";
                     id = PlayerControl.LocalPlayer.PlayerId;
+                    friendCode = PlayerControl.LocalPlayer.Data.FriendCode ?? "";
                 }
 
                 if (string.IsNullOrEmpty(name))
@@ -69,6 +72,11 @@ namespace MalumMenu
                 if (string.IsNullOrEmpty(name))
                 {
                     try { name = PlayerPrefs.GetString("PlayerName", ""); } catch { }
+                }
+
+                if (string.IsNullOrEmpty(friendCode))
+                {
+                    try { friendCode = EOSManager.Instance?.FriendCode ?? ""; } catch { }
                 }
 
                 if (!string.IsNullOrEmpty(room))
@@ -90,6 +98,8 @@ namespace MalumMenu
                     LocalPlayerId = id;
                 }
 
+                LocalFriendCode = friendCode ?? "";
+
                 if (CurrentRoomCode != _lastRoomCode)
                 {
                     _lastRoomCode = CurrentRoomCode;
@@ -101,7 +111,7 @@ namespace MalumMenu
 
         public static bool IsHydralumUser(NetworkedPlayerInfo playerInfo)
         {
-            if (playerInfo == null) return false;
+            if (playerInfo == null || playerInfo.Disconnected) return false;
 
             // Local player is always running Hydralum
             if (PlayerControl.LocalPlayer != null && playerInfo == PlayerControl.LocalPlayer.Data)
@@ -109,31 +119,69 @@ namespace MalumMenu
                 return true;
             }
 
-            lock (_currentRoomPeers)
-            {
-                if (!string.IsNullOrEmpty(playerInfo.PlayerName) && _currentRoomPeers.Contains(playerInfo.PlayerName))
-                    return true;
+            string targetName = playerInfo.PlayerName ?? "";
+            int targetId = playerInfo.PlayerId;
+            string targetFriendCode = playerInfo.FriendCode ?? "";
 
-                if (_currentRoomPeerIds.Contains(playerInfo.PlayerId))
+            if (string.IsNullOrEmpty(targetFriendCode))
+            {
+                try
+                {
+                    var client = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetClientFromPlayerInfo(playerInfo) : null;
+                    if (client != null && !string.IsNullOrEmpty(client.FriendCode))
+                    {
+                        targetFriendCode = client.FriendCode;
+                    }
+                }
+                catch { }
+            }
+
+            // Check in-process cache
+            lock (_peerLock)
+            {
+                if (CheckPeerMatch(_currentRoomPeers, targetName, targetId, targetFriendCode))
                     return true;
             }
 
             // Cross-plugin fallback via AppDomain
             try
             {
-                if (AppDomain.CurrentDomain.GetData("HydralumPeerNames") is HashSet<string> domainPeers)
+                if (AppDomain.CurrentDomain.GetData("HydralumPeersJson") is string peersJson && !string.IsNullOrEmpty(peersJson))
                 {
-                    if (!string.IsNullOrEmpty(playerInfo.PlayerName) && domainPeers.Contains(playerInfo.PlayerName))
-                        return true;
-                }
-                if (AppDomain.CurrentDomain.GetData("HydralumPeerIds") is HashSet<byte> domainPeerIds)
-                {
-                    if (domainPeerIds.Contains(playerInfo.PlayerId))
+                    var domainPeers = JsonSerializer.Deserialize<List<PeerData>>(peersJson);
+                    if (domainPeers != null && CheckPeerMatch(domainPeers, targetName, targetId, targetFriendCode))
                         return true;
                 }
             }
             catch { }
 
+            return false;
+        }
+
+        private static bool CheckPeerMatch(List<PeerData> peers, string targetName, int targetId, string targetFriendCode)
+        {
+            if (peers == null || peers.Count == 0) return false;
+
+            foreach (var peer in peers)
+            {
+                if (peer == null) continue;
+
+                // Primary: Pinpoint match on unique Friend Code if available on both ends
+                if (!string.IsNullOrWhiteSpace(peer.FriendCode) && !string.IsNullOrWhiteSpace(targetFriendCode))
+                {
+                    if (string.Equals(peer.FriendCode.Trim(), targetFriendCode.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+
+                // Strict Fallback: Both exact Name AND PlayerId must match simultaneously (never name-alone or id-alone)
+                if (!string.IsNullOrWhiteSpace(peer.Name) && !string.IsNullOrWhiteSpace(targetName))
+                {
+                    if (string.Equals(peer.Name, targetName, StringComparison.Ordinal) && peer.PlayerId == targetId && targetId >= 0)
+                    {
+                        return true;
+                    }
+                }
+            }
             return false;
         }
 
@@ -174,6 +222,7 @@ namespace MalumMenu
                     string roomCode = CurrentRoomCode;
                     string pName = LocalPlayerName;
                     int pId = LocalPlayerId;
+                    string pFriendCode = LocalFriendCode;
 
                     // 1. Send heartbeat
                     var payloadObj = new PresenceNode
@@ -181,6 +230,7 @@ namespace MalumMenu
                         name = pName,
                         room = roomCode,
                         p_id = pId,
+                        friend_code = pFriendCode,
                         last_seen = now,
                         last_seen_time = GetCentralTimeString(),
                         versions = new VersionInfo
@@ -209,12 +259,11 @@ namespace MalumMenu
                             if (data != null)
                             {
                                 int active = 0;
-                                var matchedPeers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                                var matchedPeerIds = new HashSet<byte>();
+                                var matchedPeers = new List<PeerData>();
 
                                 foreach (var entry in data)
                                 {
-                                    if (entry.Value != null && (now - entry.Value.last_seen) < 45)
+                                    if (entry.Value != null && (now - entry.Value.last_seen) < 30)
                                     {
                                         active++;
 
@@ -223,29 +272,33 @@ namespace MalumMenu
                                             string.Equals(entry.Value.room, roomCode, StringComparison.OrdinalIgnoreCase) &&
                                             entry.Key != SessionId)
                                         {
-                                            if (!string.IsNullOrEmpty(entry.Value.name))
-                                                matchedPeers.Add(entry.Value.name);
-                                            if (entry.Value.p_id >= 0 && entry.Value.p_id <= 255)
-                                                matchedPeerIds.Add((byte)entry.Value.p_id);
+                                            matchedPeers.Add(new PeerData
+                                            {
+                                                Name = entry.Value.name ?? "",
+                                                PlayerId = entry.Value.p_id,
+                                                FriendCode = entry.Value.friend_code ?? ""
+                                            });
                                         }
                                     }
-                                    else if (entry.Value == null || (now - entry.Value.last_seen) > 60)
+                                    else if (entry.Value == null || (now - entry.Value.last_seen) > 45)
                                     {
                                         // Prune stale session from Firebase
                                         _ = HttpClient.DeleteAsync($"{FirebaseUrl}/{entry.Key}.json", token);
                                     }
                                 }
 
-                                lock (_currentRoomPeers)
+                                lock (_peerLock)
                                 {
                                     _currentRoomPeers.Clear();
-                                    foreach (var p in matchedPeers) _currentRoomPeers.Add(p);
-                                    _currentRoomPeerIds.Clear();
-                                    foreach (var id in matchedPeerIds) _currentRoomPeerIds.Add(id);
+                                    _currentRoomPeers.AddRange(matchedPeers);
                                 }
 
-                                AppDomain.CurrentDomain.SetData("HydralumPeerNames", matchedPeers);
-                                AppDomain.CurrentDomain.SetData("HydralumPeerIds", matchedPeerIds);
+                                try
+                                {
+                                    string peersJson = JsonSerializer.Serialize(matchedPeers);
+                                    AppDomain.CurrentDomain.SetData("HydralumPeersJson", peersJson);
+                                }
+                                catch { }
 
                                 OnlineCount = Math.Max(1, active);
                                 AppDomain.CurrentDomain.SetData("HydralumOnlineCount", OnlineCount);
@@ -316,13 +369,21 @@ namespace MalumMenu
             public string malum { get; set; } = "3.3.0";
         }
 
+        public class PeerData
+        {
+            public string Name { get; set; } = "";
+            public int PlayerId { get; set; } = -1;
+            public string FriendCode { get; set; } = "";
+        }
+
         public class PresenceNode
         {
-            public string name { get; set; }
-            public string room { get; set; }
+            public string name { get; set; } = "";
+            public string room { get; set; } = "";
             public int p_id { get; set; } = -1;
+            public string friend_code { get; set; } = "";
             public long last_seen { get; set; }
-            public string last_seen_time { get; set; }
+            public string last_seen_time { get; set; } = "";
             public VersionInfo versions { get; set; } = new VersionInfo();
         }
     }

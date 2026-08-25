@@ -452,7 +452,7 @@ namespace HydraMenu.ui.sections
 			}
 			GUILayout.EndHorizontal();
 
-			string chips = string.Join(", ", targets.Select(p => $"<color=\"{GetRoleColor(p.Data.RoleType)}\">{p.Data.PlayerName}</color>"));
+			string chips = string.Join(", ", targets.Where(p => p != null && p.Data != null).Select(p => $"<color=\"{GetRoleColor(p.Data.RoleType)}\">{p.Data.PlayerName}</color>"));
 			GUILayout.Label($"Targets: {chips}");
 
 			GUILayout.Space(5);

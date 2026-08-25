@@ -27,7 +27,8 @@ public class TasksUI : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!CheatToggles.showTasksMenu || !(MenuUI.isGUIActive || MalumMenu.menuKeepSubwindowsOpen.Value) || MalumMenu.isPanicked) return;
+        bool keepOpen = MalumMenu.menuKeepSubwindowsOpen?.Value ?? false;
+        if (!CheatToggles.showTasksMenu || !(MenuUI.isGUIActive || keepOpen) || MalumMenu.isPanicked) return;
 
         _playerHeaderStyle ??= new GUIStyle(GUI.skin.button)
         {

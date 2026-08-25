@@ -14,6 +14,8 @@ public class DebugUI : MonoBehaviour
     private static readonly List<string> _logEntries = new();
     private const int MaxLogEntries = 500;
 
+    private static readonly object _logLock = new();
+
     private void Start()
     {
         // Instantiate 2D area of DebugUI on the left side of the screen
@@ -27,7 +29,8 @@ public class DebugUI : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!CheatToggles.showDebugConsole || !(MenuUI.isGUIActive || MalumMenu.menuKeepSubwindowsOpen.Value) || MalumMenu.isPanicked) return;
+        bool keepOpen = MalumMenu.menuKeepSubwindowsOpen?.Value ?? false;
+        if (!CheatToggles.showDebugConsole || !(MenuUI.isGUIActive || keepOpen) || MalumMenu.isPanicked) return;
 
         _logStyle ??= new GUIStyle(GUI.skin.label)
         {
@@ -48,7 +51,12 @@ public class DebugUI : MonoBehaviour
 
             _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, false);
 
-            var logs = _logEntries.ToArray();
+            string[] logs;
+            lock (_logLock)
+            {
+                logs = _logEntries.ToArray();
+            }
+
             foreach (var log in logs)
             {
                 GUILayout.Label(log, _logStyle);
@@ -62,12 +70,18 @@ public class DebugUI : MonoBehaviour
 
             if (GUILayout.Button("Clear Log", GUILayout.Width(260)))
             {
-                _logEntries.Clear();
+                lock (_logLock)
+                {
+                    _logEntries.Clear();
+                }
             }
 
             if (GUILayout.Button("Copy Log to Clipboard"))
             {
-                GUIUtility.systemCopyBuffer = string.Join("\n", _logEntries.ToArray());
+                lock (_logLock)
+                {
+                    GUIUtility.systemCopyBuffer = string.Join("\n", _logEntries.ToArray());
+                }
             }
 
             GUILayout.EndHorizontal();
@@ -79,12 +93,15 @@ public class DebugUI : MonoBehaviour
 
     public static void Log(string message)
     {
-        if (_logEntries.Count >= MaxLogEntries)
+        lock (_logLock)
         {
-            _logEntries.RemoveAt(0);
-        }
+            if (_logEntries.Count >= MaxLogEntries)
+            {
+                _logEntries.RemoveAt(0);
+            }
 
-        _logEntries.Add(message);
+            _logEntries.Add(message);
+        }
 
         // Scroll to the bottom
         _scrollPosition.y = float.MaxValue;

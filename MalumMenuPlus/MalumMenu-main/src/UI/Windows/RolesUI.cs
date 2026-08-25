@@ -23,7 +23,8 @@ public class RolesUI : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!CheatToggles.showRolesMenu || !(MenuUI.isGUIActive || MalumMenu.menuKeepSubwindowsOpen.Value) || MalumMenu.isPanicked) return;
+        bool keepOpen = MalumMenu.menuKeepSubwindowsOpen?.Value ?? false;
+        if (!CheatToggles.showRolesMenu || !(MenuUI.isGUIActive || keepOpen) || MalumMenu.isPanicked) return;
 
         UIHelpers.ApplyUIColor();
 

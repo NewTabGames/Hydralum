@@ -26,7 +26,8 @@ public class DoorsUI : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!CheatToggles.showDoorsMenu || !(MenuUI.isGUIActive || MalumMenu.menuKeepSubwindowsOpen.Value) || MalumMenu.isPanicked) return;
+        bool keepOpen = MalumMenu.menuKeepSubwindowsOpen?.Value ?? false;
+        if (!CheatToggles.showDoorsMenu || !(MenuUI.isGUIActive || keepOpen) || MalumMenu.isPanicked) return;
 
         UIHelpers.ApplyUIColor();
 

@@ -204,14 +204,14 @@ public class PlayersTab : ITab
             GUILayout.EndHorizontal();
 
             // Render compact player chips
-            string playerChips = string.Join(", ", targets.Select(p => $"<color=#{ColorUtility.ToHtmlStringRGB(p.Data.Color)}>{p.Data.PlayerName}</color>"));
+            string playerChips = string.Join(", ", targets.Where(p => p != null && p.Data != null).Select(p => $"<color=#{ColorUtility.ToHtmlStringRGB(p.Data.Color)}>{p.Data.PlayerName}</color>"));
             GUILayout.Label($"Targets: {playerChips}", GUIStylePreset.Hint);
 
             GUILayout.Space(8);
             GUILayout.Label("Multi-Target Actions", GUIStylePreset.TabSubtitle);
 
             // Teleport to first target
-            var firstTarget = targets.FirstOrDefault(p => !p.AmOwner && !p.Data.Disconnected);
+            var firstTarget = targets.FirstOrDefault(p => p != null && !p.AmOwner && p.Data != null && !p.Data.Disconnected);
             var canTeleport = Utils.isPlayer && firstTarget != null;
             GUI.enabled = canTeleport;
             if (GUILayout.Button($"Teleport to First Selected ({firstTarget?.Data?.PlayerName ?? "None"})", GUIStylePreset.NormalButton) && canTeleport)

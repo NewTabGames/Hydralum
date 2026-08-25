@@ -15,6 +15,8 @@ public class ConsoleUI : MonoBehaviour
     private static List<string> _logEntries = new();
     private const int MaxLogEntries = 300;
 
+    private static readonly object _logLock = new();
+
     private void Start()
     {
         // Instantiate 2D area of ConsoleUI
@@ -28,7 +30,8 @@ public class ConsoleUI : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!CheatToggles.showConsole || !(MenuUI.isGUIActive || MalumMenu.menuKeepSubwindowsOpen.Value) || MalumMenu.isPanicked) return;
+        bool keepOpen = MalumMenu.menuKeepSubwindowsOpen?.Value ?? false;
+        if (!CheatToggles.showConsole || !(MenuUI.isGUIActive || keepOpen) || MalumMenu.isPanicked) return;
 
         _logStyle ??= new GUIStyle(GUI.skin.label)
         {
@@ -48,7 +51,12 @@ public class ConsoleUI : MonoBehaviour
 
             _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, false);
 
-            var logs = _logEntries.ToArray();
+            string[] logs;
+            lock (_logLock)
+            {
+                logs = _logEntries.ToArray();
+            }
+
             foreach (var log in logs)
             {
                 GUILayout.Label(log, _logStyle);
@@ -62,12 +70,18 @@ public class ConsoleUI : MonoBehaviour
 
             if (GUILayout.Button("Clear Log", GUILayout.Width(260)))
             {
-                _logEntries.Clear();
+                lock (_logLock)
+                {
+                    _logEntries.Clear();
+                }
             }
 
             if (GUILayout.Button("Copy Log to Clipboard"))
             {
-                GUIUtility.systemCopyBuffer = String.Join("\n", _logEntries.ToArray());
+                lock (_logLock)
+                {
+                    GUIUtility.systemCopyBuffer = String.Join("\n", _logEntries.ToArray());
+                }
             }
 
             GUILayout.EndHorizontal();
@@ -82,12 +96,15 @@ public class ConsoleUI : MonoBehaviour
         // Timestamp every entry so the console reads like a replay timeline
         var entry = $"<color=#8A8A8A>[{System.DateTime.Now:h:mm:ss tt}]</color> {message}";
 
-        if (_logEntries.Count >= MaxLogEntries) // Limit the number of logs to keep memory usage in check
+        lock (_logLock)
         {
-            _logEntries.RemoveAt(0); // Remove the oldest log entry
-        }
+            if (_logEntries.Count >= MaxLogEntries) // Limit the number of logs to keep memory usage in check
+            {
+                _logEntries.RemoveAt(0); // Remove the oldest log entry
+            }
 
-        _logEntries.Add(entry);
+            _logEntries.Add(entry);
+        }
 
         // Scroll to the bottom
         _scrollPosition.y = float.MaxValue;

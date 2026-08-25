@@ -72,6 +72,7 @@ namespace MalumMenu
         private const string FirebaseUrl = "https://hydralum-presence-default-rtdb.firebaseio.com/announcement.json";
         private static readonly HttpClient HttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
         private static string _lastSyncedJson = null;
+        private static readonly object _syncLock = new object();
 
         public static AnnouncementData Current { get; private set; }
 
@@ -94,11 +95,14 @@ namespace MalumMenu
 
         public static void SyncFromAppDomain()
         {
-            var raw = AppDomain.CurrentDomain.GetData("HydralumAnnouncementJson") as string;
-            if (raw != _lastSyncedJson)
+            lock (_syncLock)
             {
-                _lastSyncedJson = raw;
-                Current = AnnouncementData.FromJson(raw);
+                var raw = AppDomain.CurrentDomain.GetData("HydralumAnnouncementJson") as string;
+                if (raw != _lastSyncedJson)
+                {
+                    _lastSyncedJson = raw;
+                    Current = AnnouncementData.FromJson(raw);
+                }
             }
         }
 
