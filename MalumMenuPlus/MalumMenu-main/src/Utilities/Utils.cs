@@ -535,8 +535,8 @@ public static class Utils
             {
                 if (isDev)
                 {
-                    gemTop = "<color=#FFD700>★ [DEV]</color>\r\n";
-                    gemInline = "<color=#FFD700>★ [DEV]</color> ";
+                    gemTop = "<color=#FFD700>[DEV]</color>\r\n";
+                    gemInline = "<color=#FFD700>[DEV]</color> ";
                 }
                 else
                 {
