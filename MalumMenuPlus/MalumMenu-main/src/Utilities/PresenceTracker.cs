@@ -166,6 +166,17 @@ namespace MalumMenu
                 LocalFriendCode = friendCode ?? "";
                 LocalPuid = puid ?? "";
 
+                var outdatedVal = AppDomain.CurrentDomain.GetData("HydralumOutdated");
+                if (outdatedVal is bool b)
+                {
+                    IsOutdated = b;
+                }
+                var reqVerVal = AppDomain.CurrentDomain.GetData("HydralumRequiredVersion");
+                if (reqVerVal is string s && !string.IsNullOrEmpty(s))
+                {
+                    RequiredVersion = s;
+                }
+
                 if (CurrentRoomCode != _lastRoomCode || CurrentGameState != _lastGameState)
                 {
                     _lastRoomCode = CurrentRoomCode;
@@ -507,7 +518,8 @@ namespace MalumMenu
                     // 4. Fetch stats and verify version requirement
                     try
                     {
-                        using var statsResp = await HttpClient.GetAsync("https://hydralum-presence-default-rtdb.firebaseio.com/stats.json", token);
+                        string statsUrl = $"https://hydralum-presence-default-rtdb.firebaseio.com/stats.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                        using var statsResp = await HttpClient.GetAsync(statsUrl, token);
                         if (statsResp.IsSuccessStatusCode)
                         {
                             var statsJson = await statsResp.Content.ReadAsStringAsync(token);
@@ -570,7 +582,6 @@ namespace MalumMenu
         private static GUIStyle _lockoutVerStyle;
         private static GUIStyle _lockoutBodyStyle;
         private static GUIStyle _lockoutBtnStyle;
-        private static int _lockoutLastFrame = -1;
 
         public static void RenderLockoutModalGUI()
         {
@@ -580,10 +591,16 @@ namespace MalumMenu
                 bool isOutdated = (outdatedVal is bool b && b) || IsOutdated;
                 if (!isOutdated) return;
 
-                // Per-frame dedup: only render once even if both plugins call this
-                int frame = Time.frameCount;
-                if (frame == _lockoutLastFrame) return;
-                _lockoutLastFrame = frame;
+                // Dedup per IMGUI event so both Layout and Repaint run, but multi-plugin calls don't duplicate
+                if (Event.current != null)
+                {
+                    string dedupKey = $"HydralumLockout_{Time.frameCount}_{(int)Event.current.type}";
+                    if (AppDomain.CurrentDomain.GetData(dedupKey) != null)
+                    {
+                        return;
+                    }
+                    AppDomain.CurrentDomain.SetData(dedupKey, true);
+                }
 
                 var reqVerVal = AppDomain.CurrentDomain.GetData("HydralumRequiredVersion");
                 string reqVer = (reqVerVal is string s && !string.IsNullOrEmpty(s)) ? s : RequiredVersion;
@@ -597,20 +614,21 @@ namespace MalumMenu
                 GUI.backgroundColor = new Color(0.04f, 0.04f, 0.06f, 0.98f);
                 GUI.Box(new Rect(0, 0, Screen.width, Screen.height), GUIContent.none);
 
-                // Block all mouse and keyboard input from passing through
-                if (Event.current != null && (Event.current.isMouse || Event.current.isKey))
-                {
-                    Event.current.Use();
-                }
-
                 // Center Dialog Box
                 float boxWidth = Mathf.Max(100f, Mathf.Min(580f, Screen.width - 40f));
                 float boxHeight = 360f;
                 float boxX = (Screen.width - boxWidth) / 2f;
                 float boxY = (Screen.height - boxHeight) / 2f;
 
+                // Block clicks outside dialog box from reaching underlying game buttons
+                Rect dialogRect = new Rect(boxX, boxY, boxWidth, boxHeight);
+                if (Event.current != null && Event.current.isMouse && !dialogRect.Contains(Event.current.mousePosition))
+                {
+                    Event.current.Use();
+                }
+
                 GUI.backgroundColor = new Color(0.12f, 0.12f, 0.16f, 1f);
-                GUI.Box(new Rect(boxX, boxY, boxWidth, boxHeight), GUIContent.none);
+                GUI.Box(dialogRect, GUIContent.none);
 
                 GUILayout.BeginArea(new Rect(boxX + 24, boxY + 22, boxWidth - 48, boxHeight - 44));
                 try
