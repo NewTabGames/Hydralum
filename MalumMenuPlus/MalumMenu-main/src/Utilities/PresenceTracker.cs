@@ -609,26 +609,39 @@ namespace MalumMenu
                 string displayReqVer = reqVer.TrimStart('v', 'V');
                 string displayCurVer = CurrentHydralumVersion.TrimStart('v', 'V');
 
-                // Full-screen solid backdrop
+                // Render on top-most layer
+                GUI.depth = -99999;
+                Color prevColor = GUI.color;
                 Color prevBg = GUI.backgroundColor;
-                GUI.backgroundColor = new Color(0.04f, 0.04f, 0.06f, 0.98f);
-                GUI.Box(new Rect(0, 0, Screen.width, Screen.height), GUIContent.none);
+
+                // Full-screen solid backdrop using Texture2D.whiteTexture
+                GUI.color = new Color(0.04f, 0.04f, 0.06f, 0.98f);
+                GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
 
                 // Center Dialog Box
                 float boxWidth = Mathf.Max(100f, Mathf.Min(580f, Screen.width - 40f));
                 float boxHeight = 360f;
                 float boxX = (Screen.width - boxWidth) / 2f;
                 float boxY = (Screen.height - boxHeight) / 2f;
+                Rect dialogRect = new Rect(boxX, boxY, boxWidth, boxHeight);
 
                 // Block clicks outside dialog box from reaching underlying game buttons
-                Rect dialogRect = new Rect(boxX, boxY, boxWidth, boxHeight);
                 if (Event.current != null && Event.current.isMouse && !dialogRect.Contains(Event.current.mousePosition))
                 {
                     Event.current.Use();
                 }
 
-                GUI.backgroundColor = new Color(0.12f, 0.12f, 0.16f, 1f);
-                GUI.Box(dialogRect, GUIContent.none);
+                // Dialog Card Border (Cyan Glow)
+                GUI.color = new Color(0f, 0.9f, 0.7f, 0.8f);
+                GUI.DrawTexture(new Rect(boxX - 2, boxY - 2, boxWidth + 4, boxHeight + 4), Texture2D.whiteTexture);
+
+                // Dialog Card Background (Dark Solid Box)
+                GUI.color = new Color(0.11f, 0.11f, 0.15f, 1f);
+                GUI.DrawTexture(dialogRect, Texture2D.whiteTexture);
+
+                // Restore GUI color for text/content rendering
+                GUI.color = Color.white;
+                GUI.backgroundColor = Color.white;
 
                 GUILayout.BeginArea(new Rect(boxX + 24, boxY + 22, boxWidth - 48, boxHeight - 44));
                 try
@@ -703,9 +716,9 @@ namespace MalumMenu
                 finally
                 {
                     GUILayout.EndArea();
+                    GUI.color = prevColor;
+                    GUI.backgroundColor = prevBg;
                 }
-
-                GUI.backgroundColor = prevBg;
             }
             catch { }
         }
