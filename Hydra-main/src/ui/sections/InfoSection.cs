@@ -6,6 +6,8 @@ namespace HydraMenu.ui.sections
 	{
 		public InfoSection() : base("Info") { }
 
+		private const string HydralumUrl = "https://github.com/NewTabGames/Hydralum";
+		private const string HydralumDiscordUrl = "https://discord.gg/GBg7hp7qAX";
 		private const string MalumUrl = "https://github.com/scp222thj/MalumMenu";
 		private const string MalumDiscordUrl = "https://discord.gg/MMg8W7T3Cy";
 		private const string HydraUrl = "https://github.com/MrDiamond64/Hydra";
@@ -22,6 +24,7 @@ namespace HydraMenu.ui.sections
 			GUILayout.Space(12);
 			GUILayout.Label("Credits & Community");
 
+			DrawCredit("Hydralum", "Official Discord & GitHub", HydralumUrl, HydralumDiscordUrl);
 			DrawCredit("MalumMenu", "by scp222thj & astra1dev", MalumUrl, MalumDiscordUrl);
 			DrawCredit("Hydra", "by MrDiamond64", HydraUrl, HydraDiscordUrl);
 
