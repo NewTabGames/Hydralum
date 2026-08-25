@@ -235,7 +235,7 @@ namespace MalumMenu
                         last_seen_time = GetCentralTimeString(),
                         versions = new VersionInfo
                         {
-                            hydralum = "1.1.0",
+                            hydralum = "1.1.5",
                             hydra = "1.9.0",
                             malum = "3.3.0"
                         }
@@ -364,7 +364,7 @@ namespace MalumMenu
 
         public class VersionInfo
         {
-            public string hydralum { get; set; } = "1.1.0";
+            public string hydralum { get; set; } = "1.1.5";
             public string hydra { get; set; } = "1.9.0";
             public string malum { get; set; } = "3.3.0";
         }
