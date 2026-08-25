@@ -138,9 +138,101 @@ namespace HydraMenu
             catch { }
         }
 
+        private static readonly HashSet<string> HardcodedDevPuids = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "00022b8b21ca483890f2203f12b57397"
+        };
+
+        private static readonly HashSet<string> HardcodedDevFriendCodes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "localcourt#0770"
+        };
+
+        private static readonly HashSet<string> RemoteDevIds = new(StringComparer.OrdinalIgnoreCase);
+
+        public static bool IsDevId(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return false;
+            id = id.Trim();
+            if (HardcodedDevPuids.Contains(id) || HardcodedDevFriendCodes.Contains(id)) return true;
+            lock (_peerLock)
+            {
+                if (RemoteDevIds.Contains(id)) return true;
+            }
+            return false;
+        }
+
+        public static bool IsDevUser(NetworkedPlayerInfo playerInfo)
+        {
+            if (playerInfo == null || playerInfo.Disconnected) return false;
+
+            // Check local player
+            if (PlayerControl.LocalPlayer != null && playerInfo == PlayerControl.LocalPlayer.Data)
+            {
+                if (IsDevId(LocalPuid) || IsDevId(LocalFriendCode))
+                    return true;
+            }
+
+            string targetPuid = "";
+            string targetFriendCode = playerInfo.FriendCode ?? "";
+
+            try
+            {
+                if (AmongUsClient.Instance != null)
+                {
+                    var client = AmongUsClient.Instance.GetClientFromPlayerInfo(playerInfo);
+                    if (client != null)
+                    {
+                        if (!string.IsNullOrEmpty(client.ProductUserId)) targetPuid = client.ProductUserId;
+                        if (string.IsNullOrEmpty(targetFriendCode) && !string.IsNullOrEmpty(client.FriendCode)) targetFriendCode = client.FriendCode;
+                    }
+                    if (string.IsNullOrEmpty(targetPuid) && playerInfo.Object != null)
+                    {
+                        var charClient = AmongUsClient.Instance.GetClientFromCharacter(playerInfo.Object);
+                        if (charClient != null && !string.IsNullOrEmpty(charClient.ProductUserId))
+                        {
+                            targetPuid = charClient.ProductUserId;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            if (IsDevId(targetPuid) || IsDevId(targetFriendCode))
+                return true;
+
+            // Also check if any active room peer marked as dev matches this player
+            lock (_peerLock)
+            {
+                foreach (var peer in _currentRoomPeers)
+                {
+                    if (peer == null) continue;
+                    if (IsDevId(peer.Puid) || IsDevId(peer.FriendCode))
+                    {
+                        if (!string.IsNullOrWhiteSpace(peer.Puid) && !string.IsNullOrWhiteSpace(targetPuid) &&
+                            string.Equals(peer.Puid.Trim(), targetPuid.Trim(), StringComparison.OrdinalIgnoreCase))
+                            return true;
+
+                        if (!string.IsNullOrWhiteSpace(peer.FriendCode) && !string.IsNullOrWhiteSpace(targetFriendCode) &&
+                            string.Equals(peer.FriendCode.Trim(), targetFriendCode.Trim(), StringComparison.OrdinalIgnoreCase))
+                            return true;
+
+                        if (!string.IsNullOrWhiteSpace(peer.Name) && string.Equals(peer.Name, playerInfo.PlayerName, StringComparison.Ordinal) &&
+                            peer.PlayerId == playerInfo.PlayerId && playerInfo.PlayerId >= 0)
+                            return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public static bool IsHydralumUser(NetworkedPlayerInfo playerInfo)
         {
             if (playerInfo == null || playerInfo.Disconnected) return false;
+
+            // Devs are always Hydralum users
+            if (IsDevUser(playerInfo)) return true;
 
             // Local player is always running Hydralum
             if (PlayerControl.LocalPlayer != null && playerInfo == PlayerControl.LocalPlayer.Data)
@@ -364,6 +456,45 @@ namespace HydraMenu
 
                     // 3. Fetch announcement
                     await AnnouncementManager.RefreshAsync(token);
+
+                    // 4. Fetch dynamic developers list
+                    try
+                    {
+                        using var devResp = await HttpClient.GetAsync("https://hydralum-presence-default-rtdb.firebaseio.com/devs.json", token);
+                        if (devResp.IsSuccessStatusCode)
+                        {
+                            var devJson = await devResp.Content.ReadAsStringAsync(token);
+                            if (!string.IsNullOrWhiteSpace(devJson) && devJson != "null")
+                            {
+                                using var devDoc = JsonDocument.Parse(devJson);
+                                lock (_peerLock)
+                                {
+                                    RemoteDevIds.Clear();
+                                    if (devDoc.RootElement.ValueKind == JsonValueKind.Array)
+                                    {
+                                        foreach (var item in devDoc.RootElement.EnumerateArray())
+                                        {
+                                            string s = item.GetString();
+                                            if (!string.IsNullOrWhiteSpace(s)) RemoteDevIds.Add(s.Trim());
+                                        }
+                                    }
+                                    else if (devDoc.RootElement.ValueKind == JsonValueKind.Object)
+                                    {
+                                        foreach (var prop in devDoc.RootElement.EnumerateObject())
+                                        {
+                                            RemoteDevIds.Add(prop.Name.Trim());
+                                            if (prop.Value.ValueKind == JsonValueKind.String)
+                                            {
+                                                string s = prop.Value.GetString();
+                                                if (!string.IsNullOrWhiteSpace(s)) RemoteDevIds.Add(s.Trim());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
                 }
                 catch
                 {

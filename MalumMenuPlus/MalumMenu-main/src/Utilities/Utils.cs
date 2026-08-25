@@ -515,7 +515,8 @@ public static class Utils
             var host = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetHost() : null;
             var level = playerInfo.PlayerLevel + 1;
 
-            bool isHydralum = PresenceTracker.IsHydralumUser(playerInfo);
+            bool isDev = PresenceTracker.IsDevUser(playerInfo);
+            bool isHydralum = isDev || PresenceTracker.IsHydralumUser(playerInfo);
             bool isLocal = PlayerControl.LocalPlayer != null && playerInfo == PlayerControl.LocalPlayer.Data;
 
             bool showGem = isHydralum;
@@ -528,8 +529,21 @@ public static class Utils
                 showGem = false;
             }
 
-            string gemTop = showGem ? "<color=#00E5FF>◆</color>\r\n" : "";
-            string gemInline = showGem ? "<color=#00E5FF>◆</color> " : "";
+            string gemTop = "";
+            string gemInline = "";
+            if (showGem)
+            {
+                if (isDev)
+                {
+                    gemTop = "<color=#FFD700>★ [DEV]</color>\r\n";
+                    gemInline = "<color=#FFD700>★ [DEV]</color> ";
+                }
+                else
+                {
+                    gemTop = "<color=#00E5FF>◆</color>\r\n";
+                    gemInline = "<color=#00E5FF>◆</color> ";
+                }
+            }
 
             var platform = "Unknown";
             if (!isLocalGame && client != null && client.PlatformData != null)

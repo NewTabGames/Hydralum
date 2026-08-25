@@ -10,6 +10,7 @@ namespace HydraMenu
     public class AnnouncementData
     {
         public bool enabled { get; set; } = false;
+        public string id { get; set; } = "";
         public string title { get; set; } = "";
         public string message { get; set; } = "";
         public string color { get; set; } = "#00FFAA";
@@ -36,6 +37,9 @@ namespace HydraMenu
                     else if (propEnabled.ValueKind == JsonValueKind.Number)
                         data.enabled = propEnabled.GetInt32() != 0;
                 }
+
+                if (root.TryGetProperty("id", out var propId))
+                    data.id = propId.ToString();
 
                 if (root.TryGetProperty("title", out var propTitle))
                     data.title = propTitle.ToString();
@@ -102,8 +106,20 @@ namespace HydraMenu
                 {
                     _lastSyncedJson = raw;
                     Current = AnnouncementData.FromJson(raw);
+
+                    // If announcement is disabled or removed, reset dismissed status so re-enabling shows it again
+                    if (Current == null || !Current.enabled)
+                    {
+                        AppDomain.CurrentDomain.SetData("HydralumDismissedAnnouncement", null);
+                    }
                 }
             }
+        }
+
+        public static string GetAnnouncementKey(AnnouncementData data)
+        {
+            if (data == null) return "";
+            return !string.IsNullOrEmpty(data.id) ? data.id : $"{data.title}|{data.message}";
         }
 
         public static bool ShouldShow()
@@ -116,7 +132,8 @@ namespace HydraMenu
             }
 
             string dismissed = AppDomain.CurrentDomain.GetData("HydralumDismissedAnnouncement") as string;
-            if (!string.IsNullOrEmpty(dismissed) && dismissed == $"{data.title}|{data.message}")
+            string key = GetAnnouncementKey(data);
+            if (!string.IsNullOrEmpty(dismissed) && dismissed == key)
             {
                 return false;
             }
@@ -129,7 +146,8 @@ namespace HydraMenu
             var data = Current;
             if (data != null)
             {
-                AppDomain.CurrentDomain.SetData("HydralumDismissedAnnouncement", $"{data.title}|{data.message}");
+                string key = GetAnnouncementKey(data);
+                AppDomain.CurrentDomain.SetData("HydralumDismissedAnnouncement", key);
             }
         }
 

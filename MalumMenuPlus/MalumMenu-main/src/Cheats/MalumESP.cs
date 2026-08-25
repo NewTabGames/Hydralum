@@ -205,7 +205,8 @@ public static class MalumESP
             // Move the nameText up to prevent it overlapping with colorblind text or character sprite
             if (playerPhysics.myPlayer.cosmetics.nameText != null)
             {
-                bool isHydralum = PresenceTracker.IsHydralumUser(playerPhysics.myPlayer.Data);
+                bool isDev = PresenceTracker.IsDevUser(playerPhysics.myPlayer.Data);
+                bool isHydralum = isDev || PresenceTracker.IsHydralumUser(playerPhysics.myPlayer.Data);
                 bool isLocal = PlayerControl.LocalPlayer != null && playerPhysics.myPlayer.Data == PlayerControl.LocalPlayer.Data;
                 bool showingGem = isHydralum && !CheatToggles.hideAllGems && !(isLocal && CheatToggles.hideMyGem);
 
