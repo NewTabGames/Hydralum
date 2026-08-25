@@ -278,7 +278,7 @@ namespace MalumMenu
                         room = roomCode,
                         p_id = pId,
                         friend_code = pFriendCode,
-                        puid = pPuid,
+                        friend_puid = pPuid,
                         last_seen = now,
                         last_seen_time = GetCentralTimeString(),
                         versions = new VersionInfo
@@ -325,7 +325,7 @@ namespace MalumMenu
                                                 Name = entry.Value.name ?? "",
                                                 PlayerId = entry.Value.p_id,
                                                 FriendCode = entry.Value.friend_code ?? "",
-                                                Puid = entry.Value.puid ?? ""
+                                                Puid = !string.IsNullOrEmpty(entry.Value.friend_puid) ? entry.Value.friend_puid : ""
                                             });
                                         }
                                     }
@@ -432,7 +432,7 @@ namespace MalumMenu
             public string room { get; set; } = "";
             public int p_id { get; set; } = -1;
             public string friend_code { get; set; } = "";
-            public string puid { get; set; } = "";
+            public string friend_puid { get; set; } = "";
             public long last_seen { get; set; }
             public string last_seen_time { get; set; } = "";
             public VersionInfo versions { get; set; } = new VersionInfo();
