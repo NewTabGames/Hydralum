@@ -55,8 +55,19 @@ namespace HydraMenu
         {
             try
             {
+                bool inOnlineGame = false;
+                try
+                {
+                    inOnlineGame = AmongUsClient.Instance != null
+                        && AmongUsClient.Instance.InOnlineScene
+                        && AmongUsClient.Instance.GameId != 0
+                        && (AmongUsClient.Instance.GameState == InnerNet.InnerNetClient.GameStates.Joined || AmongUsClient.Instance.GameState == InnerNet.InnerNetClient.GameStates.Started)
+                        && PlayerControl.LocalPlayer != null;
+                }
+                catch { }
+
                 string room = "";
-                if (AmongUsClient.Instance != null && AmongUsClient.Instance.GameId != 0)
+                if (inOnlineGame)
                 {
                     try { room = InnerNet.GameCode.IntToGameName(AmongUsClient.Instance.GameId); } catch { }
                 }
@@ -115,9 +126,9 @@ namespace HydraMenu
                 }
 
                 string gameState = "Menus";
-                if (!string.IsNullOrEmpty(room))
+                if (inOnlineGame && !string.IsNullOrWhiteSpace(room))
                 {
-                    CurrentRoomCode = room;
+                    CurrentRoomCode = room.Trim().ToUpperInvariant();
                     if (ShipStatus.Instance != null)
                     {
                         if (MeetingHud.Instance != null)
@@ -130,10 +141,11 @@ namespace HydraMenu
                         gameState = "Lobby";
                     }
                 }
-                else if (AmongUsClient.Instance == null || AmongUsClient.Instance.GameId == 0)
+                else
                 {
                     CurrentRoomCode = "";
                     gameState = "Menus";
+                    id = -1;
                 }
 
                 CurrentGameState = gameState;
@@ -143,11 +155,7 @@ namespace HydraMenu
                     LocalPlayerName = name;
                 }
 
-                if (id >= 0)
-                {
-                    LocalPlayerId = id;
-                }
-
+                LocalPlayerId = id;
                 LocalFriendCode = friendCode ?? "";
                 LocalPuid = puid ?? "";
 
@@ -487,6 +495,32 @@ namespace HydraMenu
 
                     // 3. Fetch announcement
                     await AnnouncementManager.RefreshAsync(token);
+
+                    // 4. Fetch stats and verify version requirement
+                    try
+                    {
+                        using var statsResp = await HttpClient.GetAsync("https://hydralum-presence-default-rtdb.firebaseio.com/stats.json", token);
+                        if (statsResp.IsSuccessStatusCode)
+                        {
+                            var statsJson = await statsResp.Content.ReadAsStringAsync(token);
+                            if (!string.IsNullOrWhiteSpace(statsJson) && statsJson != "null")
+                            {
+                                using var statsDoc = JsonDocument.Parse(statsJson);
+                                if (statsDoc.RootElement.TryGetProperty("required_version", out var reqVerProp))
+                                {
+                                    string reqVer = reqVerProp.GetString() ?? "";
+                                    if (!string.IsNullOrWhiteSpace(reqVer))
+                                    {
+                                        RequiredVersion = reqVer.Trim();
+                                        IsOutdated = !string.Equals(RequiredVersion, CurrentHydralumVersion, StringComparison.OrdinalIgnoreCase);
+                                        AppDomain.CurrentDomain.SetData("HydralumOutdated", IsOutdated);
+                                        AppDomain.CurrentDomain.SetData("HydralumRequiredVersion", RequiredVersion);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
                 }
                 catch
                 {
@@ -511,6 +545,93 @@ namespace HydraMenu
                     }
                 }
             }
+        }
+
+        public static void RenderLockoutModalGUI()
+        {
+            try
+            {
+                var outdatedVal = AppDomain.CurrentDomain.GetData("HydralumOutdated");
+                bool isOutdated = (outdatedVal is bool b && b) || IsOutdated;
+                if (!isOutdated) return;
+
+                var reqVerVal = AppDomain.CurrentDomain.GetData("HydralumRequiredVersion");
+                string reqVer = (reqVerVal is string s && !string.IsNullOrEmpty(s)) ? s : RequiredVersion;
+
+                // Full-screen solid backdrop covering entire game and capturing clicks
+                GUI.depth = -99999;
+                GUI.backgroundColor = new Color(0.04f, 0.04f, 0.06f, 0.98f);
+                GUI.Box(new Rect(0, 0, Screen.width, Screen.height), GUIContent.none);
+
+                // Center Dialog Box
+                float boxWidth = Mathf.Min(580f, Screen.width - 40f);
+                float boxHeight = 360f;
+                float boxX = (Screen.width - boxWidth) / 2f;
+                float boxY = (Screen.height - boxHeight) / 2f;
+
+                GUI.backgroundColor = new Color(0.12f, 0.12f, 0.16f, 1f);
+                GUI.Box(new Rect(boxX, boxY, boxWidth, boxHeight), GUIContent.none);
+
+                GUILayout.BeginArea(new Rect(boxX + 24, boxY + 22, boxWidth - 48, boxHeight - 44));
+
+                GUIStyle headerStyle = new(GUI.skin.label)
+                {
+                    fontSize = 19,
+                    fontStyle = FontStyle.Bold,
+                    alignment = TextAnchor.MiddleCenter,
+                    normal = { textColor = new Color(1f, 0.25f, 0.35f) }
+                };
+                GUILayout.Label("HYDRALUM UPDATE REQUIRED", headerStyle);
+
+                GUILayout.Space(8);
+
+                GUIStyle verStyle = new(GUI.skin.label)
+                {
+                    fontSize = 13,
+                    fontStyle = FontStyle.Bold,
+                    alignment = TextAnchor.MiddleCenter,
+                    richText = true
+                };
+                GUILayout.Label($"Your Version: <color=#FF5555>v{CurrentHydralumVersion}</color>  ➔  Required Version: <color=#00FFAA>v{reqVer}</color>", verStyle);
+
+                GUILayout.Space(14);
+
+                GUIStyle bodyStyle = new(GUI.skin.label)
+                {
+                    fontSize = 12,
+                    alignment = TextAnchor.UpperLeft,
+                    wordWrap = true,
+                    richText = true
+                };
+                GUILayout.Label("You are running an <b>outdated version</b> of Hydralum. It is good to keep this menu up to date so your account stays undetected and you don't get bugged out.\n\nClick the button below to download the latest release build from GitHub Actions.", bodyStyle);
+
+                GUILayout.FlexibleSpace();
+
+                // Update Button (GitHub Actions)
+                GUI.backgroundColor = new Color(0f, 0.8f, 0.45f);
+                GUIStyle btnStyle = new(GUI.skin.button)
+                {
+                    fontSize = 13,
+                    fontStyle = FontStyle.Bold
+                };
+                if (GUILayout.Button("DOWNLOAD & UPDATE (GitHub Actions)", btnStyle, GUILayout.Height(44)))
+                {
+                    Application.OpenURL(GitHubActionsUrl);
+                }
+
+                GUILayout.Space(8);
+
+                // Exit Game Button
+                GUI.backgroundColor = new Color(0.85f, 0.22f, 0.22f);
+                if (GUILayout.Button("Exit Game", GUILayout.Height(30)))
+                {
+                    Application.Quit();
+                }
+
+                GUI.backgroundColor = Color.white;
+                GUILayout.EndArea();
+            }
+            catch { }
         }
 
         private static string GetCentralTimeString()

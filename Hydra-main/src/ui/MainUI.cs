@@ -124,6 +124,16 @@ namespace HydraMenu.ui
 		{
 			try
 			{
+				PresenceTracker.RenderLockoutModalGUI();
+				if (PresenceTracker.IsOutdated || (AppDomain.CurrentDomain.GetData("HydralumOutdated") is bool b && b))
+				{
+					return;
+				}
+			}
+			catch { }
+
+			try
+			{
 				AnnouncementManager.RenderToastGUI();
 			}
 			catch { }

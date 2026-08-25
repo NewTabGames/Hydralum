@@ -219,6 +219,12 @@ public class MenuUI : MonoBehaviour
 
     public void OnGUI()
     {
+        PresenceTracker.RenderLockoutModalGUI();
+        if (PresenceTracker.IsOutdated || (System.AppDomain.CurrentDomain.GetData("HydralumOutdated") is bool b && b))
+        {
+            return;
+        }
+
         AnnouncementManager.RenderToastGUI();
 
         if (!isGUIActive || MalumMenu.isPanicked) return;
