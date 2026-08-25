@@ -403,7 +403,8 @@ namespace MalumMenu
 
                                 foreach (var entry in data)
                                 {
-                                    if (entry.Value != null && (now - entry.Value.last_seen) < 30)
+                                    long age = entry.Value != null ? Math.Abs(now - entry.Value.last_seen) : 999;
+                                    if (entry.Value != null && age < 60)
                                     {
                                         active++;
 
@@ -421,7 +422,7 @@ namespace MalumMenu
                                             });
                                         }
                                     }
-                                    else if (entry.Value == null || (now - entry.Value.last_seen) > 45)
+                                    else if (entry.Value == null || age > 90)
                                     {
                                         // Prune stale session from Firebase
                                         _ = HttpClient.DeleteAsync($"{FirebaseUrl}/{entry.Key}.json", token);
@@ -501,8 +502,8 @@ namespace MalumMenu
                     // Ignore network fluctuations
                 }
 
-                // Wait 15 seconds, or wake up sooner if room changed
-                for (int i = 0; i < 30; i++)
+                // Wait 5 seconds, or wake up sooner if room changed
+                for (int i = 0; i < 10; i++)
                 {
                     if (_forceRefresh)
                     {

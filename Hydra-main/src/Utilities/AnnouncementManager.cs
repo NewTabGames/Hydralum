@@ -16,6 +16,7 @@ namespace HydraMenu
         public string color { get; set; } = "#00FFAA";
         public string link { get; set; } = "";
         public string linkText { get; set; } = "Open Link";
+        public long timestamp { get; set; } = 0;
 
         public static AnnouncementData FromJson(string json)
         {
@@ -62,6 +63,22 @@ namespace HydraMenu
                     if (!string.IsNullOrWhiteSpace(lt) && lt != "Value") data.linkText = lt;
                 }
 
+                if (root.TryGetProperty("timestamp", out var propTs))
+                {
+                    if (propTs.ValueKind == JsonValueKind.Number && propTs.TryGetInt64(out var ts)) data.timestamp = ts;
+                    else if (propTs.ValueKind == JsonValueKind.String && long.TryParse(propTs.GetString(), out var ts2)) data.timestamp = ts2;
+                }
+                else if (root.TryGetProperty("time", out var propTime))
+                {
+                    if (propTime.ValueKind == JsonValueKind.Number && propTime.TryGetInt64(out var t)) data.timestamp = t;
+                    else if (propTime.ValueKind == JsonValueKind.String && long.TryParse(propTime.GetString(), out var t2)) data.timestamp = t2;
+                }
+
+                if (root.TryGetProperty("version", out var propVer))
+                {
+                    data.id = propVer.ToString();
+                }
+
                 return data;
             }
             catch
@@ -105,10 +122,16 @@ namespace HydraMenu
                 if (raw != _lastSyncedJson)
                 {
                     _lastSyncedJson = raw;
+                    var prev = Current;
                     Current = AnnouncementData.FromJson(raw);
 
                     // If announcement is disabled or removed, reset dismissed status so re-enabling shows it again
                     if (Current == null || !Current.enabled)
+                    {
+                        AppDomain.CurrentDomain.SetData("HydralumDismissedAnnouncement", null);
+                    }
+                    // If announcement content/id/timestamp changed, also reset dismissal so new announcements always show
+                    else if (prev != null && GetAnnouncementKey(prev) != GetAnnouncementKey(Current))
                     {
                         AppDomain.CurrentDomain.SetData("HydralumDismissedAnnouncement", null);
                     }
@@ -119,7 +142,9 @@ namespace HydraMenu
         public static string GetAnnouncementKey(AnnouncementData data)
         {
             if (data == null) return "";
-            return !string.IsNullOrEmpty(data.id) ? data.id : $"{data.title}|{data.message}";
+            string baseKey = !string.IsNullOrEmpty(data.id) ? $"id:{data.id}" : $"{data.title}|{data.message}|{data.link}";
+            if (data.timestamp > 0) baseKey += $"|ts:{data.timestamp}";
+            return baseKey;
         }
 
         public static bool ShouldShow()
@@ -133,7 +158,7 @@ namespace HydraMenu
 
             string dismissed = AppDomain.CurrentDomain.GetData("HydralumDismissedAnnouncement") as string;
             string key = GetAnnouncementKey(data);
-            if (!string.IsNullOrEmpty(dismissed) && dismissed == key)
+            if (!string.IsNullOrEmpty(dismissed) && string.Equals(dismissed, key, StringComparison.Ordinal))
             {
                 return false;
             }
