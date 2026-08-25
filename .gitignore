@@ -22,9 +22,15 @@ DLLs/
 /MalumMenu-*
 *Steam-Itch*
 Antigravity.md
+DevMenu/
+**/DevMenu/
 scratch/
 **/scratch/
 
 # OS generated files
 .DS_Store
 Thumbs.db
+
+HydralumLogo.png
+**/HydralumLogo.png
+

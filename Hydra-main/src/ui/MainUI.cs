@@ -136,7 +136,7 @@ namespace HydraMenu.ui
 				GUI.skin.label.fontSize = (int)(13 * scale);
 
 				// Render UI box
-				GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum v1.1.5 - Hydra v{MyPluginInfo.PLUGIN_VERSION}  |  Online: {PresenceTracker.GetOnlineCount()}", Styles.MainBox);
+				GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum v{PresenceTracker.CurrentHydralumVersion} - Hydra v{MyPluginInfo.PLUGIN_VERSION}  |  Online: {PresenceTracker.GetOnlineCount()}", Styles.MainBox);
 
 				// Switch button on top header matching the Hydralum mock design
 				Rect switchBtnRect = new Rect(windowPosition.x + WindowSize.x - 95 * scale, windowPosition.y + 2 * scale, 90 * scale, 20 * scale);

@@ -17,6 +17,11 @@ namespace HydraMenu
         private static CancellationTokenSource _cts;
         private static bool _started = false;
 
+        public const string CurrentHydralumVersion = "1.2.0";
+        public const string GitHubActionsUrl = "https://github.com/NewTabGames/Hydralum/actions";
+        public static bool IsOutdated { get; set; } = false;
+        public static string RequiredVersion { get; set; } = "1.2.0";
+
         public static int OnlineCount { get; private set; } = 1;
 
         // Thread-safe cached local player and lobby state (updated on Unity main thread)
@@ -25,8 +30,10 @@ namespace HydraMenu
         public static int LocalPlayerId { get; private set; } = -1;
         public static string LocalFriendCode { get; private set; } = "";
         public static string LocalPuid { get; private set; } = "";
+        public static string CurrentGameState { get; private set; } = "Menus";
 
         private static string _lastRoomCode = "";
+        private static string _lastGameState = "Menus";
         private static volatile bool _forceRefresh = false;
 
         // Structured list of active Hydralum peers in the current lobby
@@ -107,14 +114,29 @@ namespace HydraMenu
                     try { puid = EOSManager.Instance?.ProductUserId ?? ""; } catch { }
                 }
 
+                string gameState = "Menus";
                 if (!string.IsNullOrEmpty(room))
                 {
                     CurrentRoomCode = room;
+                    if (ShipStatus.Instance != null)
+                    {
+                        if (MeetingHud.Instance != null)
+                            gameState = "Meeting";
+                        else
+                            gameState = "In Game";
+                    }
+                    else
+                    {
+                        gameState = "Lobby";
+                    }
                 }
                 else if (AmongUsClient.Instance == null || AmongUsClient.Instance.GameId == 0)
                 {
                     CurrentRoomCode = "";
+                    gameState = "Menus";
                 }
+
+                CurrentGameState = gameState;
 
                 if (!string.IsNullOrEmpty(name))
                 {
@@ -129,9 +151,10 @@ namespace HydraMenu
                 LocalFriendCode = friendCode ?? "";
                 LocalPuid = puid ?? "";
 
-                if (CurrentRoomCode != _lastRoomCode)
+                if (CurrentRoomCode != _lastRoomCode || CurrentGameState != _lastGameState)
                 {
                     _lastRoomCode = CurrentRoomCode;
+                    _lastGameState = CurrentGameState;
                     _forceRefresh = true;
                 }
             }
@@ -358,6 +381,7 @@ namespace HydraMenu
                 {
                     long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                     string roomCode = CurrentRoomCode;
+                    string pState = CurrentGameState;
                     string pName = LocalPlayerName;
                     int pId = LocalPlayerId;
                     string pFriendCode = LocalFriendCode;
@@ -368,6 +392,7 @@ namespace HydraMenu
                     {
                         name = pName,
                         room = roomCode,
+                        state = pState,
                         p_id = pId,
                         friend_code = pFriendCode,
                         friend_puid = pPuid,
@@ -375,7 +400,7 @@ namespace HydraMenu
                         last_seen_time = GetCentralTimeString(),
                         versions = new VersionInfo
                         {
-                            hydralum = "1.1.5",
+                            hydralum = CurrentHydralumVersion,
                             hydra = "1.9.0",
                             malum = "3.3.0"
                         }
@@ -445,57 +470,23 @@ namespace HydraMenu
                                 OnlineCount = Math.Max(1, active);
                                 AppDomain.CurrentDomain.SetData("HydralumOnlineCount", OnlineCount);
 
-                                // Update live summary in Firebase Console
-                                var statsPayload = $"{{\"online_players\":{OnlineCount},\"last_updated\":{now}}}";
-                                using (var statsContent = new StringContent(statsPayload, Encoding.UTF8, "application/json"))
+                                // Update live summary in Firebase without overwriting required_version
+                                try
                                 {
-                                    await HttpClient.PutAsync("https://hydralum-presence-default-rtdb.firebaseio.com/stats.json", statsContent, token);
+                                    var statsPayload = $"{{\"online_players\":{OnlineCount},\"last_updated\":{now}}}";
+                                    using var patchReq = new HttpRequestMessage(new HttpMethod("PATCH"), "https://hydralum-presence-default-rtdb.firebaseio.com/stats.json")
+                                    {
+                                        Content = new StringContent(statsPayload, Encoding.UTF8, "application/json")
+                                    };
+                                    using var patchRes = await HttpClient.SendAsync(patchReq, token);
                                 }
+                                catch { }
                             }
                         }
                     }
 
                     // 3. Fetch announcement
                     await AnnouncementManager.RefreshAsync(token);
-
-                    // 4. Fetch dynamic developers list
-                    try
-                    {
-                        using var devResp = await HttpClient.GetAsync("https://hydralum-presence-default-rtdb.firebaseio.com/devs.json", token);
-                        if (devResp.IsSuccessStatusCode)
-                        {
-                            var devJson = await devResp.Content.ReadAsStringAsync(token);
-                            if (!string.IsNullOrWhiteSpace(devJson) && devJson != "null")
-                            {
-                                using var devDoc = JsonDocument.Parse(devJson);
-                                lock (_peerLock)
-                                {
-                                    RemoteDevIds.Clear();
-                                    if (devDoc.RootElement.ValueKind == JsonValueKind.Array)
-                                    {
-                                        foreach (var item in devDoc.RootElement.EnumerateArray())
-                                        {
-                                            string s = item.GetString();
-                                            if (!string.IsNullOrWhiteSpace(s)) RemoteDevIds.Add(s.Trim());
-                                        }
-                                    }
-                                    else if (devDoc.RootElement.ValueKind == JsonValueKind.Object)
-                                    {
-                                        foreach (var prop in devDoc.RootElement.EnumerateObject())
-                                        {
-                                            RemoteDevIds.Add(prop.Name.Trim());
-                                            if (prop.Value.ValueKind == JsonValueKind.String)
-                                            {
-                                                string s = prop.Value.GetString();
-                                                if (!string.IsNullOrWhiteSpace(s)) RemoteDevIds.Add(s.Trim());
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    catch { }
                 }
                 catch
                 {
@@ -545,7 +536,7 @@ namespace HydraMenu
 
         public class VersionInfo
         {
-            public string hydralum { get; set; } = "1.1.5";
+            public string hydralum { get; set; } = CurrentHydralumVersion;
             public string hydra { get; set; } = "1.9.0";
             public string malum { get; set; } = "3.3.0";
         }
@@ -562,6 +553,7 @@ namespace HydraMenu
         {
             public string name { get; set; } = "";
             public string room { get; set; } = "";
+            public string state { get; set; } = "Menus";
             public int p_id { get; set; } = -1;
             public string friend_code { get; set; } = "";
             public string friend_puid { get; set; } = "";
