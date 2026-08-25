@@ -577,11 +577,12 @@ namespace HydraMenu
             }
         }
 
-        // Cached GUIStyles for lockout modal (avoid per-frame allocation)
-        private static GUIStyle _lockoutHeaderStyle;
+        private static Rect _lockoutWindowRect = new Rect(0, 0, 560, 340);
+        private static GUIStyle _lockoutTitleStyle;
         private static GUIStyle _lockoutVerStyle;
         private static GUIStyle _lockoutBodyStyle;
         private static GUIStyle _lockoutBtnStyle;
+        private static GUIStyle _lockoutExitBtnStyle;
 
         public static void RenderLockoutModalGUI()
         {
@@ -591,134 +592,130 @@ namespace HydraMenu
                 bool isOutdated = (outdatedVal is bool b && b) || IsOutdated;
                 if (!isOutdated) return;
 
-                // Dedup per IMGUI event so both Layout and Repaint run, but multi-plugin calls don't duplicate
-                if (Event.current != null)
-                {
-                    string dedupKey = $"HydralumLockout_{Time.frameCount}_{(int)Event.current.type}";
-                    if (AppDomain.CurrentDomain.GetData(dedupKey) != null)
-                    {
-                        return;
-                    }
-                    AppDomain.CurrentDomain.SetData(dedupKey, true);
-                }
-
-                var reqVerVal = AppDomain.CurrentDomain.GetData("HydralumRequiredVersion");
-                string reqVer = (reqVerVal is string s && !string.IsNullOrEmpty(s)) ? s : RequiredVersion;
-
-                // Strip leading 'v' for display
-                string displayReqVer = reqVer.TrimStart('v', 'V');
-                string displayCurVer = CurrentHydralumVersion.TrimStart('v', 'V');
-
-                // Render on top-most layer
                 GUI.depth = -99999;
                 Color prevColor = GUI.color;
                 Color prevBg = GUI.backgroundColor;
 
-                // Full-screen solid backdrop using Texture2D.whiteTexture
-                GUI.color = new Color(0.04f, 0.04f, 0.06f, 0.98f);
-                GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+                // 1. Full-Screen Solid Dimmer
+                if (Event.current.type == EventType.Repaint)
+                {
+                    GUI.color = new Color(0.03f, 0.03f, 0.05f, 0.95f);
+                    GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+                    GUI.color = Color.white;
+                }
 
-                // Center Dialog Box
-                float boxWidth = Mathf.Max(100f, Mathf.Min(580f, Screen.width - 40f));
-                float boxHeight = 360f;
-                float boxX = (Screen.width - boxWidth) / 2f;
-                float boxY = (Screen.height - boxHeight) / 2f;
-                Rect dialogRect = new Rect(boxX, boxY, boxWidth, boxHeight);
+                // 2. Center Modal Rect
+                float boxWidth = Mathf.Max(320f, Mathf.Min(560f, Screen.width - 40f));
+                float boxHeight = Mathf.Max(260f, Mathf.Min(340f, Screen.height - 40f));
+                _lockoutWindowRect = new Rect((Screen.width - boxWidth) / 2f, (Screen.height - boxHeight) / 2f, boxWidth, boxHeight);
 
-                // Block clicks outside dialog box from reaching underlying game buttons
-                if (Event.current != null && Event.current.isMouse && !dialogRect.Contains(Event.current.mousePosition))
+                // 3. Block mouse clicks outside modal
+                if (Event.current != null && Event.current.isMouse && !_lockoutWindowRect.Contains(Event.current.mousePosition))
                 {
                     Event.current.Use();
                 }
 
-                // Dialog Card Border (Cyan Glow)
-                GUI.color = new Color(0f, 0.9f, 0.7f, 0.8f);
-                GUI.DrawTexture(new Rect(boxX - 2, boxY - 2, boxWidth + 4, boxHeight + 4), Texture2D.whiteTexture);
+                // 4. Modal Window with guaranteed Unity IMGUI clipping & layout
+                GUI.backgroundColor = new Color(0.10f, 0.10f, 0.14f, 1f);
+                _lockoutWindowRect = GUI.Window(99999, _lockoutWindowRect, (GUI.WindowFunction)DrawLockoutWindowContents, "");
 
-                // Dialog Card Background (Dark Solid Box)
-                GUI.color = new Color(0.11f, 0.11f, 0.15f, 1f);
-                GUI.DrawTexture(dialogRect, Texture2D.whiteTexture);
+                GUI.color = prevColor;
+                GUI.backgroundColor = prevBg;
+            }
+            catch { }
+        }
 
-                // Restore GUI color for text/content rendering
-                GUI.color = Color.white;
-                GUI.backgroundColor = Color.white;
+        private static void DrawLockoutWindowContents(int windowId)
+        {
+            try
+            {
+                var reqVerVal = AppDomain.CurrentDomain.GetData("HydralumRequiredVersion");
+                string reqVer = (reqVerVal is string s && !string.IsNullOrEmpty(s)) ? s : RequiredVersion;
 
-                GUILayout.BeginArea(new Rect(boxX + 24, boxY + 22, boxWidth - 48, boxHeight - 44));
-                try
+                string displayReqVer = reqVer.TrimStart('v', 'V');
+                string displayCurVer = CurrentHydralumVersion.TrimStart('v', 'V');
+
+                GUILayout.Space(10);
+
+                if (_lockoutTitleStyle == null)
                 {
-                    // Lazy-init cached styles
-                    if (_lockoutHeaderStyle == null)
+                    _lockoutTitleStyle = new GUIStyle(GUI.skin.label)
                     {
-                        _lockoutHeaderStyle = new GUIStyle(GUI.skin.label)
-                        {
-                            fontSize = 19,
-                            fontStyle = FontStyle.Bold,
-                            alignment = TextAnchor.MiddleCenter,
-                            normal = { textColor = new Color(1f, 0.25f, 0.35f) }
-                        };
-                    }
-                    GUILayout.Label("HYDRALUM UPDATE REQUIRED", _lockoutHeaderStyle);
-
-                    GUILayout.Space(8);
-
-                    if (_lockoutVerStyle == null)
-                    {
-                        _lockoutVerStyle = new GUIStyle(GUI.skin.label)
-                        {
-                            fontSize = 13,
-                            fontStyle = FontStyle.Bold,
-                            alignment = TextAnchor.MiddleCenter,
-                            richText = true
-                        };
-                    }
-                    GUILayout.Label($"Your Version: <color=#FF5555>v{displayCurVer}</color>  ->  Required Version: <color=#00FFAA>v{displayReqVer}</color>", _lockoutVerStyle);
-
-                    GUILayout.Space(14);
-
-                    if (_lockoutBodyStyle == null)
-                    {
-                        _lockoutBodyStyle = new GUIStyle(GUI.skin.label)
-                        {
-                            fontSize = 12,
-                            alignment = TextAnchor.UpperLeft,
-                            wordWrap = true,
-                            richText = true
-                        };
-                    }
-                    GUILayout.Label("You are running an <b>outdated version</b> of Hydralum. It is good to keep this menu up to date so your account stays undetected and you don't get bugged out.\n\nClick the button below to download the latest release build from GitHub Actions.", _lockoutBodyStyle);
-
-                    GUILayout.FlexibleSpace();
-
-                    // Update Button (GitHub Actions)
-                    GUI.backgroundColor = new Color(0f, 0.8f, 0.45f);
-                    if (_lockoutBtnStyle == null)
-                    {
-                        _lockoutBtnStyle = new GUIStyle(GUI.skin.button)
-                        {
-                            fontSize = 13,
-                            fontStyle = FontStyle.Bold
-                        };
-                    }
-                    if (GUILayout.Button("DOWNLOAD & UPDATE (GitHub Actions)", _lockoutBtnStyle, GUILayout.Height(44)))
-                    {
-                        Application.OpenURL(GitHubActionsUrl);
-                    }
-
-                    GUILayout.Space(8);
-
-                    // Exit Game Button
-                    GUI.backgroundColor = new Color(0.85f, 0.22f, 0.22f);
-                    if (GUILayout.Button("Exit Game", GUILayout.Height(30)))
-                    {
-                        Application.Quit();
-                    }
+                        fontSize = 18,
+                        fontStyle = FontStyle.Bold,
+                        alignment = TextAnchor.MiddleCenter,
+                        normal = { textColor = new Color(1f, 0.3f, 0.35f) }
+                    };
                 }
-                finally
+                GUILayout.Label("HYDRALUM UPDATE REQUIRED", _lockoutTitleStyle);
+
+                GUILayout.Space(6);
+
+                if (_lockoutVerStyle == null)
                 {
-                    GUILayout.EndArea();
-                    GUI.color = prevColor;
-                    GUI.backgroundColor = prevBg;
+                    _lockoutVerStyle = new GUIStyle(GUI.skin.label)
+                    {
+                        fontSize = 13,
+                        fontStyle = FontStyle.Bold,
+                        alignment = TextAnchor.MiddleCenter,
+                        richText = true,
+                        normal = { textColor = Color.white }
+                    };
                 }
+                GUILayout.Label($"Your Version: <color=#FF5555>v{displayCurVer}</color>   ➔   Required Version: <color=#00FFAA>v{displayReqVer}</color>", _lockoutVerStyle);
+
+                GUILayout.Space(12);
+
+                if (_lockoutBodyStyle == null)
+                {
+                    _lockoutBodyStyle = new GUIStyle(GUI.skin.label)
+                    {
+                        fontSize = 12,
+                        alignment = TextAnchor.UpperLeft,
+                        wordWrap = true,
+                        richText = true,
+                        normal = { textColor = new Color(0.88f, 0.88f, 0.90f) }
+                    };
+                }
+                GUILayout.Label("You are running an <b>outdated version</b> of Hydralum. It is good to keep this menu up to date so your account stays undetected and you don't get bugged out.\n\nClick the button below to download the latest release build from GitHub Actions.", _lockoutBodyStyle);
+
+                GUILayout.FlexibleSpace();
+
+                // Download & Update Button (Bright Green)
+                GUI.backgroundColor = new Color(0f, 0.85f, 0.5f);
+                if (_lockoutBtnStyle == null)
+                {
+                    _lockoutBtnStyle = new GUIStyle(GUI.skin.button)
+                    {
+                        fontSize = 13,
+                        fontStyle = FontStyle.Bold,
+                        normal = { textColor = Color.white }
+                    };
+                }
+                if (GUILayout.Button("DOWNLOAD & UPDATE (GitHub Actions)", _lockoutBtnStyle, GUILayout.Height(42)))
+                {
+                    Application.OpenURL(GitHubActionsUrl);
+                }
+
+                GUILayout.Space(8);
+
+                // Exit Game Button (Red)
+                GUI.backgroundColor = new Color(0.85f, 0.22f, 0.22f);
+                if (_lockoutExitBtnStyle == null)
+                {
+                    _lockoutExitBtnStyle = new GUIStyle(GUI.skin.button)
+                    {
+                        fontSize = 12,
+                        fontStyle = FontStyle.Bold,
+                        normal = { textColor = Color.white }
+                    };
+                }
+                if (GUILayout.Button("Exit Game", _lockoutExitBtnStyle, GUILayout.Height(28)))
+                {
+                    Application.Quit();
+                }
+
+                GUILayout.Space(8);
             }
             catch { }
         }
