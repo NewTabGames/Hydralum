@@ -92,9 +92,6 @@ public class ConfigTab : ITab
         MalumMenu.menuKeepSubwindowsOpen.Value =
             GUILayout.Toggle(MalumMenu.menuKeepSubwindowsOpen.Value, " Keep Subwindows Open");
 
-        MalumMenu.menuAllowClickThrough.Value =
-            GUILayout.Toggle(MalumMenu.menuAllowClickThrough.Value, " Allow Clicks Through");
-
         MalumMenu.showVersionWarning.Value =
             GUILayout.Toggle(MalumMenu.showVersionWarning.Value, " Version Warning Popup");
 

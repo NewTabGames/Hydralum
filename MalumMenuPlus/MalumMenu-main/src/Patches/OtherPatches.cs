@@ -423,7 +423,6 @@ public static class PassiveUiElement_Patches
     public static bool Prefix()
     {
         if (MalumMenu.isPanicked) return true;
-        if (MalumMenu.menuAllowClickThrough != null && MalumMenu.menuAllowClickThrough.Value) return true;
 
         // Input.mousePosition has a bottom-left origin
         // Convert it to a top-left origin by flipping the Y coordinate
