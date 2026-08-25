@@ -168,19 +168,26 @@ namespace HydraMenu.ui
 					if(i == activeTab)
 					{
 						GUILayout.BeginArea(new Rect(FeaturePanePosition.x, FeaturePanePosition.y, FeaturePaneSize.x, FeaturePaneSize.y));
-						section.scrollVector = GUILayout.BeginScrollView(section.scrollVector);
-
 						try
 						{
-							section.Render();
+							section.scrollVector = GUILayout.BeginScrollView(section.scrollVector);
+							try
+							{
+								section.Render();
+							}
+							catch (Exception ex)
+							{
+								GUILayout.Label($"<color=red>Error rendering {section.name} section:</color>\n<size=11>{ex.Message}</size>");
+							}
+							finally
+							{
+								GUILayout.EndScrollView();
+							}
 						}
-						catch (Exception ex)
+						finally
 						{
-							GUILayout.Label($"<color=red>Error rendering {section.name} section:</color>\n<size=11>{ex.Message}</size>");
+							GUILayout.EndArea();
 						}
-
-						GUILayout.EndScrollView();
-						GUILayout.EndArea();
 					}
 				}
 

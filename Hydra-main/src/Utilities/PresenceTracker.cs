@@ -17,7 +17,7 @@ namespace HydraMenu
         private static CancellationTokenSource _cts;
         private static bool _started = false;
 
-        public const string CurrentHydralumVersion = "1.2.0";
+        public const string CurrentHydralumVersion = "1.2.5";
         public const string GitHubActionsUrl = "https://github.com/NewTabGames/Hydralum/actions";
         public static bool IsOutdated { get; set; } = false;
         public static string RequiredVersion { get; set; } = "1.2.0";
@@ -146,6 +146,13 @@ namespace HydraMenu
                     CurrentRoomCode = "";
                     gameState = "Menus";
                     id = -1;
+
+                    // Clear stale peer data from previous lobby
+                    lock (_peerLock)
+                    {
+                        _currentRoomPeers.Clear();
+                    }
+                    try { AppDomain.CurrentDomain.SetData("HydralumPeersJson", "[]"); } catch { }
                 }
 
                 CurrentGameState = gameState;
@@ -374,8 +381,9 @@ namespace HydraMenu
             try
             {
                 _cts?.Cancel();
-                using var request = new HttpRequestMessage(HttpMethod.Delete, $"{FirebaseUrl}/{SessionId}.json");
-                HttpClient.Send(request);
+                _started = false;
+                // Fire-and-forget cleanup (non-blocking)
+                _ = Task.Run(async () => { try { using var r = await HttpClient.DeleteAsync($"{FirebaseUrl}/{SessionId}.json"); } catch { } });
                 AppDomain.CurrentDomain.SetData("HydralumPresenceActive", null);
             }
             catch { }
@@ -417,7 +425,7 @@ namespace HydraMenu
                     string payload = JsonSerializer.Serialize(payloadObj);
                     using (var content = new StringContent(payload, Encoding.UTF8, "application/json"))
                     {
-                        await HttpClient.PutAsync($"{FirebaseUrl}/{SessionId}.json", content, token);
+                        using var putResp = await HttpClient.PutAsync($"{FirebaseUrl}/{SessionId}.json", content, token);
                     }
 
                     // 2. Fetch active presence nodes
@@ -436,8 +444,8 @@ namespace HydraMenu
 
                                 foreach (var entry in data)
                                 {
-                                    long age = entry.Value != null ? Math.Abs(now - entry.Value.last_seen) : 999;
-                                    if (entry.Value != null && age < 60)
+                                    long age = entry.Value != null ? (now - entry.Value.last_seen) : 999;
+                                    if (entry.Value != null && age >= 0 && age < 60)
                                     {
                                         active++;
 
@@ -455,10 +463,10 @@ namespace HydraMenu
                                             });
                                         }
                                     }
-                                    else if (entry.Value == null || age > 90)
+                                    else if (entry.Key != SessionId && (entry.Value == null || age > 90))
                                     {
-                                        // Prune stale session from Firebase
-                                        _ = HttpClient.DeleteAsync($"{FirebaseUrl}/{entry.Key}.json", token);
+                                        // Prune stale session from Firebase (fire-and-forget with proper disposal)
+                                        _ = Task.Run(async () => { try { using var r = await HttpClient.DeleteAsync($"{FirebaseUrl}/{entry.Key}.json", token); } catch { } });
                                     }
                                 }
 
@@ -508,11 +516,21 @@ namespace HydraMenu
                                 using var statsDoc = JsonDocument.Parse(statsJson);
                                 if (statsDoc.RootElement.TryGetProperty("required_version", out var reqVerProp))
                                 {
-                                    string reqVer = reqVerProp.GetString() ?? "";
+                                    string reqVer = reqVerProp.ValueKind == JsonValueKind.String ? (reqVerProp.GetString() ?? "") : reqVerProp.ToString();
                                     if (!string.IsNullOrWhiteSpace(reqVer))
                                     {
                                         RequiredVersion = reqVer.Trim();
-                                        IsOutdated = !string.Equals(RequiredVersion, CurrentHydralumVersion, StringComparison.OrdinalIgnoreCase);
+                                        // Semantic version comparison: only lock out if current < required
+                                        string cleanReq = RequiredVersion.TrimStart('v', 'V');
+                                        string cleanCur = CurrentHydralumVersion.TrimStart('v', 'V');
+                                        if (Version.TryParse(cleanReq, out var parsedReq) && Version.TryParse(cleanCur, out var parsedCur))
+                                        {
+                                            IsOutdated = parsedCur < parsedReq;
+                                        }
+                                        else
+                                        {
+                                            IsOutdated = !string.Equals(cleanReq, cleanCur, StringComparison.OrdinalIgnoreCase);
+                                        }
                                         AppDomain.CurrentDomain.SetData("HydralumOutdated", IsOutdated);
                                         AppDomain.CurrentDomain.SetData("HydralumRequiredVersion", RequiredVersion);
                                     }
@@ -547,6 +565,13 @@ namespace HydraMenu
             }
         }
 
+        // Cached GUIStyles for lockout modal (avoid per-frame allocation)
+        private static GUIStyle _lockoutHeaderStyle;
+        private static GUIStyle _lockoutVerStyle;
+        private static GUIStyle _lockoutBodyStyle;
+        private static GUIStyle _lockoutBtnStyle;
+        private static int _lockoutLastFrame = -1;
+
         public static void RenderLockoutModalGUI()
         {
             try
@@ -555,16 +580,31 @@ namespace HydraMenu
                 bool isOutdated = (outdatedVal is bool b && b) || IsOutdated;
                 if (!isOutdated) return;
 
+                // Per-frame dedup: only render once even if both plugins call this
+                int frame = Time.frameCount;
+                if (frame == _lockoutLastFrame) return;
+                _lockoutLastFrame = frame;
+
                 var reqVerVal = AppDomain.CurrentDomain.GetData("HydralumRequiredVersion");
                 string reqVer = (reqVerVal is string s && !string.IsNullOrEmpty(s)) ? s : RequiredVersion;
 
-                // Full-screen solid backdrop covering entire game and capturing clicks
-                GUI.depth = -99999;
+                // Strip leading 'v' for display
+                string displayReqVer = reqVer.TrimStart('v', 'V');
+                string displayCurVer = CurrentHydralumVersion.TrimStart('v', 'V');
+
+                // Full-screen solid backdrop
+                Color prevBg = GUI.backgroundColor;
                 GUI.backgroundColor = new Color(0.04f, 0.04f, 0.06f, 0.98f);
                 GUI.Box(new Rect(0, 0, Screen.width, Screen.height), GUIContent.none);
 
+                // Block all mouse and keyboard input from passing through
+                if (Event.current != null && (Event.current.isMouse || Event.current.isKey))
+                {
+                    Event.current.Use();
+                }
+
                 // Center Dialog Box
-                float boxWidth = Mathf.Min(580f, Screen.width - 40f);
+                float boxWidth = Mathf.Max(100f, Mathf.Min(580f, Screen.width - 40f));
                 float boxHeight = 360f;
                 float boxX = (Screen.width - boxWidth) / 2f;
                 float boxY = (Screen.height - boxHeight) / 2f;
@@ -573,63 +613,81 @@ namespace HydraMenu
                 GUI.Box(new Rect(boxX, boxY, boxWidth, boxHeight), GUIContent.none);
 
                 GUILayout.BeginArea(new Rect(boxX + 24, boxY + 22, boxWidth - 48, boxHeight - 44));
-
-                GUIStyle headerStyle = new(GUI.skin.label)
+                try
                 {
-                    fontSize = 19,
-                    fontStyle = FontStyle.Bold,
-                    alignment = TextAnchor.MiddleCenter,
-                    normal = { textColor = new Color(1f, 0.25f, 0.35f) }
-                };
-                GUILayout.Label("HYDRALUM UPDATE REQUIRED", headerStyle);
+                    // Lazy-init cached styles
+                    if (_lockoutHeaderStyle == null)
+                    {
+                        _lockoutHeaderStyle = new GUIStyle(GUI.skin.label)
+                        {
+                            fontSize = 19,
+                            fontStyle = FontStyle.Bold,
+                            alignment = TextAnchor.MiddleCenter,
+                            normal = { textColor = new Color(1f, 0.25f, 0.35f) }
+                        };
+                    }
+                    GUILayout.Label("HYDRALUM UPDATE REQUIRED", _lockoutHeaderStyle);
 
-                GUILayout.Space(8);
+                    GUILayout.Space(8);
 
-                GUIStyle verStyle = new(GUI.skin.label)
+                    if (_lockoutVerStyle == null)
+                    {
+                        _lockoutVerStyle = new GUIStyle(GUI.skin.label)
+                        {
+                            fontSize = 13,
+                            fontStyle = FontStyle.Bold,
+                            alignment = TextAnchor.MiddleCenter,
+                            richText = true
+                        };
+                    }
+                    GUILayout.Label($"Your Version: <color=#FF5555>v{displayCurVer}</color>  ->  Required Version: <color=#00FFAA>v{displayReqVer}</color>", _lockoutVerStyle);
+
+                    GUILayout.Space(14);
+
+                    if (_lockoutBodyStyle == null)
+                    {
+                        _lockoutBodyStyle = new GUIStyle(GUI.skin.label)
+                        {
+                            fontSize = 12,
+                            alignment = TextAnchor.UpperLeft,
+                            wordWrap = true,
+                            richText = true
+                        };
+                    }
+                    GUILayout.Label("You are running an <b>outdated version</b> of Hydralum. It is good to keep this menu up to date so your account stays undetected and you don't get bugged out.\n\nClick the button below to download the latest release build from GitHub Actions.", _lockoutBodyStyle);
+
+                    GUILayout.FlexibleSpace();
+
+                    // Update Button (GitHub Actions)
+                    GUI.backgroundColor = new Color(0f, 0.8f, 0.45f);
+                    if (_lockoutBtnStyle == null)
+                    {
+                        _lockoutBtnStyle = new GUIStyle(GUI.skin.button)
+                        {
+                            fontSize = 13,
+                            fontStyle = FontStyle.Bold
+                        };
+                    }
+                    if (GUILayout.Button("DOWNLOAD & UPDATE (GitHub Actions)", _lockoutBtnStyle, GUILayout.Height(44)))
+                    {
+                        Application.OpenURL(GitHubActionsUrl);
+                    }
+
+                    GUILayout.Space(8);
+
+                    // Exit Game Button
+                    GUI.backgroundColor = new Color(0.85f, 0.22f, 0.22f);
+                    if (GUILayout.Button("Exit Game", GUILayout.Height(30)))
+                    {
+                        Application.Quit();
+                    }
+                }
+                finally
                 {
-                    fontSize = 13,
-                    fontStyle = FontStyle.Bold,
-                    alignment = TextAnchor.MiddleCenter,
-                    richText = true
-                };
-                GUILayout.Label($"Your Version: <color=#FF5555>v{CurrentHydralumVersion}</color>  ➔  Required Version: <color=#00FFAA>v{reqVer}</color>", verStyle);
-
-                GUILayout.Space(14);
-
-                GUIStyle bodyStyle = new(GUI.skin.label)
-                {
-                    fontSize = 12,
-                    alignment = TextAnchor.UpperLeft,
-                    wordWrap = true,
-                    richText = true
-                };
-                GUILayout.Label("You are running an <b>outdated version</b> of Hydralum. It is good to keep this menu up to date so your account stays undetected and you don't get bugged out.\n\nClick the button below to download the latest release build from GitHub Actions.", bodyStyle);
-
-                GUILayout.FlexibleSpace();
-
-                // Update Button (GitHub Actions)
-                GUI.backgroundColor = new Color(0f, 0.8f, 0.45f);
-                GUIStyle btnStyle = new(GUI.skin.button)
-                {
-                    fontSize = 13,
-                    fontStyle = FontStyle.Bold
-                };
-                if (GUILayout.Button("DOWNLOAD & UPDATE (GitHub Actions)", btnStyle, GUILayout.Height(44)))
-                {
-                    Application.OpenURL(GitHubActionsUrl);
+                    GUILayout.EndArea();
                 }
 
-                GUILayout.Space(8);
-
-                // Exit Game Button
-                GUI.backgroundColor = new Color(0.85f, 0.22f, 0.22f);
-                if (GUILayout.Button("Exit Game", GUILayout.Height(30)))
-                {
-                    Application.Quit();
-                }
-
-                GUI.backgroundColor = Color.white;
-                GUILayout.EndArea();
+                GUI.backgroundColor = prevBg;
             }
             catch { }
         }
