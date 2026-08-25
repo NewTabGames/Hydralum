@@ -17,7 +17,7 @@ namespace MalumMenu
         private static CancellationTokenSource _cts;
         private static bool _started = false;
 
-        public const string CurrentHydralumVersion = "1.2.5";
+        public const string CurrentHydralumVersion = "1.2.6";
         public const string GitHubActionsUrl = "https://github.com/NewTabGames/Hydralum/actions";
         public static bool IsOutdated { get; set; } = false;
         public static string RequiredVersion { get; set; } = "1.2.0";
