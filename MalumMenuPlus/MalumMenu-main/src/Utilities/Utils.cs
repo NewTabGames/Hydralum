@@ -20,7 +20,7 @@ namespace MalumMenu;
 public static class Utils
 {
     public static bool isPastingInput;
-    public static ReferenceDataManager ReferenceDataManager = DestroyableSingleton<ReferenceDataManager>.Instance; // Useful for getting full lists of all the Among Us cosmetics IDs
+    public static ReferenceDataManager ReferenceDataManager => DestroyableSingleton<ReferenceDataManager>.Instance; // Useful for getting full lists of all the Among Us cosmetics IDs
     public static SabotageSystemType SabotageSystem => ShipStatus.Instance.Systems[SystemTypes.Sabotage].Cast<SabotageSystemType>();
     public static bool isShip => ShipStatus.Instance;
     public static bool isClient => AmongUsClient.Instance;
@@ -705,7 +705,8 @@ public static class Utils
     {
         try
         {
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(path);
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(path);
+            if (stream == null) return null;
             var texture = new Texture2D(1, 1, TextureFormat.ARGB32, false);
             using MemoryStream ms = new();
 

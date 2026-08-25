@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 using InnerNet;
 using System;
 
@@ -11,10 +11,11 @@ namespace HydraMenu.anticheat.rpc
 			int source = reader.ReadInt32();
 			int target = reader.ReadInt32();
 
+			if (AmongUsClient.Instance == null) return false;
 			ClientData client = AmongUsClient.Instance.FindClientById(source);
-			if(client == null || client.Character == null)
+			if(client == null || client.Character == null || client.Character.Data == null)
 			{
-				Hydra.Log.LogInfo($"An unknown client id ({source}) attempted to votekick {target}");
+				Hydra.Log.LogInfo($"An unknown client id ({source}) or client with null character data attempted to votekick {target}");
 				return false;
 			}
 

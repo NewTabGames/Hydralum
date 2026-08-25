@@ -16,7 +16,7 @@ namespace HydraMenu.features
 			get { return isSkeldFlipped; }
 			set
 			{
-				if(AmongUsClient.Instance == null || isSkeldFlipped == value) return;
+				if(AmongUsClient.Instance == null || AmongUsClient.Instance.ShipPrefabs == null || AmongUsClient.Instance.ShipPrefabs.Count <= 3 || isSkeldFlipped == value) return;
 
 				// ShipPrefabs is a list corresponding map IDs to their map
 				// ID 0 is Skeld, 1 is Mira, 2 is Polus, and 3 is Dleks

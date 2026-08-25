@@ -7,21 +7,26 @@ public static class ShipStatus_FixedUpdate
 {
     public static void Postfix(ShipStatus __instance)
     {
-        MalumSabotageCheats.Process(__instance);
-        MalumCheats.OpenSabotageMapCheat();
-
-        MalumCheats.CloseMeetingCheat();
-        MalumCheats.SkipMeetingCheat();
-        MalumCheats.CallMeetingCheat();
-        MalumCheats.WalkInVentCheat();
-        MalumCheats.KickVentsCheat();
-        MalumCheats.DisableVentsCheat();
-
-        MalumPPMCheats.ReportBodyPPM();
-
-        if (__instance is FungleShipStatus fungle)
+        if (__instance == null) return;
+        try
         {
-            MalumSabotageCheats.ProcessFungle(fungle);
+            MalumSabotageCheats.Process(__instance);
+            MalumCheats.OpenSabotageMapCheat();
+
+            MalumCheats.CloseMeetingCheat();
+            MalumCheats.SkipMeetingCheat();
+            MalumCheats.CallMeetingCheat();
+            MalumCheats.WalkInVentCheat();
+            MalumCheats.KickVentsCheat();
+            MalumCheats.DisableVentsCheat();
+
+            MalumPPMCheats.ReportBodyPPM();
+
+            if (__instance is FungleShipStatus fungle)
+            {
+                MalumSabotageCheats.ProcessFungle(fungle);
+            }
         }
+        catch { }
     }
 }

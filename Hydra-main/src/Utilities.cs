@@ -444,7 +444,8 @@ namespace HydraMenu
 
 			batch.FinishBatch();
 
-			Hydra.notifications.Send("Kick Player", $"{player.Data.PlayerName} has been kicked from the game.", 5);
+			string kickedName = player.Data?.PlayerName ?? $"Player {player.PlayerId}";
+			Hydra.notifications.Send("Kick Player", $"{kickedName} has been kicked from the game.", 5);
 		}
 	}
 }

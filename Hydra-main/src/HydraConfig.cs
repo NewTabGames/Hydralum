@@ -46,8 +46,6 @@ namespace HydraMenu
         public static ConfigEntry<bool> ProtectAgainstNonHostKickExploit;
 
         // Self
-        public static ConfigEntry<bool> ColorSniperEnabled;
-        public static ConfigEntry<int> ColorSniperTargetColor;
         public static ConfigEntry<bool> UpdateStatsFreeplay;
         public static ConfigEntry<bool> ImmortalityEnabled;
         public static ConfigEntry<bool> AlwaysShowTaskAnimations;
@@ -140,8 +138,6 @@ namespace HydraMenu
             ProtectAgainstNonHostKickExploit = config.Bind("Protections", "ProtectAgainstNonHostKickExploit", true, "Protect against non-host kick exploit");
 
             // Self
-            ColorSniperEnabled = config.Bind("Self", "ColorSniperEnabled", false, "Automatically grab your chosen color when available in lobby");
-            ColorSniperTargetColor = config.Bind("Self", "ColorSniperTargetColor", 0, "Target color index for Color Sniper");
             UpdateStatsFreeplay = config.Bind("Self", "UpdateStatsFreeplay", false, "Update player stats in Freeplay");
             ImmortalityEnabled = config.Bind("Self", "Immortality", false, "Become immortal");
             AlwaysShowTaskAnimations = config.Bind("Self", "AlwaysShowTaskAnimations", false, "Always show task visual animations");
@@ -231,8 +227,6 @@ namespace HydraMenu
             Protections.ProtectAgainstNonHostKickExploit = ProtectAgainstNonHostKickExploit.Value;
 
             // Apply Self
-            Self.ColorSniper.Enabled = ColorSniperEnabled.Value;
-            Self.ColorSniper.TargetColor = (byte)Mathf.Clamp(ColorSniperTargetColor.Value, 0, (int)ui.Controls.PlayerColors.Fortegreen);
             Self.UpdateStatsFreeplay.Enabled = UpdateStatsFreeplay.Value;
             Immortality.Enabled = ImmortalityEnabled.Value;
             Self.AlwaysShowTaskAnimations = AlwaysShowTaskAnimations.Value;
@@ -325,8 +319,6 @@ namespace HydraMenu
             if (ProtectAgainstNonHostKickExploit != null) ProtectAgainstNonHostKickExploit.Value = Protections.ProtectAgainstNonHostKickExploit;
 
             // Self
-            if (ColorSniperEnabled != null) ColorSniperEnabled.Value = Self.ColorSniper.Enabled;
-            if (ColorSniperTargetColor != null) ColorSniperTargetColor.Value = (int)Self.ColorSniper.TargetColor;
             if (UpdateStatsFreeplay != null) UpdateStatsFreeplay.Value = Self.UpdateStatsFreeplay.Enabled;
             if (ImmortalityEnabled != null) ImmortalityEnabled.Value = Immortality.Enabled;
             if (AlwaysShowTaskAnimations != null) AlwaysShowTaskAnimations.Value = Self.AlwaysShowTaskAnimations;

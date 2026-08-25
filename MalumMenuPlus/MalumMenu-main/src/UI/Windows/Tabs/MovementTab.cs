@@ -36,8 +36,6 @@ public class MovementTab : ITab
 
     private void DrawGeneral()
     {
-        CheatToggles.becomeImmortal = GUILayout.Toggle(CheatToggles.becomeImmortal, " Become Immortal");
-
         CheatToggles.noClip = GUILayout.Toggle(CheatToggles.noClip, " NoClip");
 
         CheatToggles.invertControls = GUILayout.Toggle(CheatToggles.invertControls, " Invert Controls");

@@ -138,7 +138,10 @@ public static class DisconnectPopup_DoShow
 
         GUIUtility.systemCopyBuffer = AmongUsClient_OnGameJoined.lastGameIdString;
 
-        __instance.SetText(__instance._textArea.text + "\n\n<size=60%>Lobby code has been copied to the clipboard</size>");
+        if (__instance._textArea != null)
+        {
+            __instance.SetText(__instance._textArea.text + "\n\n<size=60%>Lobby code has been copied to the clipboard</size>");
+        }
     }
 }
 
@@ -187,7 +190,7 @@ public static class InnerNetClient_JoinGame
     // Prefix patch of InnerNetClient.JoinGame to allow online games
     public static void Prefix()
     {
-        if (CheatToggles.unlockFeatures)
+        if (CheatToggles.unlockFeatures && DataManager.Player?.Account != null)
         {
             DataManager.Player.Account.LoginStatus = EOSManager.AccountLoginStatus.LoggedIn;
         }
@@ -364,9 +367,9 @@ public static class BanMenu_SetVisible
 
         show &= PlayerControl.LocalPlayer && PlayerControl.LocalPlayer.Data != null;
 
-        __instance.BanButton.gameObject.SetActive(true);
-        __instance.KickButton.gameObject.SetActive(true);
-        __instance.MenuButton.gameObject.SetActive(show);
+        if (__instance.BanButton != null) __instance.BanButton.gameObject.SetActive(true);
+        if (__instance.KickButton != null) __instance.KickButton.gameObject.SetActive(true);
+        if (__instance.MenuButton != null) __instance.MenuButton.gameObject.SetActive(show);
 
         return false;
     }

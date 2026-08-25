@@ -62,30 +62,29 @@ public static class PlayerControl_MurderPlayer
     // Also logs when a kill gets saved by a guardian angel.
     public static void Prefix(PlayerControl __instance, PlayerControl target)
     {
-        if (!CheatToggles.logDeaths || target == null) return;
-
-        var (realKillerName, displayKillerName, isDisguised) = Utils.GetPlayerIdentity(__instance);
-        var targetName = $"<color=#{ColorUtility.ToHtmlStringRGB(target.Data.Color)}>{target.CurrentOutfit.PlayerName}</color>";
-
-        var room = Utils.GetRoomFromPosition(target.GetTruePosition());
-        var roomName = room != null ? room.RoomId.ToString() : "an unknown location";
-
-        if (target == PlayerControl.LocalPlayer && CheatToggles.becomeImmortal)
+        if (target == null || target.Data == null) return;
+        try
         {
-            // Immortality refuses the kill, so log it as an attempt rather than a death
-            ConsoleUI.Log(isDisguised ? $"{realKillerName} (as {displayKillerName}) tried to kill {targetName} in {roomName} (Immortal)"
-                : $"{realKillerName} tried to kill {targetName} in {roomName} (Immortal)");
+            if (!CheatToggles.logDeaths || target == null) return;
+
+            var (realKillerName, displayKillerName, isDisguised) = Utils.GetPlayerIdentity(__instance);
+            var targetName = $"<color=#{ColorUtility.ToHtmlStringRGB(target.Data.Color)}>{target.CurrentOutfit.PlayerName}</color>";
+
+            var room = Utils.GetRoomFromPosition(target.GetTruePosition());
+            var roomName = room != null ? room.RoomId.ToString() : "an unknown location";
+
+            if (target.protectedByGuardianId != -1)
+            {
+                ConsoleUI.Log(isDisguised ? $"{realKillerName} (as {displayKillerName}) tried to kill {targetName} in {roomName} (Protected)"
+                    : $"{realKillerName} tried to kill {targetName} in {roomName} (Protected)");
+            }
+            else
+            {
+                ConsoleUI.Log(isDisguised ? $"{realKillerName} (as {displayKillerName}) killed {targetName} in {roomName}"
+                    : $"{realKillerName} killed {targetName} in {roomName}");
+            }
         }
-        else if (target.protectedByGuardianId != -1)
-        {
-            ConsoleUI.Log(isDisguised ? $"{realKillerName} (as {displayKillerName}) tried to kill {targetName} in {roomName} (Protected)"
-                : $"{realKillerName} tried to kill {targetName} in {roomName} (Protected)");
-        }
-        else
-        {
-            ConsoleUI.Log(isDisguised ? $"{realKillerName} (as {displayKillerName}) killed {targetName} in {roomName}"
-                : $"{realKillerName} killed {targetName} in {roomName}");
-        }
+        catch { }
     }
 }
 

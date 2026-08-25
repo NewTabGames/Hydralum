@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 
 namespace HydraMenu.anticheat.rpc
 {
@@ -16,6 +16,8 @@ namespace HydraMenu.anticheat.rpc
 				return false;
 			}
 
+			if(player.Data == null) return false;
+
 			if(RoleManager.IsImpostorRole(player.Data.RoleType))
 			{
 				Anticheat.Flag(player, $"{player.Data.PlayerName} tried completing task {taskIndex} while being an imposter.");
@@ -23,7 +25,7 @@ namespace HydraMenu.anticheat.rpc
 			}
 
 			// Task IDs are zero-indexed
-			if(taskIndex + 1 > player.Data.Tasks.Count)
+			if(player.Data.Tasks != null && taskIndex + 1 > player.Data.Tasks.Count)
 			{
 				Anticheat.Flag(player, $"{player.Data.PlayerName} tried completing task {taskIndex} when they only have {player.Data.Tasks.Count} tasks.");
 				return false;

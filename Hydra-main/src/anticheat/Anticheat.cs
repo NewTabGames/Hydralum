@@ -1,4 +1,4 @@
-﻿using AmongUs.InnerNet.GameDataMessages;
+using AmongUs.InnerNet.GameDataMessages;
 using HarmonyLib;
 using Hazel;
 using HydraMenu.anticheat.gamedata;
@@ -95,6 +95,8 @@ namespace HydraMenu.anticheat
 
 		private static bool HandleRpc(Type sourceNetObj, PlayerControl player, RpcCalls rpc, MessageReader reader)
 		{
+			if (AmongUsClient.Instance == null) return true;
+
 			RpcHandlers.TryGetValue(rpc, out RpcCheck rpcCheck);
 			if(!Enabled || rpcCheck == null || !rpcCheck.Enabled) return true;
 
@@ -107,7 +109,7 @@ namespace HydraMenu.anticheat
 			// Only we, the host, should be sending host-only RPCs
 			if(player != null && AmongUsClient.Instance.AmHost && rpcCheck.IsHostOnly())
 			{
-				Flag(player, $"{player.Data.PlayerName} sent the {rpc} RPC while non-host.");
+				Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent the {rpc} RPC while non-host.");
 				return false;
 			}
 
@@ -138,6 +140,8 @@ namespace HydraMenu.anticheat
 
 		public static void Flag(PlayerControl player, string reason, bool shouldPunish = true)
 		{
+			if (AmongUsClient.Instance == null) return;
+
 			// Sanity check, make sure that we are not flagging ourselves
 			// On servers without net object impersonation checks, it may be possible to send an invalid RPC on the behalf of the host
 			// which would result in Hydra Anticheat flagging ourselves and banning us from our own lobby
@@ -165,6 +169,8 @@ namespace HydraMenu.anticheat
 
 		private static void Punish(PlayerControl player)
 		{
+			if (AmongUsClient.Instance == null) return;
+
 			switch(punishment)
 			{
 				case Punishments.None:
@@ -172,7 +178,7 @@ namespace HydraMenu.anticheat
 
 				case Punishments.Kick:
 				case Punishments.ErrorKick:
-					Hydra.Log.LogMessage($"{player.Data.PlayerName} was kicked by Hydra Anticheat for hacking");
+					Hydra.Log.LogMessage($"{player?.Data?.PlayerName ?? "Unknown"} was kicked by Hydra Anticheat for hacking");
 
 					// The vanilla anticheat prevents using the ErrorKick method if the game has not started yet
 					if(punishment == Punishments.Kick || AmongUsClient.Instance.GameState != InnerNet.InnerNetClient.GameStates.Started)
@@ -191,7 +197,7 @@ namespace HydraMenu.anticheat
 					break;
 
 				case Punishments.Ban:
-					Hydra.Log.LogMessage($"{player.Data.PlayerName} was automatically banned by Hydra Anticheat for hacking");
+					Hydra.Log.LogMessage($"{player?.Data?.PlayerName ?? "Unknown"} was automatically banned by Hydra Anticheat for hacking");
 					AmongUsClient.Instance.KickPlayer(player.OwnerId, true);
 					break;
 			}

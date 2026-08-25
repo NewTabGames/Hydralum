@@ -138,7 +138,7 @@ namespace HydraMenu.ui.sections
 			bool isSelected = selectedPlayerIds.Contains(player.PlayerId);
 			GUIStyle style = isSelected ? Styles.PlayerBoxActive : Styles.PlayerBox;
 
-			if(player.OwnerId == AmongUsClient.Instance.HostId)
+			if(AmongUsClient.Instance != null && player.OwnerId == AmongUsClient.Instance.HostId)
 			{
 				style.normal.textColor = new Color(1.0f, 0.84f, 0.0f); // #FFD700
 			}
@@ -194,7 +194,7 @@ namespace HydraMenu.ui.sections
 				$"\nRole: {target.Data.RoleType}" +
 				$"\nState: " + (target.Data.IsDead ? "Dead" : "Alive");
 
-			ClientData clientData = AmongUsClient.Instance.GetClientFromCharacter(target);
+			ClientData clientData = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetClientFromCharacter(target) : null;
 			if(clientData != null)
 			{
 				var platform = clientData.PlatformData;
@@ -205,7 +205,7 @@ namespace HydraMenu.ui.sections
 					$"\nPUID: " + (streamerMode ? "REDACTED" : target.Data.Puid) +
 					$"\nLevel: {target.Data.PlayerLevel + 1}" +
 					$"\nDevice: {platform?.Platform}" +
-					(target.OwnerId == AmongUsClient.Instance.HostId ? "\nHost: true" : "");
+					(AmongUsClient.Instance != null && target.OwnerId == AmongUsClient.Instance.HostId ? "\nHost: true" : "");
 			}
 
 			GUILayout.Label(playerInfo);
@@ -223,7 +223,8 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Teleport to Me"))
 			{
-				if(AmongUsClient.Instance.AmHost || !hasAnticheat)
+				if(AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null) { }
+				else if(AmongUsClient.Instance.AmHost || !hasAnticheat)
 				{
 					Teleporter.TeleportPlayerTo(target, PlayerControl.LocalPlayer.transform.position);
 				}
@@ -236,7 +237,8 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Teleport All To"))
 			{
-				if(AmongUsClient.Instance.AmHost || !hasAnticheat)
+				if(AmongUsClient.Instance == null) { }
+				else if(AmongUsClient.Instance.AmHost || !hasAnticheat)
 				{
 					Teleporter.TeleportAllTo(target.transform.position);
 				}
@@ -278,7 +280,7 @@ namespace HydraMenu.ui.sections
 			}
 
 			GUILayout.Space(5);
-			GUILayout.Label("Host Only Features:" + (AmongUsClient.Instance.AmHost ? "" : "\n(Using these will get you kicked!)"));
+			GUILayout.Label("Host Only Features:" + (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost ? "" : "\n(Using these will get you kicked!)"));
 
 			Troll.AutoReportBodies.Enabled = Controls.PlayerSpecificToggle("Auto Report Bodies As", target, ref Troll.AutoReportBodies.source);
 			Hydra.routines.discoHost.Enabled = Controls.PlayerSpecificToggle("Disco Mode", target, ref Hydra.routines.discoHost.targets);
@@ -368,47 +370,62 @@ namespace HydraMenu.ui.sections
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Blind"))
 			{
-				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-				gameOptions.SetFloat(FloatOptionNames.CrewLightMod, -1.0f);
-				gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, -1.0f);
+				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
+				{
+					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+					gameOptions.SetFloat(FloatOptionNames.CrewLightMod, -1.0f);
+					gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, -1.0f);
 
-				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				}
 			}
 
 			if(GUILayout.Button("Fullbright"))
 			{
-				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-				gameOptions.SetFloat(FloatOptionNames.CrewLightMod, 1000f);
-				gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, 1000f);
+				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
+				{
+					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+					gameOptions.SetFloat(FloatOptionNames.CrewLightMod, 1000f);
+					gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, 1000f);
 
-				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				}
 			}
 			GUILayout.EndHorizontal();
 
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Slow Speed"))
 			{
-				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-				gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, 0.1f);
+				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
+				{
+					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+					gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, 0.1f);
 
-				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				}
 			}
 
 			if(GUILayout.Button("Super Speed"))
 			{
-				float maxSpeed = Utilities.IsAnticheatPresent() ? 3.0f : 5.0f;
+				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
+				{
+					float maxSpeed = Utilities.IsAnticheatPresent() ? 3.0f : 5.0f;
 
-				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-				gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, maxSpeed);
+					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+					gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, maxSpeed);
 
-				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				}
 			}
 			GUILayout.EndHorizontal();
 
 			if(GUILayout.Button("Reset to Defaults"))
 			{
-				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
+				{
+					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				}
 			}
 
 			GUILayout.Space(5);
@@ -452,7 +469,8 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Teleport All to Me"))
 			{
-				if(AmongUsClient.Instance.AmHost || !hasAnticheat)
+				if (AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null) { }
+				else if(AmongUsClient.Instance.AmHost || !hasAnticheat)
 				{
 					foreach(var target in targets)
 					{
@@ -491,7 +509,7 @@ namespace HydraMenu.ui.sections
 			GUILayout.EndHorizontal();
 
 			GUILayout.Label($"Teleport all selected to vent: {selectedVent}");
-			selectedVent = (int)GUILayout.HorizontalSlider(selectedVent, 0, ShipStatus.Instance != null ? ShipStatus.Instance.AllVents.Count - 1 : 10);
+			selectedVent = (int)GUILayout.HorizontalSlider(selectedVent, 0, ShipStatus.Instance?.AllVents != null ? ShipStatus.Instance.AllVents.Count - 1 : 10);
 			if(GUILayout.Button("Teleport to Vent"))
 			{
 				foreach(var target in targets)
@@ -501,7 +519,7 @@ namespace HydraMenu.ui.sections
 			}
 
 			GUILayout.Space(8);
-			GUILayout.Label("Host Only Features:" + (AmongUsClient.Instance.AmHost ? "" : "\n(Using these will get you kicked!)"));
+			GUILayout.Label("Host Only Features:" + (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost ? "" : "\n(Using these will get you kicked!)"));
 
 			bool allDisco = targets.All(t => Hydra.routines.discoHost.targets.Contains(t.GetHashCode()));
 			if(GUILayout.Button(allDisco ? "Disable Disco Mode" : "Enable Disco Mode on Selected"))
@@ -560,23 +578,29 @@ namespace HydraMenu.ui.sections
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Blind"))
 			{
-				foreach(var target in targets)
+				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
 				{
-					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-					gameOptions.SetFloat(FloatOptionNames.CrewLightMod, -1.0f);
-					gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, -1.0f);
-					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					foreach(var target in targets)
+					{
+						IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+						gameOptions.SetFloat(FloatOptionNames.CrewLightMod, -1.0f);
+						gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, -1.0f);
+						GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					}
 				}
 			}
 
 			if(GUILayout.Button("Fullbright"))
 			{
-				foreach(var target in targets)
+				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
 				{
-					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-					gameOptions.SetFloat(FloatOptionNames.CrewLightMod, 1000f);
-					gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, 1000f);
-					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					foreach(var target in targets)
+					{
+						IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+						gameOptions.SetFloat(FloatOptionNames.CrewLightMod, 1000f);
+						gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, 1000f);
+						GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					}
 				}
 			}
 			GUILayout.EndHorizontal();
@@ -584,32 +608,41 @@ namespace HydraMenu.ui.sections
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Slow Speed"))
 			{
-				foreach(var target in targets)
+				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
 				{
-					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-					gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, 0.1f);
-					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					foreach(var target in targets)
+					{
+						IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+						gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, 0.1f);
+						GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					}
 				}
 			}
 
 			if(GUILayout.Button("Super Speed"))
 			{
-				float maxSpeed = Utilities.IsAnticheatPresent() ? 3.0f : 5.0f;
-				foreach(var target in targets)
+				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
 				{
-					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-					gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, maxSpeed);
-					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					float maxSpeed = Utilities.IsAnticheatPresent() ? 3.0f : 5.0f;
+					foreach(var target in targets)
+					{
+						IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+						gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, maxSpeed);
+						GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					}
 				}
 			}
 			GUILayout.EndHorizontal();
 
 			if(GUILayout.Button("Reset Options to Defaults"))
 			{
-				foreach(var target in targets)
+				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
 				{
-					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					foreach(var target in targets)
+					{
+						IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+						GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					}
 				}
 			}
 
@@ -628,6 +661,7 @@ namespace HydraMenu.ui.sections
 
 		private static void AttemptMurder(PlayerControl target)
 		{
+			if (AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
 			bool hasAnticheat = Utilities.IsAnticheatPresent();
 
 			if(hasAnticheat && AmongUsClient.Instance.GameState != InnerNetClient.GameStates.Started)
@@ -672,6 +706,7 @@ namespace HydraMenu.ui.sections
 
 		private static IEnumerator AttemptFrameForKillingAll(PlayerControl target)
 		{
+			if (AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null) yield break;
 			Hydra.Log.LogInfo($"Attempting to frame {target.Data.PlayerName} for killing all players...");
 
 			bool hasAnticheat = Utilities.IsAnticheatPresent();

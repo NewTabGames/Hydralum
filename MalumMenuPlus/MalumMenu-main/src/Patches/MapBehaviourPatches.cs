@@ -9,37 +9,39 @@ public static class MapBehaviour_ShowNormalMap
     // Postfix patch of MapBehaviour.ShowNormalMap to spawn herePoint icons for each player
     public static void Postfix(MapBehaviour __instance)
     {
-        MinimapHandler.minimapActive = MinimapHandler.IsCheatEnabled();
+        try {
+            MinimapHandler.minimapActive = MinimapHandler.IsCheatEnabled();
 
-        if (!MinimapHandler.minimapActive)
-        {
-            return; // Only runs if miniMap Cheat is enabled
-        }
-
-        __instance.ColorControl.SetColor(Palette.Purple); // Custom map color
-
-        __instance.DisableTrackerOverlays();
-
-        // Destroy old player icons (herePoints)
-        try
-        {
-            MinimapHandler.herePoints.ForEach(x => UnityEngine.Object.Destroy(x.sprite.gameObject));
-            MinimapHandler.herePoints.Clear();
-        }
-        catch { }
-
-        // & create new ones for each player
-        var temp = new List<HerePoint>();
-        foreach (var player in PlayerControl.AllPlayerControls)
-        {
-            if (!player.AmOwner) // LocalPlayer is always treated normally
+            if (!MinimapHandler.minimapActive || __instance == null || __instance.ColorControl == null)
             {
-                var herePoint = UnityEngine.Object.Instantiate(__instance.HerePoint, __instance.HerePoint.transform.parent);
-
-                temp.Add(new HerePoint(player, herePoint));
+                return; // Only runs if miniMap Cheat is enabled
             }
-        }
-        MinimapHandler.herePoints = temp;
+
+            __instance.ColorControl.SetColor(Palette.Purple); // Custom map color
+
+            __instance.DisableTrackerOverlays();
+
+            // Destroy old player icons (herePoints)
+            try
+            {
+                MinimapHandler.herePoints.ForEach(x => { if (x?.sprite?.gameObject != null) UnityEngine.Object.Destroy(x.sprite.gameObject); });
+                MinimapHandler.herePoints.Clear();
+            }
+            catch { }
+
+            // & create new ones for each player
+            var temp = new List<HerePoint>();
+            foreach (var player in PlayerControl.AllPlayerControls)
+            {
+                if (player != null && !player.AmOwner && __instance.HerePoint != null) // LocalPlayer is always treated normally
+                {
+                    var herePoint = UnityEngine.Object.Instantiate(__instance.HerePoint, __instance.HerePoint.transform.parent);
+
+                    temp.Add(new HerePoint(player, herePoint));
+                }
+            }
+            MinimapHandler.herePoints = temp;
+        } catch { }
 
     }
 }
@@ -50,28 +52,32 @@ public static class MapBehaviour_FixedUpdate
     // Postfix patch of MapBehaviour.FixedUpdate to update each herePoint icon's color and position on the map based on their respective player
     public static void Postfix(MapBehaviour __instance)
     {
-        // Reset map if miniMap cheat is disabled
-        if (MinimapHandler.IsCheatEnabled() != MinimapHandler.minimapActive)
+        try
         {
-            if (!__instance.infectedOverlay.gameObject.active) // Do not affect sabotage map
+            if (__instance == null) return;
+            // Reset map if miniMap cheat is disabled
+            if (MinimapHandler.IsCheatEnabled() != MinimapHandler.minimapActive)
             {
-                __instance.Close();
-                __instance.ShowNormalMap();
+                if (__instance.infectedOverlay == null || __instance.infectedOverlay.gameObject == null || !__instance.infectedOverlay.gameObject.activeSelf) // Do not affect sabotage map
+                {
+                    __instance.Close();
+                    __instance.ShowNormalMap();
+                }
+            }
+
+            // Properly handles each herePoint icon on the map
+            var temp = MinimapHandler.herePoints;
+            foreach (var herePoint in temp)
+            {
+                MinimapHandler.HandleHerePoint(herePoint);
+            }
+
+            foreach (var herePoint in MinimapHandler.herePointsToRemove)
+            {
+                MinimapHandler.herePoints.Remove(herePoint);
             }
         }
-
-        // Properly handles each herePoint icon on the map
-        var temp = MinimapHandler.herePoints;
-        foreach (var herePoint in temp)
-        {
-            MinimapHandler.HandleHerePoint(herePoint);
-        }
-
-        foreach (var herePoint in MinimapHandler.herePointsToRemove)
-        {
-            MinimapHandler.herePoints.Remove(herePoint);
-        }
-
+        catch { }
     }
 }
 

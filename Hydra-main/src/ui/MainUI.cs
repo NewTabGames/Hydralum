@@ -122,7 +122,11 @@ namespace HydraMenu.ui
 
 		public void OnGUI()
 		{
-			AnnouncementManager.RenderToastGUI();
+			try
+			{
+				AnnouncementManager.RenderToastGUI();
+			}
+			catch { }
 
 			// https://docs.unity3d.com/6000.3/Documentation/Manual/GUIScriptingGuide.html
 			if(!visible) return;

@@ -54,9 +54,10 @@ namespace HydraMenu.ui
 
 		public static RoleTypes HorizontalRoleSlider(RoleTypes currentRole)
 		{
-			int currentValue = RolesList.IndexOf(currentRole);
+			int currentValue = Math.Max(0, RolesList.IndexOf(currentRole));
 
 			byte newValue = (byte)GUILayout.HorizontalSlider(currentValue, 0, RolesList.Count - 1);
+			newValue = Math.Max((byte)0, Math.Min(newValue, (byte)(RolesList.Count - 1)));
 
 			return RolesList[newValue];
 		}
@@ -93,7 +94,8 @@ namespace HydraMenu.ui
 
 		public static bool PlayerSpecificToggle(string label, PlayerControl selectedPlayer, ref HashSet<int> currentPlayers)
 		{
-			int hashCode = selectedPlayer.GetHashCode();
+			if (currentPlayers == null) return false;
+			int hashCode = selectedPlayer != null ? selectedPlayer.GetHashCode() : 0;
 
 			GUIStyle toggle = new GUIStyle(GUI.skin.toggle);
 			bool isSelected = selectedPlayer != null && currentPlayers.Contains(hashCode);

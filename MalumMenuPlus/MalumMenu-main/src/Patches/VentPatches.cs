@@ -26,22 +26,26 @@ public static class Vent_CanUse
     // Postfix: Allow usage of vents when Unlock Vents cheat is enabled for crewmates/non-venting roles.
     public static void Postfix(Vent __instance, NetworkedPlayerInfo pc, ref bool canUse, ref bool couldUse, ref float __result)
     {
-        if (!PlayerControl.LocalPlayer || !PlayerControl.LocalPlayer.Data) return;
-        if (CheatToggles.disableVents && (!CheatToggles.ventsExcludeSelf || (pc != null && pc.Object != PlayerControl.LocalPlayer))) return;
+        try
+        {
+            if (!PlayerControl.LocalPlayer || !PlayerControl.LocalPlayer.Data) return;
+            if (CheatToggles.disableVents && (!CheatToggles.ventsExcludeSelf || (pc != null && pc.Object != PlayerControl.LocalPlayer))) return;
 
-        if (PlayerControl.LocalPlayer.Data.Role.CanVent || PlayerControl.LocalPlayer.Data.IsDead) return;
-        if (!CheatToggles.unlockVents) return;
+            if (PlayerControl.LocalPlayer.Data.Role == null || PlayerControl.LocalPlayer.Data.Role.CanVent || PlayerControl.LocalPlayer.Data.IsDead) return;
+            if (!CheatToggles.unlockVents) return;
 
-        var @object = pc.Object;
-        if (@object == null) return;
+            var @object = pc.Object;
+            if (@object == null || @object.Collider == null) return;
 
-        var center = @object.Collider.bounds.center;
-        var position = __instance.transform.position;
-        var num = Vector2.Distance(center, position);
+            var center = @object.Collider.bounds.center;
+            var position = __instance.transform.position;
+            var num = Vector2.Distance(center, position);
 
-        canUse = num <= __instance.UsableDistance && !PhysicsHelpers.AnythingBetween(@object.Collider, center, position, Constants.ShipOnlyMask, false);
-        couldUse = true;
-        __result = num;
+            canUse = num <= __instance.UsableDistance && !PhysicsHelpers.AnythingBetween(@object.Collider, center, position, Constants.ShipOnlyMask, false);
+            couldUse = true;
+            __result = num;
+        }
+        catch { }
     }
 }
 

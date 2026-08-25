@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 using Il2CppInterop.Runtime;
 using InnerNet;
 using System;
@@ -31,6 +31,7 @@ namespace HydraMenu.anticheat.rpc
 			SystemTypes system = (SystemTypes)reader.ReadByte();
 			player = reader.ReadNetObject<PlayerControl>();
 
+			if (ShipStatus.Instance == null || ShipStatus.Instance.Systems == null) return false;
 			ShipStatus.Instance.Systems.TryGetValue(system, out ISystemType systemInterface);
 			if(systemInterface == null)
 			{

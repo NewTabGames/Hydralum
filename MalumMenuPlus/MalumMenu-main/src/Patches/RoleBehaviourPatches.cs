@@ -9,10 +9,12 @@ public static class EngineerRole_FixedUpdate
 {
     public static void Postfix(EngineerRole __instance)
     {
-        if(__instance.Player.AmOwner)
-        {
-            MalumCheats.HandleEngineerCheats(__instance);
-        }
+        try {
+            if (__instance != null && __instance.Player != null && __instance.Player.AmOwner)
+            {
+                MalumCheats.HandleEngineerCheats(__instance);
+            }
+        } catch { }
     }
 }
 
@@ -23,7 +25,7 @@ public static class ShapeshifterRole_FixedUpdate
     {
         try
         {
-            if(__instance.Player.AmOwner)
+            if (__instance != null && __instance.Player != null && __instance.Player.AmOwner)
             {
                 MalumCheats.HandleShapeshifterCheats(__instance);
             }
@@ -36,10 +38,12 @@ public static class ScientistRole_Update
 {
     public static void Postfix(ScientistRole __instance)
     {
-        if(__instance.Player.AmOwner)
-        {
-            MalumCheats.HandleScientistCheats(__instance);
-        }
+        try {
+            if (__instance != null && __instance.Player != null && __instance.Player.AmOwner)
+            {
+                MalumCheats.HandleScientistCheats(__instance);
+            }
+        } catch { }
     }
 }
 
@@ -48,10 +52,12 @@ public static class TrackerRole_FixedUpdate
 {
     public static void Postfix(TrackerRole __instance)
     {
-        if(__instance.Player.AmOwner)
-        {
-            MalumCheats.HandleTrackerCheats(__instance);
-        }
+        try {
+            if (__instance != null && __instance.Player != null && __instance.Player.AmOwner)
+            {
+                MalumCheats.HandleTrackerCheats(__instance);
+            }
+        } catch { }
     }
 }
 

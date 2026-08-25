@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using InnerNet;
 
 namespace HydraMenu.features
@@ -100,7 +100,7 @@ namespace HydraMenu.features
 		{
 			static void Postfix()
 			{
-				if(!Enabled || PlayerControl.LocalPlayer.Data.IsDead) return;
+				if(!Enabled || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null || PlayerControl.LocalPlayer.Data.IsDead) return;
 
 				Hydra.Log.LogInfo("Meeting has ended, resending Immortality RPC to retain immortal status");
 				VentilationSystem.Update(VentilationSystem.Operation.Enter, CUSTOM_VENT_ID);

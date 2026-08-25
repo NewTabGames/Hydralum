@@ -137,74 +137,78 @@ namespace HydraMenu
 
         public static void RenderToastGUI()
         {
-            if (!ShouldShow()) return;
-
-            var ann = Current;
-            if (ann == null) return;
-
-            float width = 360f;
-            float textWidth = width - 20f;
-            bool hasLink = !string.IsNullOrWhiteSpace(ann.link);
-
-            // Message Body Style
-            GUIStyle msgStyle = new GUIStyle(GUI.skin.label)
+            try
             {
-                fontSize = 11,
-                wordWrap = true,
-                richText = true,
-                alignment = TextAnchor.UpperLeft
-            };
-            msgStyle.normal.textColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+                if (!ShouldShow()) return;
 
-            // Dynamically calculate the required height for the message
-            float calculatedTextHeight = msgStyle.CalcHeight(new GUIContent(ann.message ?? ""), textWidth);
-            float msgHeight = Mathf.Clamp(calculatedTextHeight, 20f, 250f);
+                var ann = Current;
+                if (ann == null) return;
 
-            // Total box height based on header (32px), message height, link button (32px if present), and padding
-            float totalHeight = 32f + msgHeight + (hasLink ? 34f : 8f);
+                float width = 360f;
+                float textWidth = width - 20f;
+                bool hasLink = !string.IsNullOrWhiteSpace(ann.link);
 
-            float x = Screen.width - width - 20f;
-            float y = Screen.height - totalHeight - 20f;
-
-            // Background box
-            GUI.Box(new Rect(x, y, width, totalHeight), GUIContent.none, GUI.skin.box);
-
-            // Title Style
-            string colorHex = SanitizeColor(ann.color);
-            GUIStyle titleStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 13,
-                fontStyle = FontStyle.Bold,
-                richText = true,
-                alignment = TextAnchor.MiddleLeft
-            };
-            titleStyle.normal.textColor = Color.white;
-            GUI.Label(new Rect(x + 10f, y + 6f, width - 45f, 22f), $"<color={colorHex}>📢 {ann.title}</color>", titleStyle);
-
-            // Close 'X' Button
-            GUIStyle closeBtnStyle = new GUIStyle(GUI.skin.button)
-            {
-                fontSize = 12,
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter
-            };
-            if (GUI.Button(new Rect(x + width - 28f, y + 6f, 20f, 20f), "✕", closeBtnStyle))
-            {
-                Dismiss();
-            }
-
-            // Message Body
-            GUI.Label(new Rect(x + 10f, y + 30f, textWidth, msgHeight + 4f), ann.message ?? "", msgStyle);
-
-            // Action Button
-            if (hasLink)
-            {
-                string btnText = !string.IsNullOrWhiteSpace(ann.linkText) ? ann.linkText : "Open Link";
-                if (GUI.Button(new Rect(x + 10f, y + 32f + msgHeight + 4f, textWidth, 24f), btnText))
+                // Message Body Style
+                GUIStyle msgStyle = new GUIStyle(GUI.skin.label)
                 {
-                    Application.OpenURL(ann.link);
+                    fontSize = 11,
+                    wordWrap = true,
+                    richText = true,
+                    alignment = TextAnchor.UpperLeft
+                };
+                msgStyle.normal.textColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+
+                // Dynamically calculate the required height for the message
+                float calculatedTextHeight = msgStyle.CalcHeight(new GUIContent(ann.message ?? ""), textWidth);
+                float msgHeight = Mathf.Clamp(calculatedTextHeight, 20f, 250f);
+
+                // Total box height based on header (32px), message height, link button (32px if present), and padding
+                float totalHeight = 32f + msgHeight + (hasLink ? 34f : 8f);
+
+                float x = Screen.width - width - 20f;
+                float y = Screen.height - totalHeight - 20f;
+
+                // Background box
+                GUI.Box(new Rect(x, y, width, totalHeight), GUIContent.none, GUI.skin.box);
+
+                // Title Style
+                string colorHex = SanitizeColor(ann.color);
+                GUIStyle titleStyle = new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 13,
+                    fontStyle = FontStyle.Bold,
+                    richText = true,
+                    alignment = TextAnchor.MiddleLeft
+                };
+                titleStyle.normal.textColor = Color.white;
+                GUI.Label(new Rect(x + 10f, y + 6f, width - 45f, 22f), $"<color={colorHex}>📢 {ann.title}</color>", titleStyle);
+
+                // Close 'X' Button
+                GUIStyle closeBtnStyle = new GUIStyle(GUI.skin.button)
+                {
+                    fontSize = 12,
+                    fontStyle = FontStyle.Bold,
+                    alignment = TextAnchor.MiddleCenter
+                };
+                if (GUI.Button(new Rect(x + width - 28f, y + 6f, 20f, 20f), "✕", closeBtnStyle))
+                {
+                    Dismiss();
+                }
+
+                // Message Body
+                GUI.Label(new Rect(x + 10f, y + 30f, textWidth, msgHeight + 4f), ann.message ?? "", msgStyle);
+
+                // Action Button
+                if (hasLink)
+                {
+                    string btnText = !string.IsNullOrWhiteSpace(ann.linkText) ? ann.linkText : "Open Link";
+                    if (GUI.Button(new Rect(x + 10f, y + 32f + msgHeight + 4f, textWidth, 24f), btnText))
+                    {
+                        Application.OpenURL(ann.link);
+                    }
                 }
             }
+            catch { }
         }
 
         public static async Task RefreshAsync(CancellationToken token = default)
@@ -212,7 +216,7 @@ namespace HydraMenu
             try
             {
                 string url = $"{FirebaseUrl}?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-                var response = await HttpClient.GetAsync(url, token);
+                using var response = await HttpClient.GetAsync(url, token);
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync(token);

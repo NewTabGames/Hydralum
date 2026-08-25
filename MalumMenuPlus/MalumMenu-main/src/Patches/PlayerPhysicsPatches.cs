@@ -9,62 +9,72 @@ public static class PlayerPhysics_LateUpdate
 {
     public static void Postfix(PlayerPhysics __instance)
     {
-        MalumESP.PlayerNametags(__instance);
-        MalumESP.SeeGhostsCheat(__instance);
-
-        MalumCheats.NoClipCheat();
-        MalumCheats.ProtectCheat();
-        MalumCheats.KillAllCheat();
-        MalumCheats.KillAllCrewCheat();
-        MalumCheats.KillAllImpsCheat();
-        MalumCheats.ForceStartGameCheat();
-        MalumCheats.TeleportCursorCheat();
-        MalumCheats.CompleteMyTasksCheat();
-        MalumCheats.PlayAnimationCheat();
-        MalumCheats.PlayScannerCheat();
-
-        MalumPPMCheats.EjectPlayerPPM();
-        MalumPPMCheats.SpectatePPM();
-        MalumPPMCheats.KillPlayerPPM();
-        MalumPPMCheats.TelekillPlayerPPM();
-        MalumPPMCheats.TeleportPlayerPPM();
-        MalumPPMCheats.SetFakeRolePPM();
-        MalumPPMCheats.SetFakeAlivePPM();
-        // MalumPPMCheats.ForceRolePPM();
-
-        TracersHandler.DrawPlayerTracer(__instance);
-
-        GameObject[] bodyObjects = GameObject.FindGameObjectsWithTag("DeadBody");
-        foreach(GameObject bodyObject in bodyObjects) // Finds and loops through all dead bodies
-        {
-            DeadBody deadBody = bodyObject.GetComponent<DeadBody>();
-            if (!deadBody) continue;
-
-            TracersHandler.DrawBodyTracer(deadBody);
-
-            if (CheatToggles.autoReportBodies)
-            {
-                if (deadBody.Reported) continue;
-
-                deadBody.Reported = true;
-
-                PlayerControl.LocalPlayer.CmdReportDeadBody(GameData.Instance.GetPlayerById(deadBody.ParentId));
-            }
-        }
-
         try
         {
-            if (CheatToggles.invertControls)
+            MalumESP.PlayerNametags(__instance);
+            MalumESP.SeeGhostsCheat(__instance);
+
+            MalumCheats.NoClipCheat();
+            MalumCheats.ProtectCheat();
+            MalumCheats.KillAllCheat();
+            MalumCheats.KillAllCrewCheat();
+            MalumCheats.KillAllImpsCheat();
+            MalumCheats.ForceStartGameCheat();
+            MalumCheats.TeleportCursorCheat();
+            MalumCheats.CompleteMyTasksCheat();
+            MalumCheats.PlayAnimationCheat();
+            MalumCheats.PlayScannerCheat();
+
+            MalumPPMCheats.EjectPlayerPPM();
+            MalumPPMCheats.SpectatePPM();
+            MalumPPMCheats.KillPlayerPPM();
+            MalumPPMCheats.TelekillPlayerPPM();
+            MalumPPMCheats.TeleportPlayerPPM();
+            MalumPPMCheats.SetFakeRolePPM();
+            MalumPPMCheats.SetFakeAlivePPM();
+            // MalumPPMCheats.ForceRolePPM();
+
+            TracersHandler.DrawPlayerTracer(__instance);
+
+            GameObject[] bodyObjects = GameObject.FindGameObjectsWithTag("DeadBody");
+            foreach(GameObject bodyObject in bodyObjects) // Finds and loops through all dead bodies
             {
-                PlayerControl.LocalPlayer.MyPhysics.Speed = -Mathf.Abs(PlayerControl.LocalPlayer.MyPhysics.Speed);
-                PlayerControl.LocalPlayer.MyPhysics.GhostSpeed = -Mathf.Abs(PlayerControl.LocalPlayer.MyPhysics.GhostSpeed);
+                DeadBody deadBody = bodyObject.GetComponent<DeadBody>();
+                if (!deadBody) continue;
+
+                TracersHandler.DrawBodyTracer(deadBody);
+
+                if (CheatToggles.autoReportBodies)
+                {
+                    if (deadBody.Reported) continue;
+
+                    if (PlayerControl.LocalPlayer != null && GameData.Instance != null)
+                    {
+                        var targetPlayer = GameData.Instance.GetPlayerById(deadBody.ParentId);
+                        if (targetPlayer != null)
+                        {
+                            deadBody.Reported = true;
+                            PlayerControl.LocalPlayer.CmdReportDeadBody(targetPlayer);
+                        }
+                    }
+                }
             }
-            else
+
+            try
             {
-                PlayerControl.LocalPlayer.MyPhysics.Speed = Mathf.Abs(PlayerControl.LocalPlayer.MyPhysics.Speed);
-                PlayerControl.LocalPlayer.MyPhysics.GhostSpeed = Mathf.Abs(PlayerControl.LocalPlayer.MyPhysics.GhostSpeed);
-            }
-        } catch (NullReferenceException) { }
+                if (CheatToggles.invertControls)
+                {
+                    PlayerControl.LocalPlayer.MyPhysics.Speed = -Mathf.Abs(PlayerControl.LocalPlayer.MyPhysics.Speed);
+                    PlayerControl.LocalPlayer.MyPhysics.GhostSpeed = -Mathf.Abs(PlayerControl.LocalPlayer.MyPhysics.GhostSpeed);
+                }
+                else
+                {
+                    PlayerControl.LocalPlayer.MyPhysics.Speed = Mathf.Abs(PlayerControl.LocalPlayer.MyPhysics.Speed);
+                    PlayerControl.LocalPlayer.MyPhysics.GhostSpeed = Mathf.Abs(PlayerControl.LocalPlayer.MyPhysics.GhostSpeed);
+                }
+            } catch (NullReferenceException) { }
+        }
+        catch { }
     }
 }
 

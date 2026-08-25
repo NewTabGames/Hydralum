@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace HydraMenu.routines
 {
@@ -33,8 +33,14 @@ namespace HydraMenu.routines
 
 		protected override void OnEnable()
 		{
-			PlayerControl.LocalPlayer.moveable = false;
-			PlayerControl.LocalPlayer.NetTransform.body.velocity = Vector2.zero;
+			if (PlayerControl.LocalPlayer != null)
+			{
+				PlayerControl.LocalPlayer.moveable = false;
+				if (PlayerControl.LocalPlayer.NetTransform?.body != null)
+				{
+					PlayerControl.LocalPlayer.NetTransform.body.velocity = Vector2.zero;
+				}
+			}
 		}
 
 		protected override void OnDisable()

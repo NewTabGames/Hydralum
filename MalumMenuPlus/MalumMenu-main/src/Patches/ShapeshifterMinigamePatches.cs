@@ -13,65 +13,76 @@ public static class ShapeshifterMinigame_Begin
     {
         if (!PlayerPickMenu.isActive) return true; // Open normal shapeshifter menu if not active
 
-        // Custom player list set by openPlayerPickMenu
-        List<NetworkedPlayerInfo> playerList = PlayerPickMenu.customPlayerList;
-
-        __instance.potentialVictims = new List<ShapeshifterPanel>();
-
-        List<UiElement> selectableElements = new List<UiElement>();
-
-        for (int i = 0; i < playerList.Count; i++)
+        try
         {
-            NetworkedPlayerInfo playerData = playerList[i];
+            // Custom player list set by openPlayerPickMenu
+            List<NetworkedPlayerInfo> playerList = PlayerPickMenu.customPlayerList;
 
-            int num = i % 3;
-            int num2 = i / 3;
-            ShapeshifterPanel shapeshifterPanel = Object.Instantiate(__instance.PanelPrefab, __instance.transform);
-            shapeshifterPanel.transform.localPosition = new Vector3(__instance.XStart + num * __instance.XOffset, __instance.YStart + num2 * __instance.YOffset, -1f);
+            __instance.potentialVictims = new List<ShapeshifterPanel>();
 
-            shapeshifterPanel.SetPlayer(i, playerData, (Il2CppSystem.Action) (() =>
+            List<UiElement> selectableElements = new List<UiElement>();
+
+            for (int i = 0; i < playerList.Count; i++)
             {
-                PlayerPickMenu.targetPlayerData = playerData; // Save targeted player
+                NetworkedPlayerInfo playerData = playerList[i];
+                if (playerData == null) continue;
 
-                PlayerPickMenu.customAction.Invoke(); // Custom action set by openPlayerPickMenu
+                int num = i % 3;
+                int num2 = i / 3;
+                ShapeshifterPanel shapeshifterPanel = Object.Instantiate(__instance.PanelPrefab, __instance.transform);
+                shapeshifterPanel.transform.localPosition = new Vector3(__instance.XStart + num * __instance.XOffset, __instance.YStart + num2 * __instance.YOffset, -1f);
 
-                __instance.Close();
-            }));
-
-            if (playerData.Object != null)
-            {
-                shapeshifterPanel.NameText.text = Utils.GetNameTag(playerData, playerData.DefaultOutfit.PlayerName);
-
-                // Move and resize the nametag to prevent it overlapping with colorblind text
-                if (CheatToggles.seeRoles && CheatToggles.seePlayerInfo)
+                shapeshifterPanel.SetPlayer(i, playerData, (Il2CppSystem.Action) (() =>
                 {
-                    shapeshifterPanel.NameText.transform.localPosition = new Vector3(0.33f, 0.08f, 0f);
-                    shapeshifterPanel.NameText.transform.localScale = new Vector3(0.75f, 0.75f, 0.75f);
-                }
-                else if (CheatToggles.seeRoles || CheatToggles.seePlayerInfo)
+                    PlayerPickMenu.targetPlayerData = playerData; // Save targeted player
+
+                    PlayerPickMenu.customAction.Invoke(); // Custom action set by openPlayerPickMenu
+
+                    __instance.Close();
+                }));
+
+                if (playerData.Object != null && playerData.DefaultOutfit != null)
                 {
-                    shapeshifterPanel.NameText.transform.localPosition = new Vector3(0.3384f, 0.1125f, -0.1f);
-                    shapeshifterPanel.NameText.transform.localScale = new Vector3(0.9f, 1f, 1f);
+                    shapeshifterPanel.NameText.text = Utils.GetNameTag(playerData, playerData.DefaultOutfit.PlayerName);
+
+                    // Move and resize the nametag to prevent it overlapping with colorblind text
+                    if (CheatToggles.seeRoles && CheatToggles.seePlayerInfo)
+                    {
+                        shapeshifterPanel.NameText.transform.localPosition = new Vector3(0.33f, 0.08f, 0f);
+                        shapeshifterPanel.NameText.transform.localScale = new Vector3(0.75f, 0.75f, 0.75f);
+                    }
+                    else if (CheatToggles.seeRoles || CheatToggles.seePlayerInfo)
+                    {
+                        shapeshifterPanel.NameText.transform.localPosition = new Vector3(0.3384f, 0.1125f, -0.1f);
+                        shapeshifterPanel.NameText.transform.localScale = new Vector3(0.9f, 1f, 1f);
+                    }
+                    else
+                    {
+                        // Reset the position and scale of the nametag to default values (they're kinda weird but whatever)
+                        shapeshifterPanel.NameText.transform.localPosition = new Vector3(0.3384f, 0.0311f, -0.1f);
+                        shapeshifterPanel.NameText.transform.localScale = new Vector3(0.9f, 1f, 1f);
+                    }
                 }
-                else
-                {
-                    // Reset the position and scale of the nametag to default values (they're kinda weird but whatever)
-                    shapeshifterPanel.NameText.transform.localPosition = new Vector3(0.3384f, 0.0311f, -0.1f);
-                    shapeshifterPanel.NameText.transform.localScale = new Vector3(0.9f, 1f, 1f);
-                }
+
+                __instance.potentialVictims.Add(shapeshifterPanel);
+
+                selectableElements.Add(shapeshifterPanel.Button);
             }
 
-            __instance.potentialVictims.Add(shapeshifterPanel);
+            if (ControllerManager.Instance != null)
+            {
+                ControllerManager.Instance.OpenOverlayMenu(__instance.name, __instance.BackButton, __instance.DefaultButtonSelected, selectableElements, false);
+            }
 
-            selectableElements.Add(shapeshifterPanel.Button);
+            PlayerPickMenu.isActive = false;
+
+            return false; // Skip original method when active
         }
-
-        ControllerManager.Instance.OpenOverlayMenu(__instance.name, __instance.BackButton, __instance.DefaultButtonSelected, selectableElements, false);
-
-        PlayerPickMenu.isActive = false;
-
-        return false; // Skip original method when active
-
+        catch
+        {
+            PlayerPickMenu.isActive = false;
+            return true;
+        }
     }
 }
 

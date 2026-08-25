@@ -44,18 +44,6 @@ namespace HydraMenu.ui.sections
 			Self.UnlimitedMeetings.enabled = GUILayout.Toggle(Self.UnlimitedMeetings.enabled, "Unlimited Meetings");
 			if (Self.UnlimitedMeetings.enabled != prevMeetings) HydraConfig.Save();
 
-			bool prevSniper = Self.ColorSniper.Enabled;
-			Self.ColorSniper.Enabled = GUILayout.Toggle(Self.ColorSniper.Enabled, "Color Sniper");
-			if (Self.ColorSniper.Enabled != prevSniper) HydraConfig.Save();
-
-			if (Self.ColorSniper.Enabled)
-			{
-				GUILayout.Label($"Sniper Target: {(Controls.PlayerColors)Self.ColorSniper.TargetColor}");
-				byte prevCol = Self.ColorSniper.TargetColor;
-				Self.ColorSniper.TargetColor = (byte)Controls.HorizontalColorSlider((Controls.PlayerColors)Self.ColorSniper.TargetColor);
-				if (Self.ColorSniper.TargetColor != prevCol) HydraConfig.Save();
-			}
-
 			if(GUILayout.Button("Call Meeting"))
 			{
 				if (PlayerControl.LocalPlayer != null)

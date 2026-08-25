@@ -78,33 +78,39 @@ public static class LogicRoleSelectionNormal_AssignRolesFromList
     {
         if (!CheatToggles.assignRolesNextRound || !AmongUsClient.Instance.AmHost) return;
 
-        var assignedRole = MalumHost.NextRoundRole;
+        if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
 
-        // AssignRolesFromList runs several times with different player lists. Only act on the call
-        // whose list contains our own NetworkedPlayerInfo, then remove ourselves so the game doesn't
-        // assign us a second role.
-        Il2CppSystem.Predicate<NetworkedPlayerInfo> isSelf =
-            (Il2CppSystem.Predicate<NetworkedPlayerInfo>)(p => p == PlayerControl.LocalPlayer.Data);
-        int playerIndex = players.FindIndex(isSelf);
-        if (playerIndex == -1) return;
-
-        players.RemoveAt(playerIndex);
-
-        // If the role we want is in this list, remove one instance so the head count stays correct.
-        Il2CppSystem.Predicate<RoleTypes> isRole =
-            (Il2CppSystem.Predicate<RoleTypes>)(r => r == assignedRole);
-        int roleIndex = roleList.FindIndex(isRole);
-        if (roleIndex != -1) roleList.RemoveAt(roleIndex);
-
-        // Ghost-role edge case: if we'd be the last player assigned and the role is a ghost role, the
-        // intro cutscene never plays and the lobby black-screens. Assign a normal role first.
-        if (RoleManager.IsGhostRole(assignedRole) && players.Count == 0)
+        try
         {
-            PlayerControl.LocalPlayer.RpcSetRole(
-                RoleManager.IsImpostorRole(assignedRole) ? RoleTypes.Impostor : RoleTypes.Crewmate, true);
-        }
+            var assignedRole = MalumHost.NextRoundRole;
 
-        PlayerControl.LocalPlayer.RpcSetRole(assignedRole, true);
-        rolesAssigned++;
+            // AssignRolesFromList runs several times with different player lists. Only act on the call
+            // whose list contains our own NetworkedPlayerInfo, then remove ourselves so the game doesn't
+            // assign us a second role.
+            Il2CppSystem.Predicate<NetworkedPlayerInfo> isSelf =
+                (Il2CppSystem.Predicate<NetworkedPlayerInfo>)(p => p == PlayerControl.LocalPlayer.Data);
+            int playerIndex = players.FindIndex(isSelf);
+            if (playerIndex == -1) return;
+
+            players.RemoveAt(playerIndex);
+
+            // If the role we want is in this list, remove one instance so the head count stays correct.
+            Il2CppSystem.Predicate<RoleTypes> isRole =
+                (Il2CppSystem.Predicate<RoleTypes>)(r => r == assignedRole);
+            int roleIndex = roleList.FindIndex(isRole);
+            if (roleIndex != -1) roleList.RemoveAt(roleIndex);
+
+            // Ghost-role edge case: if we'd be the last player assigned and the role is a ghost role, the
+            // intro cutscene never plays and the lobby black-screens. Assign a normal role first.
+            if (RoleManager.IsGhostRole(assignedRole) && players.Count == 0)
+            {
+                PlayerControl.LocalPlayer.RpcSetRole(
+                    RoleManager.IsImpostorRole(assignedRole) ? RoleTypes.Impostor : RoleTypes.Crewmate, true);
+            }
+
+            PlayerControl.LocalPlayer.RpcSetRole(assignedRole, true);
+            rolesAssigned++;
+        }
+        catch { }
     }
 }

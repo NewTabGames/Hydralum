@@ -80,20 +80,20 @@ namespace HydraMenu.features
                         return true;
 
                     case DisconnectReasons.Hacking:
-						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was banned by the Among Us anticheat for hacking.");
+						if (HudManager.Instance != null && HudManager.Instance.Notifier != null) HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was banned by the Among Us anticheat for hacking.");
 						return false;
 
                     case DisconnectReasons.DuplicateConnectionDetected:
-						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was kicked due to duplicate login.");
+						if (HudManager.Instance != null && HudManager.Instance.Notifier != null) HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was kicked due to duplicate login.");
 						return false;
 
                     // This disconnect reason happens when a player does not send the ClientReady message after the game starts in time
                     case DisconnectReasons.ClientTimeout:
-						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was kicked due to timeout.");
+						if (HudManager.Instance != null && HudManager.Instance.Notifier != null) HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was kicked due to timeout.");
                         return false;
 
 					default:
-						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was disconnected due to {reason}.");
+						if (HudManager.Instance != null && HudManager.Instance.Notifier != null) HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was disconnected due to {reason}.");
 						return false;
                 }
 			}
@@ -108,7 +108,10 @@ namespace HydraMenu.features
 			{
 				if(Enabled)
 				{
-					HudManager.Instance.shhhEmblem.gameObject.SetActive(false);
+					if (HudManager.Instance != null && HudManager.Instance.shhhEmblem != null)
+					{
+						HudManager.Instance.shhhEmblem.gameObject.SetActive(false);
+					}
 					return false;
 				}
 				else

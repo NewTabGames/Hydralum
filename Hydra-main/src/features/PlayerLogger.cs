@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using InnerNet;
 
 namespace HydraMenu.features
@@ -10,14 +10,14 @@ namespace HydraMenu.features
 		{
 			static void Postfix(PlayerControl __instance)
 			{
-				if(__instance == PlayerControl.LocalPlayer || AmongUsClient.Instance.NetworkMode == NetworkModes.FreePlay) return;
+				if(__instance == PlayerControl.LocalPlayer || AmongUsClient.Instance == null || AmongUsClient.Instance.NetworkMode == NetworkModes.FreePlay) return;
 
 				ClientData clientData = AmongUsClient.Instance.GetClientFromCharacter(__instance);
 				if(clientData == null) return;
 
 				PlatformSpecificData platformData = clientData.PlatformData;
 
-				Hydra.Log.LogMessage($"[PlayerLogger] {clientData.PlayerName} ({__instance.NetId}) joined on {platformData.Platform}. Friendcode {clientData.FriendCode}, PUID {clientData.ProductUserId}");
+				Hydra.Log.LogMessage($"[PlayerLogger] {clientData.PlayerName} ({__instance.NetId}) joined on {platformData?.Platform}. Friendcode {clientData.FriendCode}, PUID {clientData.ProductUserId}");
 			}
 		}
 	}

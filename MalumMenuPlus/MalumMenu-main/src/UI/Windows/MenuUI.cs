@@ -64,9 +64,6 @@ public class MenuUI : MonoBehaviour
         // Vent Network hop keys (Right arrow = next / Left arrow = previous), polled here for GetKeyDown
         MalumCheats.VentNetworkInput();
 
-        // Keep the Become Immortal fake-vent state in sync with its toggle
-        MalumImmortality.Sync();
-
         // Disco Party recolors every player on an interval while hosting
         MalumHost.DiscoParty();
 

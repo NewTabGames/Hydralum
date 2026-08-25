@@ -15,9 +15,6 @@ public struct CheatToggles
     public static bool invertControls;
     public static bool useSnapToRpc = true;
 
-    // Self (ported from Hydra)
-    public static bool becomeImmortal;
-
     // Roles
     public static bool setFakeRole;
     public static bool setFakeAlive;

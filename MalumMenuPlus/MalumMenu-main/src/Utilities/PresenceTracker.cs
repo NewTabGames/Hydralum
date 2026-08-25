@@ -199,7 +199,7 @@ namespace MalumMenu
 
                     // 2. Fetch active presence nodes
                     string fetchUrl = $"{FirebaseUrl}.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-                    var response = await HttpClient.GetAsync(fetchUrl, token);
+                    using var response = await HttpClient.GetAsync(fetchUrl, token);
                     if (response.IsSuccessStatusCode)
                     {
                         var json = await response.Content.ReadAsStringAsync(token);

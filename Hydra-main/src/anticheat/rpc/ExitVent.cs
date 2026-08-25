@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 using System;
 
 namespace HydraMenu.anticheat.rpc
@@ -14,7 +14,7 @@ namespace HydraMenu.anticheat.rpc
 				return false;
 			}
 
-			if(!player.Data.IsDead && !player.Data.Role.CanVent)
+			if(!player.Data.IsDead && player.Data.Role != null && !player.Data.Role.CanVent)
 			{
 				Anticheat.Flag(player, $"{player.Data.PlayerName} tried to exit a vent when their role ({player.Data.RoleType}) does not support venting.");
 				return false;

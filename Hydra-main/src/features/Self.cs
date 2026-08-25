@@ -110,15 +110,8 @@ namespace HydraMenu.features
 
 			static void Prefix()
 			{
-				if(enabled) PlayerControl.LocalPlayer.RemainingEmergencies = 999999;
+				if(enabled && PlayerControl.LocalPlayer != null) PlayerControl.LocalPlayer.RemainingEmergencies = 999999;
 			}
-		}
-
-		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.RpcSetColor))]
-		public static class ColorSniper
-		{
-			public static bool Enabled { get; set; } = false;
-			public static byte TargetColor { get; set; } = 0;
 		}
 	}
 }

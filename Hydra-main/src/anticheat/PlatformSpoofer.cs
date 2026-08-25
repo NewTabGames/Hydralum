@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using InnerNet;
 
 namespace HydraMenu.anticheat
@@ -10,10 +10,10 @@ namespace HydraMenu.anticheat
 		{
 			static void Postfix(PlayerControl __instance)
 			{
-				if(!Anticheat.Enabled || !Anticheat.CheckSpoofedPlatforms) return;
+				if(!Anticheat.Enabled || !Anticheat.CheckSpoofedPlatforms || AmongUsClient.Instance == null) return;
 
 				ClientData clientData = AmongUsClient.Instance.GetClientFromCharacter(__instance);
-				if(clientData == null) return;
+				if(clientData == null || clientData.PlatformData == null) return;
 
 				PlatformSpecificData platformData = clientData.PlatformData;
 
