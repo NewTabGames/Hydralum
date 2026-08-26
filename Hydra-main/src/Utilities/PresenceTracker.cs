@@ -428,7 +428,7 @@ namespace HydraMenu
                         versions = new VersionInfo
                         {
                             hydralum = CurrentHydralumVersion,
-                            hydra = "1.9.0",
+                            hydra = "1.10.0",
                             malum = "3.3.0"
                         }
                     };
@@ -744,7 +744,7 @@ namespace HydraMenu
         public class VersionInfo
         {
             public string hydralum { get; set; } = CurrentHydralumVersion;
-            public string hydra { get; set; } = "1.9.0";
+            public string hydra { get; set; } = "1.10.0";
             public string malum { get; set; } = "3.3.0";
         }
 
