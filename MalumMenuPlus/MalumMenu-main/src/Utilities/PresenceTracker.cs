@@ -525,42 +525,65 @@ namespace MalumMenu
                     // 3. Fetch announcement
                     await AnnouncementManager.RefreshAsync(token);
 
-                    // 4. Fetch stats and verify version requirement
+                    // 4. Fetch stats and verify version requirement (checks /announcement/required_version first to prevent old-client overwrites)
                     try
                     {
-                        string statsUrl = $"https://hydralum-presence-default-rtdb.firebaseio.com/stats.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-                        using var statsResp = await HttpClient.GetAsync(statsUrl, token);
-                        if (statsResp.IsSuccessStatusCode)
+                        string reqVer = "";
+
+                        // Try protected endpoint first
+                        try
                         {
-                            var statsJson = await statsResp.Content.ReadAsStringAsync(token);
-                            if (!string.IsNullOrWhiteSpace(statsJson) && statsJson != "null")
+                            string reqUrl = $"https://hydralum-presence-default-rtdb.firebaseio.com/announcement/required_version.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                            using var reqResp = await HttpClient.GetAsync(reqUrl, token);
+                            if (reqResp.IsSuccessStatusCode)
                             {
-                                using var statsDoc = JsonDocument.Parse(statsJson);
-                                if (statsDoc.RootElement.TryGetProperty("required_version", out var reqVerProp))
+                                var rj = await reqResp.Content.ReadAsStringAsync(token);
+                                if (!string.IsNullOrWhiteSpace(rj) && rj != "null")
                                 {
-                                    string reqVer = reqVerProp.ValueKind == JsonValueKind.String ? (reqVerProp.GetString() ?? "") : reqVerProp.ToString();
-                                    if (!string.IsNullOrWhiteSpace(reqVer))
+                                    reqVer = rj.Trim().Trim('"');
+                                }
+                            }
+                        }
+                        catch { }
+
+                        // Fallback to stats.json
+                        if (string.IsNullOrWhiteSpace(reqVer))
+                        {
+                            string statsUrl = $"https://hydralum-presence-default-rtdb.firebaseio.com/stats.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                            using var statsResp = await HttpClient.GetAsync(statsUrl, token);
+                            if (statsResp.IsSuccessStatusCode)
+                            {
+                                var statsJson = await statsResp.Content.ReadAsStringAsync(token);
+                                if (!string.IsNullOrWhiteSpace(statsJson) && statsJson != "null")
+                                {
+                                    using var statsDoc = JsonDocument.Parse(statsJson);
+                                    if (statsDoc.RootElement.TryGetProperty("required_version", out var reqVerProp))
                                     {
-                                        RequiredVersion = reqVer.Trim();
-                                        // Semantic version comparison: only lock out if current < required
-                                        string cleanReq = RequiredVersion.TrimStart('v', 'V');
-                                        string cleanCur = CurrentHydralumVersion.TrimStart('v', 'V');
-                                        if (!_updateDismissed)
-                                        {
-                                            if (Version.TryParse(cleanReq, out var parsedReq) && Version.TryParse(cleanCur, out var parsedCur))
-                                            {
-                                                IsOutdated = parsedCur < parsedReq;
-                                            }
-                                            else
-                                            {
-                                                IsOutdated = !string.Equals(cleanReq, cleanCur, StringComparison.OrdinalIgnoreCase);
-                                            }
-                                            AppDomain.CurrentDomain.SetData("HydralumOutdated", IsOutdated);
-                                        }
-                                        AppDomain.CurrentDomain.SetData("HydralumRequiredVersion", RequiredVersion);
+                                        reqVer = reqVerProp.ValueKind == JsonValueKind.String ? (reqVerProp.GetString() ?? "") : reqVerProp.ToString();
                                     }
                                 }
                             }
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(reqVer))
+                        {
+                            RequiredVersion = reqVer.Trim();
+                            // Semantic version comparison: only lock out if current < required
+                            string cleanReq = RequiredVersion.TrimStart('v', 'V');
+                            string cleanCur = CurrentHydralumVersion.TrimStart('v', 'V');
+                            if (!_updateDismissed)
+                            {
+                                if (Version.TryParse(cleanReq, out var parsedReq) && Version.TryParse(cleanCur, out var parsedCur))
+                                {
+                                    IsOutdated = parsedCur < parsedReq;
+                                }
+                                else
+                                {
+                                    IsOutdated = !string.Equals(cleanReq, cleanCur, StringComparison.OrdinalIgnoreCase);
+                                }
+                                AppDomain.CurrentDomain.SetData("HydralumOutdated", IsOutdated);
+                            }
+                            AppDomain.CurrentDomain.SetData("HydralumRequiredVersion", RequiredVersion);
                         }
                     }
                     catch { }
