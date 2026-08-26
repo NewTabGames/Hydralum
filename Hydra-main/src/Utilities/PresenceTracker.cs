@@ -21,6 +21,7 @@ namespace HydraMenu
         public const string GitHubActionsUrl = "https://github.com/NewTabGames/Hydralum/actions";
         public static bool IsOutdated { get; set; } = false;
         public static string RequiredVersion { get; set; } = "1.2.0";
+        private static volatile bool _updateDismissed = false;
 
         public static int OnlineCount { get; private set; } = 1;
 
@@ -518,18 +519,6 @@ namespace HydraMenu
 
                                 OnlineCount = Math.Max(1, active);
                                 AppDomain.CurrentDomain.SetData("HydralumOnlineCount", OnlineCount);
-
-                                // Update live summary in Firebase without overwriting required_version
-                                try
-                                {
-                                    var statsPayload = $"{{\"online_players\":{OnlineCount},\"last_updated\":{now}}}";
-                                    using var patchReq = new HttpRequestMessage(new HttpMethod("PATCH"), "https://hydralum-presence-default-rtdb.firebaseio.com/stats.json")
-                                    {
-                                        Content = new StringContent(statsPayload, Encoding.UTF8, "application/json")
-                                    };
-                                    using var patchRes = await HttpClient.SendAsync(patchReq, token);
-                                }
-                                catch { }
                             }
                         }
 
@@ -556,15 +545,18 @@ namespace HydraMenu
                                         // Semantic version comparison: only lock out if current < required
                                         string cleanReq = RequiredVersion.TrimStart('v', 'V');
                                         string cleanCur = CurrentHydralumVersion.TrimStart('v', 'V');
-                                        if (Version.TryParse(cleanReq, out var parsedReq) && Version.TryParse(cleanCur, out var parsedCur))
+                                        if (!_updateDismissed)
                                         {
-                                            IsOutdated = parsedCur < parsedReq;
+                                            if (Version.TryParse(cleanReq, out var parsedReq) && Version.TryParse(cleanCur, out var parsedCur))
+                                            {
+                                                IsOutdated = parsedCur < parsedReq;
+                                            }
+                                            else
+                                            {
+                                                IsOutdated = !string.Equals(cleanReq, cleanCur, StringComparison.OrdinalIgnoreCase);
+                                            }
+                                            AppDomain.CurrentDomain.SetData("HydralumOutdated", IsOutdated);
                                         }
-                                        else
-                                        {
-                                            IsOutdated = !string.Equals(cleanReq, cleanCur, StringComparison.OrdinalIgnoreCase);
-                                        }
-                                        AppDomain.CurrentDomain.SetData("HydralumOutdated", IsOutdated);
                                         AppDomain.CurrentDomain.SetData("HydralumRequiredVersion", RequiredVersion);
                                     }
                                 }
@@ -720,8 +712,11 @@ namespace HydraMenu
 
                 GUILayout.Space(8);
 
-                // Exit Game Button (Red)
-                GUI.backgroundColor = new Color(0.85f, 0.22f, 0.22f);
+                // Action Buttons Row (Update Later & Exit Game)
+                GUILayout.BeginHorizontal();
+
+                // Update Later Button (Amber)
+                GUI.backgroundColor = new Color(0.95f, 0.65f, 0.15f);
                 if (_lockoutExitBtnStyle == null)
                 {
                     _lockoutExitBtnStyle = new GUIStyle(GUI.skin.button)
@@ -731,10 +726,24 @@ namespace HydraMenu
                         normal = { textColor = Color.white }
                     };
                 }
-                if (GUILayout.Button("Exit Game", _lockoutExitBtnStyle, GUILayout.Height(28)))
+                if (GUILayout.Button("Update Later", _lockoutExitBtnStyle, GUILayout.Height(30)))
+                {
+                    _updateDismissed = true;
+                    IsOutdated = false;
+                    AppDomain.CurrentDomain.SetData("HydralumOutdated", false);
+                    Application.OpenURL(GitHubActionsUrl);
+                }
+
+                GUILayout.Space(8);
+
+                // Exit Game Button (Red)
+                GUI.backgroundColor = new Color(0.85f, 0.22f, 0.22f);
+                if (GUILayout.Button("Exit Game", _lockoutExitBtnStyle, GUILayout.Height(30)))
                 {
                     Application.Quit();
                 }
+
+                GUILayout.EndHorizontal();
 
                 GUILayout.Space(8);
             }
