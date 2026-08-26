@@ -1,4 +1,4 @@
-﻿using AmongUs.InnerNet.GameDataMessages;
+using AmongUs.InnerNet.GameDataMessages;
 using Hazel;
 using InnerNet;
 
@@ -19,7 +19,7 @@ namespace HydraMenu.anticheat.gamedata
 
 			if(client.IsReady)
 			{
-				Anticheat.Flag(client.Character, $"{client.Character.Data.PlayerName} sent a ClientReady message while already ready.");
+				Anticheat.Flag(client.Character, $"{client?.Character?.Data?.PlayerName ?? "Unknown"} sent a ClientReady message while already ready.");
 				return false;
 			}
 

@@ -22,7 +22,8 @@ namespace HydraMenu.ui.sections
 			{ "17.2.1", 50652900 },
 			{ "17.2.2", 50653700 },
 			{ "17.3", 50652400 },
-			{ "17.4", 50656300 }
+			{ "17.4", 50656300 },
+			{ "18.0", 50663350 }
 		};
 
 		public static int versionSelection = 0;

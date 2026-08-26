@@ -227,8 +227,8 @@ public class DoorsUI : MonoBehaviour
 
         if (!anyOpen) return false;
 
-        // Throttle so one reopen doesn't cause a burst of RPCs while the close is still in flight
-        if (_lastCloseTime.TryGetValue((int)room, out var last) && Time.time - last < 0.35f) return false;
+        // Throttle so one reopen doesn't cause an excessive flood while the close is in flight (100ms response time)
+        if (_lastCloseTime.TryGetValue((int)room, out var last) && Time.time - last < 0.10f) return false;
 
         _lastCloseTime[(int)room] = Time.time;
         return true;

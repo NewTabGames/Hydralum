@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 
 namespace HydraMenu.anticheat.rpc
 {
@@ -14,37 +14,41 @@ namespace HydraMenu.anticheat.rpc
 			// then we know that SetScanner RPC was sent illegitimately
 			if(ShipStatus.Instance == null && scanning)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} sent the SetScanner RPC while the map has not spawned in yet.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent the SetScanner RPC while the map has not spawned in yet.");
 				return false;
 			}
 
 			// When a player gets killed, a SetScanner RPC with the scanning value sent to false is sent
 			// This applies to Imposters too if they were to somehow die, so we need to account for this false flag
-			if(RoleManager.IsImpostorRole(player.Data.RoleType) && scanning)
+			if(player.Data != null && RoleManager.IsImpostorRole(player.Data.RoleType) && scanning)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} sent the SetScanner RPC when they are an imposter.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent the SetScanner RPC when they are an imposter.");
 				return false;
 			}
 
 			if(!GameManager.Instance.LogicOptions.GetVisualTasks())
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} sent the SetScanner RPC while visual tasks were disabled.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent the SetScanner RPC while visual tasks were disabled.");
 				return false;
 			}
 
 			bool hasMedbayScanTask = false;
-			foreach(NetworkedPlayerInfo.TaskInfo task in player.Data.Tasks)
+			if (player.Data?.Tasks != null)
 			{
-				if(task.Id != (byte)TaskTypes.SubmitScan) continue;
-
-				hasMedbayScanTask = true;
-				break;
+				foreach(var task in player.Data.Tasks)
+				{
+					if(task != null && task.Id == (byte)TaskTypes.SubmitScan)
+					{
+						hasMedbayScanTask = true;
+						break;
+					}
+				}
 			}
 
 			// SetScanner RPC is sent upon player death, so we have to make sure the scanning value is set to true to avoid false positives
 			if(!hasMedbayScanTask && scanning)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} sent the SetScanner RPC without being assigned the medbay scan task.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent the SetScanner RPC without being assigned the medbay scan task.");
 				return false;
 			}
 

@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 using HydraMenu.features;
 using HydraMenu.network;
 using System.Collections.Generic;
@@ -184,18 +184,23 @@ namespace HydraMenu
 				return;
 			}
 
+			if (player != null && player.NetTransform != null && player.NetTransform.body != null)
+			{
+				player.NetTransform.body.velocity = Vector2.zero;
+			}
+
 			if(!Troll.VentSeqIds.ContainsKey(player))
 			{
 				// High enough value to supersede the actual sequence ID
 				Troll.VentSeqIds.Add(player, 10000);
 			}
 
-			MessageWriter enterVent = MessageWriter.Get(SendOption.None);
+			MessageWriter enterVent = MessageWriter.Get(SendOption.Reliable);
 			enterVent.Write(++Troll.VentSeqIds[player]);
 			enterVent.Write((byte)VentilationSystem.Operation.Enter);
 			enterVent.Write((byte)ventId);
 
-			MessageWriter bootFromVent = MessageWriter.Get(SendOption.None);
+			MessageWriter bootFromVent = MessageWriter.Get(SendOption.Reliable);
 			bootFromVent.Write(++Troll.VentSeqIds[player]);
 			bootFromVent.Write((byte)VentilationSystem.Operation.BootImpostors);
 			bootFromVent.Write((byte)ventId);

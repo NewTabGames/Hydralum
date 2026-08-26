@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 
 namespace HydraMenu.anticheat.rpc
 {
@@ -14,7 +14,7 @@ namespace HydraMenu.anticheat.rpc
 			ClientData clientData = AmongUsClient.Instance.GetClient(player.OwnerId);
 			if(AmongUsClient.Instance.NetworkMode != NetworkModes.LocalGame && requestedName != clientData.PlayerName)
 			{
-				Anticheat.Flag(player, $"{clientData.PlayerName} requested a name that does not match their name in the login handshake.");
+				Anticheat.Flag(player, $"{clientData?.PlayerName ?? "Unknown"} requested a name that does not match their name in the login handshake.");
 				player.SetName(clientData.PlayerName);
 				return false;
 			}

@@ -313,7 +313,7 @@ namespace HydraMenu.ui.sections
 					}
 
 					BatchedMessage batch = new BatchedMessage();
-					batch.QueueVotingComplete(array, target.Data, false);
+					batch.QueueVotingComplete(array, target.Data, false, false, 0);
 					batch.FinishBatch();
 				}
 			}
@@ -329,7 +329,7 @@ namespace HydraMenu.ui.sections
 
 				MeetingHud.VoterState[] votes = Array.Empty<MeetingHud.VoterState>();
 
-				batch.QueueVotingComplete(votes, target.Data, false);
+				batch.QueueVotingComplete(votes, target.Data, false, false, 0);
 				batch.QueueCloseMeeting();
 				batch.FinishBatch();
 			}
@@ -509,9 +509,12 @@ namespace HydraMenu.ui.sections
 			}
 			GUILayout.EndHorizontal();
 
-			GUILayout.Label($"Teleport all selected to vent: {selectedVent}");
-			selectedVent = (int)GUILayout.HorizontalSlider(selectedVent, 0, ShipStatus.Instance?.AllVents != null ? ShipStatus.Instance.AllVents.Count - 1 : 10);
-			if(GUILayout.Button("Teleport to Vent"))
+			Dictionary<int, string> vents = MapAssets.GetVents();
+			int ventCount = vents != null && vents.Count > 0 ? vents.Count : (ShipStatus.Instance != null && ShipStatus.Instance.AllVents != null ? ShipStatus.Instance.AllVents.Count : 0);
+			string ventName = vents != null && vents.ContainsKey(selectedVent) ? vents[selectedVent] : selectedVent.ToString();
+			GUILayout.Label($"Teleport all selected to vent: {ventName}");
+			selectedVent = (int)GUILayout.HorizontalSlider(selectedVent, 0, Math.Max(0, ventCount - 1));
+			if(GUILayout.Button("Teleport to Vent") && ventCount > 0)
 			{
 				foreach(var target in targets)
 				{
@@ -546,7 +549,7 @@ namespace HydraMenu.ui.sections
 
 				foreach(var target in targets)
 				{
-					batch.QueueVotingComplete(Array.Empty<MeetingHud.VoterState>(), target.Data, false);
+					batch.QueueVotingComplete(Array.Empty<MeetingHud.VoterState>(), target.Data, false, false, 0);
 				}
 				batch.QueueCloseMeeting();
 				batch.FinishBatch();

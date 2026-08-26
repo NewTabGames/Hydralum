@@ -133,6 +133,31 @@ public static class MeetingHud_Update
     }
 }
 
+[HarmonyPatch]
+public static class MatchInfoGuide_Update
+{
+    public static System.Reflection.MethodBase TargetMethod()
+    {
+        return AccessTools.Method("MatchInfoGuide:Update");
+    }
+
+    public static void Postfix(object __instance)
+    {
+        try
+        {
+            if (__instance == null) return;
+
+            // Allow closing via Escape key (prevents softlocks if opened during meetings or gameplay)
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.Escape))
+            {
+                var closeMethod = __instance.GetType().GetMethod("Close");
+                closeMethod?.Invoke(__instance, null);
+            }
+        }
+        catch { }
+    }
+}
+
 [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.PopulateResults))]
 public static class MeetingHud_PopulateResults
 {

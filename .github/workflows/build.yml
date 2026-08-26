@@ -1,46 +1,47 @@
-name: Build
+name: Build & Release
 
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build
+    name: Build & Package
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
+    - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Setup .NET
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '6.0.x'
 
-    - name: Build Malum
+    - name: Build MalumMenu
       run: dotnet build MalumMenuPlus/MalumMenu-main/src/MalumMenu.csproj -c Release
 
-    - name: Build Hydra
+    - name: Build HydraMenu
       run: dotnet build Hydra-main/src/HydraMenu.csproj -c Release
 
-    - name: Copy Fresh DLLs to DLLs Folder
+    - name: Prepare DLLs Folder
       run: |
         mkdir -p DLLs
         cp MalumMenuPlus/MalumMenu-main/src/bin/Release/net6.0/MalumMenuPlus.dll DLLs/
         cp Hydra-main/src/bin/Release/net6.0/HydraMenu.dll DLLs/
 
-    - name: Upload DLLs
+    - name: Upload DLL Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: Hydralum-DLLs
         path: DLLs/*.dll
         if-no-files-found: error
 
-    - name: Package Standalone
+    - name: Package Standalone Game Folder
       run: |
         mkdir -p standalone_build
         curl -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785%2B6abdba4.zip" -o bepinex.zip
@@ -53,9 +54,24 @@ jobs:
         echo "945360" > standalone_build/steam_appid.txt
         printf "[Logging.Console]\nEnabled = true\nPreventClose = false\nStandardOutType = Auto\nLogLevels = Fatal, Error, Warning, Message, Info\n" > standalone_build/BepInEx/config/BepInEx.cfg
 
-    - name: Upload Standalone
+    - name: Upload Standalone Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Hydralum-Standalone-Steam
         path: standalone_build/
         if-no-files-found: error
+
+    - name: Create Release Zip Archives
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        cd standalone_build && zip -r ../Hydralum-Standalone-Steam.zip ./* && cd ..
+        cd DLLs && zip -r ../Hydralum-DLLs.zip ./* && cd ..
+
+    - name: Publish GitHub Release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          Hydralum-Standalone-Steam.zip
+          Hydralum-DLLs.zip
+        generate_release_notes: true

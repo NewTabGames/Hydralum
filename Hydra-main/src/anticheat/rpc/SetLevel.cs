@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 
 namespace HydraMenu.anticheat.rpc
 {
@@ -15,7 +15,7 @@ namespace HydraMenu.anticheat.rpc
 			// This is rather generous, we just check if the requested player level is greater than 10k
 			if(level > MAX_PLAYER_LEVEL)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} sent SetLevel RPC with a level that is too high ({level}).");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent SetLevel RPC with a level that is too high ({level}).");
 				player.SetLevel(MAX_PLAYER_LEVEL);
 				return false;
 			}
@@ -23,7 +23,7 @@ namespace HydraMenu.anticheat.rpc
 			// The SetLevel RPC should only be sent when a player joins the game in the lobby
 			if(ShipStatus.Instance)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} sent SetLevel RPC when the game has already started.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent SetLevel RPC when the game has already started.");
 				return false;
 			}
 

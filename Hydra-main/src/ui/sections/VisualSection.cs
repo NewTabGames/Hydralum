@@ -21,36 +21,10 @@ namespace HydraMenu.ui.sections
 			Visuals.AccurateDisconnectReasons.Enabled = GUILayout.Toggle(Visuals.AccurateDisconnectReasons.Enabled, "Use more accurate disconnection reasons");
 			if (Visuals.AccurateDisconnectReasons.Enabled != prevAcc) HydraConfig.Save();
 
-			bool prevFb = Visuals.Fullbright.Enabled;
-			Visuals.Fullbright.Enabled = GUILayout.Toggle(Visuals.Fullbright.Enabled, "Fullbright");
-			if (Visuals.Fullbright.Enabled != prevFb) HydraConfig.Save();
-
 			bool prevProt = Visuals.ShowProtections.Enabled;
 			Visuals.ShowProtections.Enabled = GUILayout.Toggle(Visuals.ShowProtections.Enabled, "Show Guardian Angel Protections");
 			if (Visuals.ShowProtections.Enabled != prevProt) HydraConfig.Save();
 
-			bool prevChat = Chat.AlwaysVisibleChat.Enabled;
-			Chat.AlwaysVisibleChat.Enabled = GUILayout.Toggle(Chat.AlwaysVisibleChat.Enabled, "Always Visible Chat");
-			if (Chat.AlwaysVisibleChat.Enabled != prevChat) HydraConfig.Save();
-
-			bool prevGhosts = Visuals.ShowGhosts.Enabled;
-			Visuals.ShowGhosts.Enabled = GUILayout.Toggle(Visuals.ShowGhosts.Enabled, "Show Ghosts");
-			if (Visuals.ShowGhosts.Enabled != prevGhosts) HydraConfig.Save();
-
-			bool prevGhostChat = Chat.OnChat.ShowMessagesByGhosts;
-			Chat.OnChat.ShowMessagesByGhosts = GUILayout.Toggle(Chat.OnChat.ShowMessagesByGhosts, "Show messages by ghosts");
-			if (Chat.OnChat.ShowMessagesByGhosts != prevGhostChat) HydraConfig.Save();
-
-			GUILayout.Space(8);
-			GUILayout.Label("<b>Hydralum Users</b> <size=11><color=#888888>(Client-sided)</color></size>");
-
-			bool prevHideMy = Visuals.HideMyGem.Enabled;
-			Visuals.HideMyGem.Enabled = GUILayout.Toggle(Visuals.HideMyGem.Enabled, "Disable My Gem");
-			if (Visuals.HideMyGem.Enabled != prevHideMy) HydraConfig.Save();
-
-			bool prevHideAll = Visuals.HideAllGems.Enabled;
-			Visuals.HideAllGems.Enabled = GUILayout.Toggle(Visuals.HideAllGems.Enabled, "Disable All Gems");
-			if (Visuals.HideAllGems.Enabled != prevHideAll) HydraConfig.Save();
 		}
 	}
 }

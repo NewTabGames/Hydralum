@@ -13,6 +13,8 @@ public class InfoTab : ITab
     private const string HydraUrl = "https://github.com/MrDiamond64/Hydra";
     private const string HydraDiscordUrl = "https://discord.gg/Yd4WVvxsm6";
 
+    private bool _showKeybindInfo = false;
+
     public void Draw()
     {
         GUILayout.Label($"<b>Hydralum</b> v{PresenceTracker.CurrentHydralumVersion} (Malum Menu v{MalumMenu.malumVersion} | Hydra Menu v1.9.0)", GUIStylePreset.TabSubtitle);
@@ -20,6 +22,29 @@ public class InfoTab : ITab
         GUILayout.Space(6);
         int online = PresenceTracker.GetOnlineCount();
         GUILayout.Label($"<b>Live Users Online:</b> <color=#00FF88>{online} {(online == 1 ? "player" : "players")}</color>", GUIStylePreset.Hint);
+
+        GUILayout.Space(8);
+        _showKeybindInfo = GUILayout.Toggle(_showKeybindInfo, " Show Keybind Info", GUIStylePreset.NormalToggle);
+
+        if (_showKeybindInfo)
+        {
+            GUILayout.Space(4);
+            GUILayout.BeginVertical(GUI.skin.box);
+            GUILayout.Label("<b>Keybind Reference & Shortcuts:</b>", GUIStylePreset.TabSubtitle);
+            GUILayout.Space(4);
+
+            DrawKeybindRow("Delete", "Toggle MalumMenu (Customizable in Config Tab)");
+            DrawKeybindRow("F6", "Toggle HydraMenu");
+            DrawKeybindRow("F8", "Toggle Hydralum Developer Console");
+            DrawKeybindRow("Escape", "Dismiss Match Info Guide / Active In-Game Dialogs");
+            DrawKeybindRow("Left / Right Arrow", "Cycle Previous / Next Vent (with Vent Cheats)");
+            DrawKeybindRow("Up / Down Arrow", "Scroll HydraMenu Sections");
+            DrawKeybindRow("Page Up / Page Down", "Switch HydraMenu Tabs");
+            DrawKeybindRow("Ctrl + C / V / X", "Copy, Paste, Cut in Custom Text Fields");
+            DrawKeybindRow("Panic Key", "Panicked Mode (Instantly closes and hides all menus)");
+
+            GUILayout.EndVertical();
+        }
 
         GUILayout.Space(12);
         GUILayout.Label("Credits & Community", GUIStylePreset.TabSubtitle);
@@ -32,6 +57,14 @@ public class InfoTab : ITab
         GUILayout.Label("MalumMenu and Hydra are both licensed under GPL-3.0.", GUIStylePreset.Hint);
         GUILayout.Space(8);
         GUILayout.Label("<b>Note:</b> These menus were combined using AI. If you don't like it, don't use it.", GUIStylePreset.Hint);
+    }
+
+    private static void DrawKeybindRow(string key, string description)
+    {
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"<color=#00FFAA><b>[{key}]</b></color>", GUILayout.Width(170));
+        GUILayout.Label(description);
+        GUILayout.EndHorizontal();
     }
 
     private static void DrawCredit(string title, string author, string githubUrl, string discordUrl = null)

@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 
 namespace HydraMenu.anticheat.rpc
 {
@@ -12,14 +12,14 @@ namespace HydraMenu.anticheat.rpc
 			// This net id field written in the RPC is seemingly useless as the client RPC handler does not do anything with this value
 			if(netId != player.Data.NetId)
 			{
-				Anticheat.Flag(player, $"SetColor RPC sent for {player.Data.PlayerName} contains invalid net id, expected {player.Data.NetId}, received {netId}", false);
+				Anticheat.Flag(player, $"SetColor RPC sent for {player?.Data?.PlayerName ?? "Unknown"} contains invalid net id, expected {player.Data.NetId}, received {netId}", false);
 				player.SetColor((byte)CrewmateColor.Red);
 				return false;
 			}
 
 			if(color >= Palette.ColorNames.Length)
 			{
-				Anticheat.Flag(player, $"SetColor RPC sent for {player.Data.PlayerName} contains an invalid color: {color}", false);
+				Anticheat.Flag(player, $"SetColor RPC sent for {player?.Data?.PlayerName ?? "Unknown"} contains an invalid color: {color}", false);
 				player.SetColor((byte)CrewmateColor.Red);
 				return false;
 			}

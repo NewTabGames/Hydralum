@@ -10,19 +10,21 @@ namespace HydraMenu.anticheat.rpc
 		{
 			if(ShipStatus.Instance == null)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} tried to exit a vent when there is no instance of ShipStatus.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} tried to exit a vent when there is no instance of ShipStatus.");
 				return false;
 			}
 
+			if (player == null || player.Data == null) return false;
+
 			if(!player.Data.IsDead && player.Data.Role != null && !player.Data.Role.CanVent)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} tried to exit a vent when their role ({player.Data.RoleType}) does not support venting.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} tried to exit a vent when their role ({player.Data.RoleType}) does not support venting.");
 				return false;
 			}
 
 			if(GameManager.Instance.IsHideAndSeek() && RoleManager.IsImpostorRole(player.Data.RoleType))
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} tried to exit a vent while being the seeker.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} tried to exit a vent while being the seeker.");
 				return false;
 			}
 

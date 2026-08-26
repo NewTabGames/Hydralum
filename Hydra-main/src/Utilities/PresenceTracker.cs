@@ -455,8 +455,8 @@ namespace HydraMenu
 
                                 foreach (var entry in data)
                                 {
-                                    long age = entry.Value != null ? (now - entry.Value.last_seen) : 999;
-                                    if (entry.Value != null && age >= 0 && age < 60)
+                                    long age = entry.Value != null ? Math.Abs(now - entry.Value.last_seen) : 999;
+                                    if (entry.Value != null && age < 90)
                                     {
                                         active++;
 
@@ -474,7 +474,7 @@ namespace HydraMenu
                                             });
                                         }
                                     }
-                                    else if (entry.Key != SessionId && (entry.Value == null || age > 90))
+                                    else if (entry.Key != SessionId && (entry.Value == null || age > 180))
                                     {
                                         // Prune stale session from Firebase (fire-and-forget with proper disposal)
                                         _ = Task.Run(async () => { try { using var r = await HttpClient.DeleteAsync($"{FirebaseUrl}/{entry.Key}.json", token); } catch { } });

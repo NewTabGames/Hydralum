@@ -35,13 +35,13 @@ namespace HydraMenu.anticheat.rpc
 			ShipStatus.Instance.Systems.TryGetValue(system, out ISystemType systemInterface);
 			if(systemInterface == null)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} tried to update system {system} when the current map has no such system.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} tried to update system {system} when the current map has no such system.");
 				return false;
 			}
 
-			if(player.Data.IsDead && !SystemsThatCanBeUpdatedWhenDead.Contains(system))
+			if(player?.Data != null && player.Data.IsDead && !SystemsThatCanBeUpdatedWhenDead.Contains(system))
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} tried to update system {system} while dead.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} tried to update system {system} while dead.");
 				return false;
 			}
 
@@ -59,7 +59,7 @@ namespace HydraMenu.anticheat.rpc
 		{
 			MushroomMixupSabotageSystem.Operation operation = (MushroomMixupSabotageSystem.Operation)reader.ReadByte();
 
-			Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to update Mushroom Mixup system with operation {operation}.");
+			Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to update Mushroom Mixup system with operation {operation}.");
 			return false;
 		}
 
@@ -70,11 +70,11 @@ namespace HydraMenu.anticheat.rpc
 			switch(operation)
 			{
 				case 16:
-					Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to forcefully fix the Reactor sabotage");
+					Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to forcefully fix the Reactor sabotage");
 					return false;
 
 				case 128:
-					Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to force call the Reactor sabotage");
+					Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to force call the Reactor sabotage");
 					return false;
 
 				default:
@@ -89,25 +89,25 @@ namespace HydraMenu.anticheat.rpc
 			Dictionary<string, SystemTypes> validSabotages = Sabotage.GetSabotages();
 			if(!validSabotages.ContainsValue(system))
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to sabotage an invalid system: {system}.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to sabotage an invalid system: {system}.");
 				return false;
 			}
 
-			if(!RoleManager.IsImpostorRole(player.Data.RoleType))
+			if(player?.Data != null && !RoleManager.IsImpostorRole(player.Data.RoleType))
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to sabotage {system} when they are not an imposter.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to sabotage {system} when they are not an imposter.");
 				return false;
 			}
 
 			if(GameManager.Instance.IsHideAndSeek())
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to sabotage {system} while in Hide and Seek.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to sabotage {system} while in Hide and Seek.");
 				return false;
 			}
 
-			if(player.inVent)
+			if(player != null && player.inVent)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to sabotage {system} while in a vent.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Player"} attempted to sabotage {system} while in a vent.");
 				return false;
 			}
 
@@ -120,13 +120,13 @@ namespace HydraMenu.anticheat.rpc
 
 			if(switches.HasBit(128))
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to bulk-update switches: {switches}.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to bulk-update switches: {switches}.");
 				return false;
 			}
 
 			if(switches > 5)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to toggle an invalid switch: {switches}.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to toggle an invalid switch: {switches}.");
 				return false;
 			}
 
@@ -137,7 +137,7 @@ namespace HydraMenu.anticheat.rpc
 			SwitchSystem system = ShipStatus.Instance.Systems[SystemTypes.Electrical].Cast<SwitchSystem>();
 			if(system.ExpectedSwitches == system.ActualSwitches)
 			{
-				Hydra.Log.LogInfo($"Blocked switch update from {player.Data.PlayerName} as lights are not currently sabotaged");
+				Hydra.Log.LogInfo($"Blocked switch update from {player?.Data?.PlayerName ?? "Unknown"} as lights are not currently sabotaged");
 				return false;
 			}
 
@@ -145,7 +145,7 @@ namespace HydraMenu.anticheat.rpc
 			// Maybe we can check to see what state the meeting is in, and if it is after the meeting was animated then flag the player?
 			if(MeetingHud.Instance)
 			{
-				Hydra.Log.LogInfo($"Blocked switch update from {player.Data.PlayerName} as there is a currently active meeting");
+				Hydra.Log.LogInfo($"Blocked switch update from {player?.Data?.PlayerName ?? "Unknown"} as there is a currently active meeting");
 				return false;
 			}
 

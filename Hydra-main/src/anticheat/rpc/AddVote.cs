@@ -21,15 +21,15 @@ namespace HydraMenu.anticheat.rpc
 
 			player = client.Character;
 
-			if(player.Data.IsDead)
+			if(player?.Data != null && player.Data.IsDead)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to votekick a player while dead.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to votekick a player while dead.");
 				return false;
 			}
 
 			if(MeetingHud.Instance == null)
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to votekick a player outside of a meeting.");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to votekick a player outside of a meeting.");
 				return false;
 			}
 

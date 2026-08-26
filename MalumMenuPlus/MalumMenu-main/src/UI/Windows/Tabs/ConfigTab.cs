@@ -138,6 +138,6 @@ public class ConfigTab : ITab
         }
 
         GUILayout.Space(6);
-        CheatToggles.showStuffTab = GUILayout.Toggle(CheatToggles.showStuffTab, " Are you sure you want to view this tab? its stupid...");
+        CheatToggles.showStuffTab = GUILayout.Toggle(CheatToggles.showStuffTab, " Show \"Stuff\" Tab (Contains Inappropriate Options)");
     }
 }

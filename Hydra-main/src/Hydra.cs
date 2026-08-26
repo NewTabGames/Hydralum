@@ -19,6 +19,7 @@ internal class Hydra : BasePlugin
 	private static MainUI mainUI;
 	public static RoutineManager routines;
 	public static NotificationManager notifications;
+	public static Roles roles;
 
 	public override void Load()
 	{
@@ -29,6 +30,7 @@ internal class Hydra : BasePlugin
 		mainUI = AddComponent<MainUI>();
 		notifications = AddComponent<NotificationManager>();
 		routines = AddComponent<RoutineManager>();
+		roles = AddComponent<Roles>();
 		notifications.DisableNotifications = HydraConfig.DisableNotifications.Value;
 
 		try
@@ -61,6 +63,7 @@ internal class Hydra : BasePlugin
 		}
 
 		Object.Destroy(mainUI);
+		Object.Destroy(roles);
 		Object.Destroy(notifications);
 		Object.Destroy(routines);
 

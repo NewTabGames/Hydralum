@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 
 namespace HydraMenu.anticheat.rpc
 {
@@ -8,7 +8,7 @@ namespace HydraMenu.anticheat.rpc
 		{
 			if(GameManager.Instance.IsHideAndSeek())
 			{
-				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to call a meeting in Hide and Seek");
+				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to call a meeting in Hide and Seek");
 				return false;
 			}
 

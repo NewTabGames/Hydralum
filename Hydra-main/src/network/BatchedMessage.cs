@@ -12,12 +12,12 @@ namespace HydraMenu.network
 		public readonly int targetClientId;
 		private int msgCount = 0;
 
-		public BatchedMessage(int targetClientId = -1)
+		public BatchedMessage(int targetClientId = (int)Constants.OwnerIds.Everyone)
 		{
 			writer = MessageWriter.Get(SendOption.Reliable);
 
 			this.targetClientId = targetClientId;
-			if(targetClientId == -1)
+			if(targetClientId == (int)Constants.OwnerIds.Everyone)
 			{
 				writer.StartMessage(InnerNet.Tags.GameData);
 				writer.Write(AmongUsClient.Instance.GameId);
@@ -30,15 +30,9 @@ namespace HydraMenu.network
 			}
 		}
 
-		private bool IsGlobal
-		{
-			get { return targetClientId == -1; }
-		}
+		private bool IsGlobal => targetClientId == (int)Constants.OwnerIds.Everyone;
 
-		private bool AmTarget
-		{
-			get { return targetClientId == -1 || targetClientId == AmongUsClient.Instance.ClientId; }
-		}
+		private bool AmTarget => targetClientId == (AmongUsClient.Instance != null ? AmongUsClient.Instance.ClientId : -1);
 
 		public void QueueDataFlag(uint netId, MessageWriter msg)
 		{
@@ -137,7 +131,7 @@ namespace HydraMenu.network
 				if(AmTarget) return;
 			}
 
-			ushort seqId = (ushort)(source.NetTransform.lastSequenceId + 2);
+			ushort seqId = (ushort)(source.NetTransform.lastSequenceId + 128);
 
 			writer.StartMessage((byte)GameDataTypes.RpcFlag);
 			writer.WritePacked(source.NetTransform.NetId);
