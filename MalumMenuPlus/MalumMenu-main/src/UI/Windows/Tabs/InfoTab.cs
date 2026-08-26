@@ -35,7 +35,7 @@ public class InfoTab : ITab
 
             DrawKeybindRow("Delete", "Toggle MalumMenu (Customizable in Config Tab)");
             DrawKeybindRow("F6", "Toggle HydraMenu");
-            DrawKeybindRow("Escape", "Dismiss Match Info Guide / Active In-Game Dialogs");
+            DrawKeybindRow("Escape (Important)", "Dismiss Match Info Guide, dialogs, and fix menu softlocks");
             DrawKeybindRow("Left / Right Arrow", "Cycle Previous / Next Vent (with Vent Cheats)");
 
             GUILayout.EndVertical();

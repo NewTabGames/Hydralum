@@ -50,7 +50,7 @@ Among Us uses Unity IL2CPP, so standard BepInEx 5 will not work. You need BepInE
 | :--- | :--- | :--- |
 | `Delete` | Toggle MalumMenu | Opens or closes MalumMenu (changeable in Config tab). |
 | `F6` | Toggle HydraMenu | Opens or closes HydraMenu. |
-| `Escape` | Close Menus | Dismisses Match Info Guide, outfit laptop menus, and dialogs. |
+| `Escape` **(Important)** | Close Menus & Fix Softlocks | Dismisses Match Info Guide, outfit laptop menus, dialogs, and resolves menu softlocks. |
 | `Left / Right Arrow` | Vent Hop | Cycles between vents when vent walk is active. |
 
 ## Requirements
