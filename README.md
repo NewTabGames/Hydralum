@@ -1,9 +1,9 @@
 # Hydralum: Combined MalumMenu and HydraMenu for Among Us
 
-[![GitHub Release](https://img.shields.io/github/v/release/NewTabGames/Hydralum?color=00FFAA&style=flat-square)](https://github.com/NewTabGames/Hydralum/releases)
+[![Build & Downloads](https://img.shields.io/badge/Download-Actions%20Builds-00FFAA?style=flat-square&logo=github)](https://github.com/NewTabGames/Hydralum/actions)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0)
 [![BepInEx 6 IL2CPP](https://img.shields.io/badge/BepInEx-6%20IL2CPP-purple.svg?style=flat-square)](https://builds.bepinex.dev/projects/bepinex_be)
-[![Discord](https://img.shields.io/discord/1344484915632738365?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/GBg7hp7qAX)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/GBg7hp7qAX)
 
 **Hydralum** is the premier all-in-one Among Us mod menu that combines **MalumMenu** and **HydraMenu** into a single, synchronized BepInEx IL2CPP mod package. Designed for seamless dual-menu switching in-game, Hydralum unites the rich feature set of MalumMenu with the powerful utilities and host features of HydraMenu.
 
@@ -83,13 +83,15 @@ For a long time, the Among Us modding community relied on two separate top-tier 
 
 The standalone package includes everything pre-configured (BepInEx 6 IL2CPP + Hydralum DLLs):
 
-1. Download **`Hydralum-Standalone-Steam.zip`** from the latest **[GitHub Releases](https://github.com/NewTabGames/Hydralum/releases)** (or from the [Actions Tab](https://github.com/NewTabGames/Hydralum/actions)).
-2. Locate your Among Us installation folder:
+1. Go to the **[Actions Tab](https://github.com/NewTabGames/Hydralum/actions)** on GitHub.
+2. Click the latest successful build run.
+3. Scroll down to **Artifacts** and download **`Hydralum-Standalone-Steam`**.
+4. Locate your Among Us installation folder:
    - **Steam**: Right-click **Among Us** in your Steam library -> **Manage** -> **Browse local files**.
    - **Epic Games**: Navigate to your install path (e.g., `C:\Program Files\Epic Games\AmongUs`).
-3. Extract all contents from the zip archive directly into your game folder (so `winhttp.dll` and the `BepInEx` folder sit in the same folder as `Among Us.exe`).
-4. Launch Among Us.
-5. Press **`Delete`** (for MalumMenu) or **`F6`** (for HydraMenu) to open the menus!
+5. Extract all contents from the zip archive directly into your game folder (so `winhttp.dll` and the `BepInEx` folder sit in the same folder as `Among Us.exe`).
+6. Launch Among Us.
+7. Press **`Delete`** (for MalumMenu) or **`F6`** (for HydraMenu) to open the menus!
 
 ---
 
@@ -97,7 +99,7 @@ The standalone package includes everything pre-configured (BepInEx 6 IL2CPP + Hy
 
 If you already have **BepInEx 6 IL2CPP (x86)** installed:
 
-1. Download **`Hydralum-DLLs.zip`** from the **[GitHub Releases](https://github.com/NewTabGames/Hydralum/releases)** page.
+1. Download **`Hydralum-DLLs`** from the **[Actions Tab](https://github.com/NewTabGames/Hydralum/actions)** (under Artifacts on the latest build).
 2. Extract `MalumMenuPlus.dll` and `HydraMenu.dll` into your `Among Us/BepInEx/plugins/` folder.
 3. Launch Among Us and press **`Delete`** or **`F6`**!
 
