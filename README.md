@@ -12,7 +12,7 @@ Hydralum is an Among Us mod for BepInEx 6 (IL2CPP) that combines MalumMenu and H
 - **Dual Menu Support**: Open MalumMenu with `Delete` or HydraMenu with `F6`. You can also switch between them using the in-game header button.
 - **Outfit Presets & Wardrobe Manager**: Save, load, and rename unlimited cosmetic loadouts stored as JSON files. Includes a 1-click cloner to copy other players' outfits in your lobby.
 - **Persistent Configs**: Hydra settings now save and load automatically between game restarts (`BepInEx/config/com.mrd.hydramenu.cfg`).
-- **Live User Presence**: Optional real-time lobby and menu status tracking between Hydralum users.
+- **Live User Presence**: Real-time lobby and menu status tracking between Hydralum users.
 
 ## Installation
 
