@@ -12,9 +12,6 @@ Hydralum is an Among Us mod for BepInEx 6 (IL2CPP) that combines MalumMenu and H
 - **Dual Menu Support**: Open MalumMenu with `Delete` or HydraMenu with `F6`. You can also switch between them using the in-game header button.
 - **Outfit Presets & Wardrobe Manager**: Save, load, and rename unlimited cosmetic loadouts stored as JSON files. Includes a 1-click cloner to copy other players' outfits in your lobby.
 - **Persistent Configs**: Hydra settings now save and load automatically between game restarts (`BepInEx/config/com.mrd.hydramenu.cfg`).
-- **Anticheat Protections**: Built-in validation checks for 18+ RPC types, blocking malicious packets, illegal scene changes, and in-vent sabotages.
-- **Door & Sabotage Controls**: Door sabotage support across all maps including The Fungle. Includes a 100ms spam-close loop to keep doors shut tight.
-- **Named Vent Teleports**: Vent teleport sliders display actual room names (Skeld and Polus) rather than raw index numbers.
 - **Live User Presence**: Optional real-time lobby and menu status tracking between Hydralum users.
 
 ## Installation
@@ -53,17 +50,12 @@ Among Us uses Unity IL2CPP, so standard BepInEx 5 will not work. You need BepInE
 | :--- | :--- | :--- |
 | `Delete` | Toggle MalumMenu | Opens or closes MalumMenu (changeable in Config tab). |
 | `F6` | Toggle HydraMenu | Opens or closes HydraMenu. |
-| `F8` | Dev Console | Opens the developer console and presence viewer. |
 | `Escape` | Close Menus | Dismisses Match Info Guide, outfit laptop menus, and dialogs. |
 | `Left / Right Arrow` | Vent Hop | Cycles between vents when vent walk is active. |
-| `Up / Down Arrow` | Scroll Sections | Navigates through HydraMenu sections. |
-| `Page Up / Page Down` | Switch Tabs | Switches HydraMenu tabs. |
-| `Ctrl + C / V / X` | Text Box Edit | Standard copy, paste, and cut in mod input fields. |
-| `Panic Key` | Panic Mode | Immediately hides all open menus. |
 
 ## Requirements
 
-- Game: Among Us (Steam, Epic Games, or Xbox PC App)
+- Game: Among Us (Steam or Epic Games)
 - OS: Windows 10 or 11 (64-bit)
 - Mod Loader: BepInEx 6 Unity IL2CPP (x86 Build 785 or newer)
 

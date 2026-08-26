@@ -35,13 +35,8 @@ public class InfoTab : ITab
 
             DrawKeybindRow("Delete", "Toggle MalumMenu (Customizable in Config Tab)");
             DrawKeybindRow("F6", "Toggle HydraMenu");
-            DrawKeybindRow("F8", "Toggle Hydralum Developer Console");
             DrawKeybindRow("Escape", "Dismiss Match Info Guide / Active In-Game Dialogs");
             DrawKeybindRow("Left / Right Arrow", "Cycle Previous / Next Vent (with Vent Cheats)");
-            DrawKeybindRow("Up / Down Arrow", "Scroll HydraMenu Sections");
-            DrawKeybindRow("Page Up / Page Down", "Switch HydraMenu Tabs");
-            DrawKeybindRow("Ctrl + C / V / X", "Copy, Paste, Cut in Custom Text Fields");
-            DrawKeybindRow("Panic Key", "Panicked Mode (Instantly closes and hides all menus)");
 
             GUILayout.EndVertical();
         }
