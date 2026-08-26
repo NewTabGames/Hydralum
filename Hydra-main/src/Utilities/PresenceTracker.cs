@@ -447,39 +447,61 @@ namespace HydraMenu
                         var json = await response.Content.ReadAsStringAsync(token);
                         if (!string.IsNullOrWhiteSpace(json) && json != "null")
                         {
-                            var data = JsonSerializer.Deserialize<Dictionary<string, PresenceNode>>(json);
-                            if (data != null)
+                            int active = 0;
+                            var matchedPeers = new List<PeerData>();
+
+                            try
                             {
-                                int active = 0;
-                                var matchedPeers = new List<PeerData>();
-
-                                foreach (var entry in data)
+                                using var doc = JsonDocument.Parse(json);
+                                foreach (var prop in doc.RootElement.EnumerateObject())
                                 {
-                                    long age = entry.Value != null ? Math.Abs(now - entry.Value.last_seen) : 999;
-                                    if (entry.Value != null && age < 90)
+                                    try
                                     {
-                                        active++;
+                                        var el = prop.Value;
+                                        if (el.ValueKind != JsonValueKind.Object) continue;
 
-                                        // Match peers in the same lobby
-                                        if (!string.IsNullOrEmpty(roomCode) &&
-                                            string.Equals(entry.Value.room, roomCode, StringComparison.OrdinalIgnoreCase) &&
-                                            entry.Key != SessionId)
+                                        long lastSeen = 0;
+                                        if (el.TryGetProperty("last_seen", out var lsProp))
                                         {
-                                            matchedPeers.Add(new PeerData
+                                            if (lsProp.TryGetInt64(out var lsVal)) lastSeen = lsVal;
+                                            else if (lsProp.TryGetInt32(out var lsInt)) lastSeen = lsInt;
+                                            else if (long.TryParse(lsProp.GetString(), out var lsParsed)) lastSeen = lsParsed;
+                                        }
+
+                                        long age = Math.Abs(now - lastSeen);
+                                        if (age < 90)
+                                        {
+                                            active++;
+
+                                            string room = el.TryGetProperty("room", out var rProp) ? rProp.GetString() ?? "" : "";
+                                            if (!string.IsNullOrEmpty(roomCode) &&
+                                                string.Equals(room, roomCode, StringComparison.OrdinalIgnoreCase) &&
+                                                prop.Name != SessionId)
                                             {
-                                                Name = entry.Value.name ?? "",
-                                                PlayerId = entry.Value.p_id,
-                                                FriendCode = entry.Value.friend_code ?? "",
-                                                Puid = !string.IsNullOrEmpty(entry.Value.friend_puid) ? entry.Value.friend_puid : ""
-                                            });
+                                                string peerName = el.TryGetProperty("name", out var nProp) ? nProp.GetString() ?? "" : "";
+                                                int peerId = el.TryGetProperty("p_id", out var idProp) && idProp.TryGetInt32(out var idVal) ? idVal : -1;
+                                                string fCode = el.TryGetProperty("friend_code", out var fcProp) ? fcProp.GetString() ?? "" : "";
+                                                string fPuid = el.TryGetProperty("friend_puid", out var fpProp) ? fpProp.GetString() ?? "" : "";
+
+                                                matchedPeers.Add(new PeerData
+                                                {
+                                                    Name = peerName,
+                                                    PlayerId = peerId,
+                                                    FriendCode = fCode,
+                                                    Puid = fPuid
+                                                });
+                                            }
+                                        }
+                                        else if (prop.Name != SessionId && age > 180)
+                                        {
+                                            // Prune stale session from Firebase (fire-and-forget with proper disposal)
+                                            _ = Task.Run(async () => { try { using var r = await HttpClient.DeleteAsync($"{FirebaseUrl}/{prop.Name}.json", token); } catch { } });
                                         }
                                     }
-                                    else if (entry.Key != SessionId && (entry.Value == null || age > 180))
-                                    {
-                                        // Prune stale session from Firebase (fire-and-forget with proper disposal)
-                                        _ = Task.Run(async () => { try { using var r = await HttpClient.DeleteAsync($"{FirebaseUrl}/{entry.Key}.json", token); } catch { } });
-                                    }
+                                    catch { }
                                 }
+                            }
+                            catch { }
 
                                 lock (_peerLock)
                                 {
@@ -510,7 +532,6 @@ namespace HydraMenu
                                 catch { }
                             }
                         }
-                    }
 
                     // 3. Fetch announcement
                     await AnnouncementManager.RefreshAsync(token);
