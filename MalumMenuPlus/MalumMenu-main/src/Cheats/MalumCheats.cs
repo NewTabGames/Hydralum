@@ -12,6 +12,8 @@ public static class MalumCheats
     private static bool _isCamsAnimActive;
     private static float _goonTimer = 0f;
     private static bool _wasGoonActive = false;
+    private static float _handAnimTimer = 0f;
+    private static bool _wasHandAnimActive = false;
 
     public static void CloseMeetingCheat()
     {
@@ -541,8 +543,8 @@ public static class MalumCheats
             float oscillation = Mathf.Sin(Time.time * 6.5f) * 0.08f;
 
             Vector2 handPos = playerPos;
-            handPos.x += (0.12f * facing) + oscillation;
-            handPos.y += 0.42f;
+            handPos.x += (0.42f * facing) + oscillation;
+            handPos.y += 0.22f;
 
             try
             {
@@ -695,5 +697,200 @@ public static class MalumCheats
 
         _isCamsAnimActive = false;
         _isScanAnimActive = false;
+    }
+
+    public static void HandAnimationCheat()
+    {
+        if (CheatToggles.handAnimEnabled && Utils.isPlayer && PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.MyPhysics != null)
+        {
+            Vector2 playerPos = PlayerControl.LocalPlayer.GetTruePosition();
+            bool isFlipped = PlayerControl.LocalPlayer.MyPhysics.FlipX;
+            float facing = isFlipped ? -1f : 1f;
+
+            float speed = Mathf.Max(0.1f, CheatToggles.handAnimSpeed);
+            float radius = Mathf.Max(0.1f, CheatToggles.handAnimRadius);
+            float t = Time.time * speed * 2.5f;
+
+            Vector2 handPos = playerPos;
+
+            switch (CheatToggles.handAnimPattern)
+            {
+                case 0: // Goon (Forward petting hand with stroke length/travel distance scaled by radius)
+                    float strokeLength = 0.18f * radius;
+                    float gOsc = Mathf.Sin(t * 2.5f) * strokeLength;
+                    handPos.x = playerPos.x + (0.35f * facing) + (gOsc * facing);
+                    handPos.y = playerPos.y + 0.22f;
+                    break;
+
+                case 1: // Orbit (Circle around player)
+                    handPos.x = playerPos.x + Mathf.Cos(t) * radius;
+                    handPos.y = playerPos.y + 0.36f + Mathf.Sin(t) * radius;
+                    break;
+
+                case 2: // Figure 8 (Infinity loop)
+                    handPos.x = playerPos.x + Mathf.Sin(t) * radius;
+                    handPos.y = playerPos.y + 0.36f + Mathf.Sin(2f * t) * (radius * 0.5f);
+                    break;
+
+                case 3: // Halo (Floating ring above head)
+                    handPos.x = playerPos.x + Mathf.Cos(t) * (radius * 0.45f);
+                    handPos.y = playerPos.y + 0.85f + Mathf.Sin(t) * (radius * 0.18f);
+                    break;
+
+                case 4: // Wiper Wave (Arc swing in front of bean)
+                    float arc = Mathf.Sin(t * 1.5f) * 0.8f;
+                    handPos.x = playerPos.x + (Mathf.Sin(arc) * radius * facing) + (0.35f * facing);
+                    handPos.y = playerPos.y + 0.36f + Mathf.Cos(arc) * (radius * 0.45f);
+                    break;
+
+                case 5: // Head Pat (Up and down bounce on head)
+                    float bounce = Mathf.Abs(Mathf.Sin(t * 2.5f)) * 0.35f;
+                    handPos.x = playerPos.x + (0.05f * facing);
+                    handPos.y = playerPos.y + 0.65f + bounce;
+                    break;
+
+                case 6: // Shield (High-speed barrier spin)
+                    float fastT = Time.time * speed * 6.5f;
+                    handPos.x = playerPos.x + Mathf.Cos(fastT) * (radius * 0.85f);
+                    handPos.y = playerPos.y + 0.36f + Mathf.Sin(fastT) * (radius * 0.85f);
+                    break;
+
+                case 7: // Heart (Love pattern)
+                    float ht = t * 1.3f;
+                    float hx = Mathf.Pow(Mathf.Sin(ht), 3);
+                    float hy = (13f * Mathf.Cos(ht) - 5f * Mathf.Cos(2f * ht) - 2f * Mathf.Cos(3f * ht) - Mathf.Cos(4f * ht)) / 16f;
+                    handPos.x = playerPos.x + hx * (radius * 0.9f);
+                    handPos.y = playerPos.y + 0.45f + hy * (radius * 0.7f);
+                    break;
+
+                case 8: // Boomerang (Throws forward away from player, curves up in an arc, and returns)
+                    float bT = t * 1.8f;
+                    float forwardReach = (1f - Mathf.Cos(bT)) * (radius * 1.25f);
+                    float arcHeight = Mathf.Sin(bT) * (radius * 0.65f);
+                    handPos.x = playerPos.x + (forwardReach * facing);
+                    handPos.y = playerPos.y + 0.40f + arcHeight;
+                    break;
+
+                case 9: // Barrage (Rapid punches in front)
+                    float pSpeed = t * 3.5f;
+                    float pDist = 0.35f + Mathf.PingPong(pSpeed, 0.45f * radius);
+                    float pY = Mathf.Sin(pSpeed * 2.2f) * 0.15f;
+                    handPos.x = playerPos.x + (pDist * facing);
+                    handPos.y = playerPos.y + 0.35f + pY;
+                    break;
+
+                case 10: // Spiral (Expanding and contracting vortex)
+                    float sRadius = radius * (0.3f + Mathf.PingPong(t * 0.4f, 1.1f));
+                    handPos.x = playerPos.x + Mathf.Cos(t * 1.6f) * sRadius;
+                    handPos.y = playerPos.y + 0.36f + Mathf.Sin(t * 1.6f) * sRadius;
+                    break;
+
+                case 11: // Tornado (Vertical corkscrew spiral)
+                    float vert = Mathf.Sin(t * 0.8f);
+                    float tRadius = radius * (0.35f + (vert + 1f) * 0.3f);
+                    handPos.x = playerPos.x + Mathf.Cos(t * 2.8f) * tRadius;
+                    handPos.y = playerPos.y + 0.35f + vert * 0.45f;
+                    break;
+
+                case 12: // Foot Tickle (Directly touching the bean's feet with high-frequency flutter)
+                    float tickleVibeX = Mathf.Sin(t * 10f) * (0.15f * radius);
+                    float tickleVibeY = Mathf.Abs(Mathf.Sin(t * 16f)) * 0.06f;
+                    handPos.x = playerPos.x + tickleVibeX;
+                    handPos.y = playerPos.y + 0.08f + tickleVibeY;
+                    break;
+
+                default:
+                    handPos.x = playerPos.x + Mathf.Cos(t) * radius;
+                    handPos.y = playerPos.y + 0.36f + Mathf.Sin(t) * radius;
+                    break;
+            }
+
+            try
+            {
+                if (PlayerControl.LocalPlayer.cosmetics?.PettingHand != null)
+                {
+                    var hand = PlayerControl.LocalPlayer.cosmetics.PettingHand;
+                    hand.gameObject.SetActive(true);
+                    hand.transform.position = new Vector3(handPos.x, handPos.y, -3.0f);
+
+                    if (hand.HandSprite != null)
+                    {
+                        hand.HandSprite.enabled = true;
+                        hand.HandSprite.gameObject.SetActive(true);
+                        hand.HandSprite.color = Color.white;
+                        if (CheatToggles.handAnimPattern == 8)
+                        {
+                            hand.HandSprite.flipX = Mathf.Sin(t * 1.8f) < 0 ? (facing > 0) : (facing < 0);
+                        }
+                        else
+                        {
+                            hand.HandSprite.flipX = handPos.x < playerPos.x;
+                        }
+                        hand.HandSprite.maskInteraction = SpriteMaskInteraction.None;
+
+                        var bodyRenderer = PlayerControl.LocalPlayer.cosmetics?.currentBodySprite?.BodySprite;
+                        if (bodyRenderer != null)
+                        {
+                            hand.HandSprite.sortingLayerID = bodyRenderer.sortingLayerID;
+                            hand.HandSprite.sortingLayerName = bodyRenderer.sortingLayerName;
+                            hand.HandSprite.sortingOrder = bodyRenderer.sortingOrder + 1000;
+                        }
+                        else
+                        {
+                            hand.HandSprite.sortingOrder = 32767;
+                        }
+                    }
+
+                    if (hand.HandSpriteAnim != null && hand.PetClip != null)
+                    {
+                        if (!hand.HandSpriteAnim.Playing || !_wasHandAnimActive)
+                        {
+                            hand.HandSpriteAnim.Play(hand.PetClip, 1f);
+                        }
+                    }
+                    else if (PlayerControl.LocalPlayer.cosmetics?.currentPet != null && !_wasHandAnimActive)
+                    {
+                        hand.StartPet(PlayerControl.LocalPlayer.cosmetics.currentPet);
+                    }
+                }
+            }
+            catch { }
+
+            // Broadcast RPC so peers in the lobby see the animated hand path smoothly
+            _handAnimTimer += Time.deltaTime;
+            if (!_wasHandAnimActive || _handAnimTimer >= 0.02f)
+            {
+                _handAnimTimer = 0f;
+                try
+                {
+                    if (AmongUsClient.Instance != null && PlayerControl.LocalPlayer.MyPhysics != null)
+                    {
+                        PlayerControl.LocalPlayer.MyPhysics.RpcPet(playerPos, handPos);
+                    }
+                }
+                catch { }
+            }
+            _wasHandAnimActive = true;
+        }
+        else if (_wasHandAnimActive)
+        {
+            _wasHandAnimActive = false;
+            _handAnimTimer = 0f;
+            try
+            {
+                if (PlayerControl.LocalPlayer?.cosmetics?.PettingHand != null)
+                {
+                    var hand = PlayerControl.LocalPlayer.cosmetics.PettingHand;
+                    hand.StopPetting();
+                    if (hand.HandSprite != null) hand.HandSprite.enabled = false;
+                    hand.gameObject.SetActive(false);
+                }
+                if (AmongUsClient.Instance != null && PlayerControl.LocalPlayer?.MyPhysics != null)
+                {
+                    PlayerControl.LocalPlayer.MyPhysics.RpcCancelPet();
+                }
+            }
+            catch { }
+        }
     }
 }

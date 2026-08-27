@@ -15,6 +15,12 @@ public struct CheatToggles
     public static bool invertControls;
     public static bool useSnapToRpc = true;
 
+    // Hand Animations
+    public static bool handAnimEnabled;
+    public static int handAnimPattern = 0;
+    public static float handAnimSpeed = 1.0f;
+    public static float handAnimRadius = 1.0f;
+
     // Roles
     public static bool setFakeRole;
     public static bool setFakeAlive;

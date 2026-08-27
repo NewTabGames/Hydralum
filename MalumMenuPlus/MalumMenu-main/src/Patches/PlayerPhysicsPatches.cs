@@ -26,6 +26,7 @@ public static class PlayerPhysics_LateUpdate
                 MalumCheats.CompleteMyTasksCheat();
                 MalumCheats.PlayAnimationCheat();
                 MalumCheats.PlayScannerCheat();
+                MalumCheats.HandAnimationCheat();
             }
 
             MalumPPMCheats.EjectPlayerPPM();

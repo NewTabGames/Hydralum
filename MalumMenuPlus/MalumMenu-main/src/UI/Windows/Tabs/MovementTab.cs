@@ -23,6 +23,10 @@ public class MovementTab : ITab
 
         DrawTeleport();
 
+        GUILayout.Space(15);
+
+        DrawHandAnimations();
+
         GUILayout.EndVertical();
 
         GUILayout.BeginVertical();
@@ -87,6 +91,54 @@ public class MovementTab : ITab
         CheatToggles.teleportPlayer = GUILayout.Toggle(CheatToggles.teleportPlayer, " to Player");
 
         CheatToggles.useSnapToRpc = GUILayout.Toggle(CheatToggles.useSnapToRpc, " Use SnapTo RPC");
+    }
+
+    private static readonly string[] HandPatterns = new string[]
+    {
+        "Goon", "Orbit", "Figure 8", "Halo",
+        "Wave", "Head Pat", "Shield", "Heart",
+        "Boomerang", "Barrage", "Spiral", "Tornado",
+        "Foot Tickle"
+    };
+
+    private void DrawHandAnimations()
+    {
+        GUILayout.Label("Hand Animations", GUIStylePreset.TabSubtitle);
+
+        CheatToggles.handAnimEnabled = GUILayout.Toggle(CheatToggles.handAnimEnabled, " Enable Hand Animation");
+
+        GUILayout.Space(4);
+        int currentPattern = Mathf.Clamp(CheatToggles.handAnimPattern, 0, HandPatterns.Length - 1);
+        GUILayout.Label($"Pattern: {HandPatterns[currentPattern]}", GUIStylePreset.Hint);
+
+        var prevBg = GUI.backgroundColor;
+        for (int i = 0; i < HandPatterns.Length; i++)
+        {
+            if (i % 4 == 0)
+            {
+                if (i > 0) GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+            }
+
+            bool isSelected = CheatToggles.handAnimPattern == i;
+            GUI.backgroundColor = isSelected ? new Color(0.2f, 0.85f, 0.5f) : prevBg;
+            if (GUILayout.Button(HandPatterns[i], GUIStylePreset.NormalButton, GUILayout.Height(22)))
+            {
+                CheatToggles.handAnimPattern = i;
+            }
+        }
+        GUILayout.EndHorizontal();
+        GUI.backgroundColor = prevBg;
+
+        GUILayout.Space(4);
+        GUILayout.Label($"Speed: {CheatToggles.handAnimSpeed:F1}x");
+        CheatToggles.handAnimSpeed = GUILayout.HorizontalSlider(CheatToggles.handAnimSpeed, 0.5f, 8.0f, GUILayout.Width(250f));
+
+        GUILayout.Label($"Radius: {CheatToggles.handAnimRadius:F1}");
+        CheatToggles.handAnimRadius = GUILayout.HorizontalSlider(CheatToggles.handAnimRadius, 0.2f, 3.5f, GUILayout.Width(250f));
+
+        GUILayout.Space(6);
+        GUILayout.Label("Note: Visible to all players (serversided), but network latency causes faster speeds to look choppy/unrecognizable on other screens. Recommended speed: 0.8x - 1.3x.", GUIStylePreset.Hint);
     }
 
     private void DrawTeleportLocations()
