@@ -48,8 +48,7 @@ namespace HydraMenu.ui
 			Banana,
 			Gray,
 			Tan,
-			Coral,
-			Fortegreen
+			Coral
 		}
 
 		public static RoleTypes HorizontalRoleSlider(RoleTypes currentRole)
@@ -64,7 +63,9 @@ namespace HydraMenu.ui
 
 		public static PlayerColors HorizontalColorSlider(PlayerColors currentColor)
 		{
-			return (PlayerColors)GUILayout.HorizontalSlider((int)currentColor, 0, Palette.ColorNames.Length);
+			int maxIndex = Palette.ColorNames != null ? Math.Max(0, Palette.ColorNames.Length - 1) : 17;
+			int clamped = Math.Clamp((int)currentColor, 0, maxIndex);
+			return (PlayerColors)Math.Clamp((int)GUILayout.HorizontalSlider(clamped, 0, maxIndex), 0, maxIndex);
 		}
 
 		public static bool PlayerSpecificToggle(string label, PlayerControl selectedPlayer, ref PlayerControl currentPlayer)
