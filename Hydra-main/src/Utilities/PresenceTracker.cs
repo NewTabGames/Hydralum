@@ -23,6 +23,24 @@ namespace HydraMenu
         public static string RequiredVersion { get; set; } = "1.2.0";
         private static volatile bool _updateDismissed = false;
 
+        public static bool IsUpdateDismissed
+        {
+            get
+            {
+                if (_updateDismissed) return true;
+                try
+                {
+                    if (AppDomain.CurrentDomain.GetData("HydralumUpdateDismissed") is bool d && d)
+                    {
+                        _updateDismissed = true;
+                        return true;
+                    }
+                }
+                catch { }
+                return false;
+            }
+        }
+
         public static int OnlineCount { get; private set; } = 1;
 
         // Thread-safe cached local player and lobby state (updated on Unity main thread)
@@ -571,7 +589,7 @@ namespace HydraMenu
                             // Semantic version comparison: only lock out if current < required
                             string cleanReq = RequiredVersion.TrimStart('v', 'V');
                             string cleanCur = CurrentHydralumVersion.TrimStart('v', 'V');
-                            if (!_updateDismissed)
+                            if (!IsUpdateDismissed)
                             {
                                 if (Version.TryParse(cleanReq, out var parsedReq) && Version.TryParse(cleanCur, out var parsedCur))
                                 {
@@ -582,6 +600,11 @@ namespace HydraMenu
                                     IsOutdated = !string.Equals(cleanReq, cleanCur, StringComparison.OrdinalIgnoreCase);
                                 }
                                 AppDomain.CurrentDomain.SetData("HydralumOutdated", IsOutdated);
+                            }
+                            else
+                            {
+                                IsOutdated = false;
+                                AppDomain.CurrentDomain.SetData("HydralumOutdated", false);
                             }
                             AppDomain.CurrentDomain.SetData("HydralumRequiredVersion", RequiredVersion);
                         }
@@ -624,6 +647,8 @@ namespace HydraMenu
         {
             try
             {
+                if (IsUpdateDismissed) return;
+
                 var outdatedVal = AppDomain.CurrentDomain.GetData("HydralumOutdated");
                 bool isOutdated = (outdatedVal is bool b && b) || IsOutdated;
                 if (!isOutdated) return;
@@ -753,7 +778,12 @@ namespace HydraMenu
                 {
                     _updateDismissed = true;
                     IsOutdated = false;
-                    AppDomain.CurrentDomain.SetData("HydralumOutdated", false);
+                    try
+                    {
+                        AppDomain.CurrentDomain.SetData("HydralumUpdateDismissed", true);
+                        AppDomain.CurrentDomain.SetData("HydralumOutdated", false);
+                    }
+                    catch { }
                     Application.OpenURL(GitHubActionsUrl);
                 }
 
