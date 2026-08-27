@@ -14,16 +14,19 @@ public static class PlayerPhysics_LateUpdate
             MalumESP.PlayerNametags(__instance);
             MalumESP.SeeGhostsCheat(__instance);
 
-            MalumCheats.NoClipCheat();
-            MalumCheats.ProtectCheat();
-            MalumCheats.KillAllCheat();
-            MalumCheats.KillAllCrewCheat();
-            MalumCheats.KillAllImpsCheat();
-            MalumCheats.ForceStartGameCheat();
-            MalumCheats.TeleportCursorCheat();
-            MalumCheats.CompleteMyTasksCheat();
-            MalumCheats.PlayAnimationCheat();
-            MalumCheats.PlayScannerCheat();
+            if (__instance != null && __instance.AmOwner)
+            {
+                MalumCheats.NoClipCheat();
+                MalumCheats.ProtectCheat();
+                MalumCheats.KillAllCheat();
+                MalumCheats.KillAllCrewCheat();
+                MalumCheats.KillAllImpsCheat();
+                MalumCheats.ForceStartGameCheat();
+                MalumCheats.TeleportCursorCheat();
+                MalumCheats.CompleteMyTasksCheat();
+                MalumCheats.PlayAnimationCheat();
+                MalumCheats.PlayScannerCheat();
+            }
 
             MalumPPMCheats.EjectPlayerPPM();
             MalumPPMCheats.SpectatePPM();

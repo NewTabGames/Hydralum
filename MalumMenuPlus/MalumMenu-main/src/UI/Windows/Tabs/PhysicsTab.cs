@@ -30,6 +30,8 @@ public class PhysicsTab : ITab
 
         CheatToggles.sussy = GUILayout.Toggle(CheatToggles.sussy, " sussy");
 
+        CheatToggles.goon = GUILayout.Toggle(CheatToggles.goon, " Goon");
+
         CheatToggles.duelingForHonour = GUILayout.Toggle(CheatToggles.duelingForHonour, " dueling for ones honour");
 
         CheatToggles.musketLineBattles = GUILayout.Toggle(CheatToggles.musketLineBattles, " Musket Line Battles and die");

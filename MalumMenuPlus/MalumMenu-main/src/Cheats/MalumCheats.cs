@@ -10,6 +10,8 @@ public static class MalumCheats
 {
     private static bool _isScanAnimActive;
     private static bool _isCamsAnimActive;
+    private static float _goonTimer = 0f;
+    private static bool _wasGoonActive = false;
 
     public static void CloseMeetingCheat()
     {
@@ -540,6 +542,98 @@ public static class MalumCheats
                 PlayerControl.LocalPlayer.cosmetics.CurrentPet.PettingPlayerPosition,
                 PlayerControl.LocalPlayer.cosmetics.CurrentPet.transform.position);
             AmongUsClient.Instance.LateBroadcastReliableMessage(Unsafe.As<IGameDataMessage>(rpcMessage));
+        }
+
+        // Goon Animation (Pets lower-middle body in a smooth oscillating back-and-forth motion)
+        if (CheatToggles.goon && Utils.isPlayer && PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.MyPhysics != null)
+        {
+            Vector2 playerPos = PlayerControl.LocalPlayer.GetTruePosition();
+            bool isFlipped = PlayerControl.LocalPlayer.MyPhysics != null && PlayerControl.LocalPlayer.MyPhysics.FlipX;
+            float facing = isFlipped ? -1f : 1f;
+            float oscillation = Mathf.Sin(Time.time * 6.5f) * 0.08f;
+
+            Vector2 handPos = playerPos;
+            handPos.x += (0.12f * facing) + oscillation;
+            handPos.y += 0.42f;
+
+            try
+            {
+                // 1. Update local hand sprite position smoothly every frame with gentle back-and-forth oscillation
+                if (PlayerControl.LocalPlayer.cosmetics?.PettingHand != null)
+                {
+                    var hand = PlayerControl.LocalPlayer.cosmetics.PettingHand;
+                    hand.gameObject.SetActive(true);
+                    hand.transform.position = new Vector3(handPos.x, handPos.y, -3.0f);
+                    if (hand.HandSprite != null)
+                    {
+                        hand.HandSprite.enabled = true;
+                        hand.HandSprite.gameObject.SetActive(true);
+                        hand.HandSprite.color = Color.white;
+                        hand.HandSprite.flipX = isFlipped;
+                        hand.HandSprite.maskInteraction = SpriteMaskInteraction.None;
+
+                        // Match body sprite's sorting layer and render in front of all cosmetics
+                        var bodyRenderer = PlayerControl.LocalPlayer.cosmetics?.currentBodySprite?.BodySprite;
+                        if (bodyRenderer != null)
+                        {
+                            hand.HandSprite.sortingLayerID = bodyRenderer.sortingLayerID;
+                            hand.HandSprite.sortingLayerName = bodyRenderer.sortingLayerName;
+                            hand.HandSprite.sortingOrder = bodyRenderer.sortingOrder + 1000;
+                        }
+                        else
+                        {
+                            hand.HandSprite.sortingOrder = 32767;
+                        }
+                    }
+
+                    // Only trigger play if not already playing, preventing constant animation reset
+                    if (hand.HandSpriteAnim != null && hand.PetClip != null)
+                    {
+                        if (!hand.HandSpriteAnim.Playing || !_wasGoonActive)
+                        {
+                            hand.HandSpriteAnim.Play(hand.PetClip, 1f);
+                        }
+                    }
+                    else if (PlayerControl.LocalPlayer.cosmetics?.currentPet != null && !_wasGoonActive)
+                    {
+                        hand.StartPet(PlayerControl.LocalPlayer.cosmetics.currentPet);
+                    }
+                }
+            }
+            catch { }
+
+            // 2. Broadcast RPC on initial toggle and on a gentle interval so network peers stay synced
+            _goonTimer += Time.deltaTime;
+            if (!_wasGoonActive || _goonTimer >= 1.8f)
+            {
+                _goonTimer = 0f;
+                try
+                {
+                    if (AmongUsClient.Instance != null && PlayerControl.LocalPlayer.MyPhysics != null)
+                    {
+                        PlayerControl.LocalPlayer.MyPhysics.RpcPet(playerPos, handPos);
+                    }
+                }
+                catch { }
+            }
+            _wasGoonActive = true;
+        }
+        else if (_wasGoonActive)
+        {
+            _wasGoonActive = false;
+            _goonTimer = 0f;
+            try
+            {
+                if (PlayerControl.LocalPlayer?.cosmetics?.PettingHand != null)
+                {
+                    PlayerControl.LocalPlayer.cosmetics.PettingHand.StopPetting();
+                }
+                if (AmongUsClient.Instance != null && PlayerControl.LocalPlayer?.MyPhysics != null)
+                {
+                    PlayerControl.LocalPlayer.MyPhysics.RpcCancelPet();
+                }
+            }
+            catch { }
         }
 
         byte mapId = Utils.GetCurrentMapID();
