@@ -108,7 +108,6 @@ public struct CheatToggles
 
     // Vents
     public static bool unlockVents;
-    public static bool walkInVents;
     public static bool kickVents;
     public static bool disableVents;
     public static bool ventsExcludeSelf;

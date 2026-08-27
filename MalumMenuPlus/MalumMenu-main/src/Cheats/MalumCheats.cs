@@ -239,18 +239,6 @@ public static class MalumCheats
         } catch { }
     }
 
-    public static void WalkInVentCheat()
-    {
-        try
-        {
-            if (!CheatToggles.walkInVents) return;
-
-            PlayerControl.LocalPlayer.inVent = false;
-            PlayerControl.LocalPlayer.moveable = true;
-
-        } catch { }
-    }
-
     public static void KickVentsCheat()
     {
         if (!CheatToggles.kickVents) return;

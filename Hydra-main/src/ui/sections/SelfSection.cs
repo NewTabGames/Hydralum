@@ -44,33 +44,15 @@ namespace HydraMenu.ui.sections
 			Self.UnlimitedMeetings.enabled = GUILayout.Toggle(Self.UnlimitedMeetings.enabled, "Unlimited Meetings");
 			if (Self.UnlimitedMeetings.enabled != prevMeetings) HydraConfig.Save();
 
+			bool prevMoveInVents = Self.MoveModifier.MoveInVents;
+			Self.MoveModifier.MoveInVents = GUILayout.Toggle(Self.MoveModifier.MoveInVents, "Walk In Vents");
+			if (Self.MoveModifier.MoveInVents != prevMoveInVents) HydraConfig.Save();
+
 			if(GUILayout.Button("Call Meeting"))
 			{
 				if (PlayerControl.LocalPlayer != null)
 					Utilities.AttemptStartMeeting(PlayerControl.LocalPlayer, null);
 			}
-
-			if(GUILayout.Button("Complete All Tasks"))
-			{
-				if (PlayerControl.LocalPlayer != null)
-					PlayerControl.LocalPlayer.StartCoroutine(CompleteAllTasks().WrapToIl2Cpp());
-			}
-
-			GUILayout.Label("Task Animations:");
-			GUILayout.BeginHorizontal();
-			if(GUILayout.Button("Start Medbay Scan"))
-			{
-				RPCEmitter.SendSetScanner(true);
-			}
-
-			if(GUILayout.Button("Finish Medbay Scan"))
-			{
-				RPCEmitter.SendSetScanner(false);
-			}
-			GUILayout.EndHorizontal();
-
-			Dictionary<string, TaskTypes> animations = MapAssets.GetAnimations();
-			Controls.DrawButtonCell(animations, PlayAnimation, 2);
 
 			GUILayout.Space(5);
 			GUILayout.Label("Avatar Controls:");
@@ -107,48 +89,6 @@ namespace HydraMenu.ui.sections
 					PlayerControl.LocalPlayer.RpcSetPet(DataManager.Player.Customization.Pet);
 				}
 			}
-		}
-
-		public IEnumerator CompleteAllTasks()
-		{
-			if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.myTasks == null) yield break;
-			Il2CppSystem.Collections.Generic.List<PlayerTask> allTasks = PlayerControl.LocalPlayer.myTasks;
-
-			Hydra.Log.LogInfo("Completing all tasks...");
-			foreach(PlayerTask task in allTasks)
-			{
-				if(task.IsComplete)
-				{
-					Hydra.Log.LogInfo($"Task {task.Id} has already been completed, skipping");
-					continue;
-				}
-
-				Hydra.Log.LogInfo($"Sent CompleteTask RPC for task {task.Id}");
-				PlayerControl.LocalPlayer.RpcCompleteTask(task.Id);
-
-				// If we want to complete more than six tasks then a delay needs to be implemented
-				// otherwise the vanilla anticheat will kick us for violating ratelimits
-				yield return Effects.Wait(0.05f);
-			}
-
-			Hydra.notifications.Send("Task Finisher", "All your tasks have been finished.", 5);
-		}
-
-		public void PlayAnimation(TaskTypes task)
-		{
-			if(PlayerControl.LocalPlayer == null)
-			{
-				Hydra.notifications.Send("Play Animation", "This option can only be used inside of a game.");
-				return;
-			}
-
-			if(ShipStatus.Instance == null)
-			{
-				Hydra.notifications.Send("Play Animation", "There must be an instance of ShipStatus for this feature to work.");
-				return;
-			}
-
-			RPCEmitter.SendPlayAnimation((byte)task);
 		}
 	}
 }

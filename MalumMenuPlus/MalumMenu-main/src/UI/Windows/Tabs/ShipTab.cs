@@ -115,8 +115,6 @@ public class ShipTab : ITab
 
         CheatToggles.kickVents = GUILayout.Toggle(CheatToggles.kickVents, " Kick All From Vents");
 
-        CheatToggles.walkInVents = GUILayout.Toggle(CheatToggles.walkInVents, " Walk In Vents");
-
         CheatToggles.disableVents = GUILayout.Toggle(CheatToggles.disableVents, " Disable Vents");
 
         CheatToggles.ventsExcludeSelf = GUILayout.Toggle(CheatToggles.ventsExcludeSelf, " Exclude Yourself");

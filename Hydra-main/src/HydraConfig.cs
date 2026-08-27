@@ -51,6 +51,7 @@ namespace HydraMenu
         public static ConfigEntry<bool> AlwaysShowTaskAnimations;
         public static ConfigEntry<bool> NoLadderCooldown;
         public static ConfigEntry<bool> UnlimitedMeetings;
+        public static ConfigEntry<bool> MoveInVents;
 
         // General / Chat
         public static ConfigEntry<bool> LogChatMessages;
@@ -143,6 +144,7 @@ namespace HydraMenu
             AlwaysShowTaskAnimations = config.Bind("Self", "AlwaysShowTaskAnimations", false, "Always show task visual animations");
             NoLadderCooldown = config.Bind("Self", "NoLadderCooldown", false, "Remove ladder climb cooldown");
             UnlimitedMeetings = config.Bind("Self", "UnlimitedMeetings", false, "Unlimited emergency meetings");
+            MoveInVents = config.Bind("Self", "MoveInVents", false, "Walk in vents");
 
             // General / Chat
             LogChatMessages = config.Bind("Chat", "LogChatMessages", false, "Log in-game chat messages to console");
@@ -232,6 +234,7 @@ namespace HydraMenu
             Self.AlwaysShowTaskAnimations = AlwaysShowTaskAnimations.Value;
             Self.NoLadderCooldown.Enabled = NoLadderCooldown.Value;
             Self.UnlimitedMeetings.enabled = UnlimitedMeetings.Value;
+            Self.MoveModifier.MoveInVents = MoveInVents.Value;
 
             // Apply General
             Chat.OnChat.LogChatMessages = LogChatMessages.Value;
@@ -324,6 +327,7 @@ namespace HydraMenu
             if (AlwaysShowTaskAnimations != null) AlwaysShowTaskAnimations.Value = Self.AlwaysShowTaskAnimations;
             if (NoLadderCooldown != null) NoLadderCooldown.Value = Self.NoLadderCooldown.Enabled;
             if (UnlimitedMeetings != null) UnlimitedMeetings.Value = Self.UnlimitedMeetings.enabled;
+            if (MoveInVents != null) MoveInVents.Value = Self.MoveModifier.MoveInVents;
 
             // General / Chat
             if (LogChatMessages != null) LogChatMessages.Value = Chat.OnChat.LogChatMessages;

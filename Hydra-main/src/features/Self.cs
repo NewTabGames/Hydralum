@@ -113,5 +113,28 @@ namespace HydraMenu.features
 				if(enabled && PlayerControl.LocalPlayer != null) PlayerControl.LocalPlayer.RemainingEmergencies = 999999;
 			}
 		}
+
+		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.CanMove), MethodType.Getter)]
+		public static class MoveModifier
+		{
+			public static bool MoveInVents { get; set; } = false;
+
+			static bool Prefix(PlayerControl __instance, ref bool __result)
+			{
+				try
+				{
+					if (HudManager.Instance != null && HudManager.Instance.Chat != null && HudManager.Instance.Chat.IsOpenOrOpening) return true;
+
+					if (__instance != null && __instance.AmOwner && __instance.inVent && MoveInVents)
+					{
+						__result = true;
+						return false;
+					}
+				}
+				catch { }
+
+				return true;
+			}
+		}
 	}
 }
