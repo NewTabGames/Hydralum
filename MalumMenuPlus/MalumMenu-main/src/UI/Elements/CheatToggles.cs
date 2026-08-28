@@ -212,7 +212,6 @@ public struct CheatToggles
     public static bool launchFirework;
     public static bool cokeCanPhysics;
     public static bool sussy;
-    public static bool goon;
     public static bool duelingForHonour;
     public static bool musketLineBattles;
     public static bool sexWithCyberleek;

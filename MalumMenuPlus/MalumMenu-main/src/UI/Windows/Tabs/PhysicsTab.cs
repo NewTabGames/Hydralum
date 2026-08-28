@@ -6,11 +6,15 @@ public class PhysicsTab : ITab
 {
     public string name => "Stuff";
 
+    private Vector2 scrollPos;
+
     public void Draw()
     {
         GUILayout.Label("Stuff", GUIStylePreset.TabSubtitle);
         GUILayout.Label("Shoutout Cyberleek", GUIStylePreset.Hint);
         GUILayout.Space(6);
+
+        scrollPos = GUILayout.BeginScrollView(scrollPos);
 
         CheatToggles.jigglePhysics = GUILayout.Toggle(CheatToggles.jigglePhysics, " Enable Jiggle Physics");
 
@@ -53,5 +57,7 @@ public class PhysicsTab : ITab
         {
             Application.OpenURL("https://www.youtube.com/watch?v=4o-625plsMk");
         }
+
+        GUILayout.EndScrollView();
     }
 }
