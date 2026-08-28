@@ -385,10 +385,26 @@ public static class MalumESP
                 }
             }
 
+            bool localInVent = PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.inVent;
+            Vent currentLocalVent = Vent.currentVent;
+
             for (int vIdx = 0; vIdx < allVents.Length; vIdx++)
             {
                 var vent = allVents[vIdx];
                 if (vent == null || vent.gameObject == null || vent.transform == null) continue;
+
+                // Hide stray navigation arrow buttons if local player is not actively inside this vent
+                if ((!localInVent || currentLocalVent != vent) && vent.Buttons != null)
+                {
+                    for (int b = 0; b < vent.Buttons.Length; b++)
+                    {
+                        var btn = vent.Buttons[b];
+                        if (btn != null && btn.gameObject != null && btn.gameObject.activeSelf)
+                        {
+                            btn.gameObject.SetActive(false);
+                        }
+                    }
+                }
 
                 var textTransform = vent.transform.Find("VentEspText");
                 GameObject textObj = textTransform != null ? textTransform.gameObject : null;
