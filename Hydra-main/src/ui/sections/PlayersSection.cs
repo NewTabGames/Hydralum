@@ -79,31 +79,40 @@ namespace HydraMenu.ui.sections
 
 			GUI.Box(new Rect(0, 0, PlayerPaneSize.x, PlayerPaneSize.y), "", Styles.MainBox);
 
-			List<PlayerControl> selectedList = new();
+			// Clean up disconnected or despawned players from selection set
+			selectedPlayerIds.RemoveWhere(id => {
+				var p = PlayerControl.AllPlayerControls.ToArray().FirstOrDefault(pc => pc != null && pc.PlayerId == id);
+				return p == null || p.Data == null || p.Data.Disconnected;
+			});
 
-			for(byte i = 0; i < PlayerControl.AllPlayerControls.Count; i++)
-			{
-				PlayerControl player = PlayerControl.AllPlayerControls[i];
-				// Wait for player data to fully load
-				if(player.Data == null) continue;
-
-				if(selectedPlayerIds.Contains(player.PlayerId))
-				{
-					selectedList.Add(player);
-				}
-
-				RenderPlayerSelection(i, player);
-			}
-
-			// Auto-select first player if nothing is picked
-			if(selectedList.Count == 0 && PlayerControl.AllPlayerControls.Count > 0)
+			// If no player is selected at all and we have online players, default select the first player once
+			if(selectedPlayerIds.Count == 0 && selectedPlayer == null && PlayerControl.AllPlayerControls.Count > 0)
 			{
 				var first = PlayerControl.AllPlayerControls[0];
 				if(first?.Data != null)
 				{
 					selectedPlayerIds.Add(first.PlayerId);
 					selectedPlayer = first;
-					selectedList.Add(first);
+				}
+			}
+
+			// Render all player selection buttons first (so button clicks update selectedPlayerIds immediately)
+			for(byte i = 0; i < PlayerControl.AllPlayerControls.Count; i++)
+			{
+				PlayerControl player = PlayerControl.AllPlayerControls[i];
+				if(player == null || player.Data == null) continue;
+
+				RenderPlayerSelection(i, player);
+			}
+
+			// Gather selected players AFTER buttons have updated selectedPlayerIds on this frame
+			List<PlayerControl> selectedList = new();
+			for(int i = 0; i < PlayerControl.AllPlayerControls.Count; i++)
+			{
+				PlayerControl player = PlayerControl.AllPlayerControls[i];
+				if(player != null && player.Data != null && selectedPlayerIds.Contains(player.PlayerId))
+				{
+					selectedList.Add(player);
 				}
 			}
 
@@ -133,15 +142,14 @@ namespace HydraMenu.ui.sections
 			Rect playerInfo = new Rect(0, position * PlayerButtonSize.y, PlayerButtonSize.x, PlayerButtonSize.y);
 
 			string playerName = player.Data.PlayerName;
+			if(AmongUsClient.Instance != null && player.OwnerId == AmongUsClient.Instance.HostId)
+			{
+				playerName = $"<color=#FFD700>{playerName}</color>";
+			}
 			playerName += $"\n<color=\"{GetRoleColor(player.Data.RoleType)}\">{player.Data.RoleType}</color>";
 
 			bool isSelected = selectedPlayerIds.Contains(player.PlayerId);
 			GUIStyle style = isSelected ? Styles.PlayerBoxActive : Styles.PlayerBox;
-
-			if(AmongUsClient.Instance != null && player.OwnerId == AmongUsClient.Instance.HostId)
-			{
-				style.normal.textColor = new Color(1.0f, 0.84f, 0.0f); // #FFD700
-			}
 
 			if(GUI.Button(playerInfo, playerName, style))
 			{
