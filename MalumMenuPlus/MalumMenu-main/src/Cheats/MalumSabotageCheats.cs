@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace MalumMenu;
 
 public static class MalumSabotageCheats
@@ -8,6 +10,8 @@ public static class MalumSabotageCheats
     private static bool _elecSab;
     private static bool _unfixableLights;
     private static bool _unfixableComms;
+    private static float _lastSpamCloseTime;
+    private static float _lastSpamOpenTime;
 
     public static void HandleReactor(ShipStatus shipStatus, byte mapId)
     {
@@ -289,11 +293,47 @@ public static class MalumSabotageCheats
 
         if (CheatToggles.spamCloseAllDoors)
         {
-            DoorsHandler.CloseAllDoors();
+            if (UnityEngine.Time.time - _lastSpamCloseTime >= 0.35f)
+            {
+                var rooms = DoorsHandler.GetRoomsWithDoors();
+                bool closedAny = false;
+                foreach (var room in rooms)
+                {
+                    var doors = DoorsHandler.GetDoorsInRoom(room);
+                    if (doors.Any(d => d != null && d.IsOpen))
+                    {
+                        DoorsHandler.CloseDoorsInRoom(room);
+                        closedAny = true;
+                    }
+                }
+                if (closedAny)
+                {
+                    _lastSpamCloseTime = UnityEngine.Time.time;
+                }
+            }
         }
+
         if (CheatToggles.spamOpenAllDoors)
         {
-            DoorsHandler.OpenAllDoors();
+            if (UnityEngine.Time.time - _lastSpamOpenTime >= 0.35f)
+            {
+                if (ShipStatus.Instance != null && ShipStatus.Instance.AllDoors != null)
+                {
+                    bool openedAny = false;
+                    foreach (var door in ShipStatus.Instance.AllDoors)
+                    {
+                        if (door != null && !door.IsOpen)
+                        {
+                            DoorsHandler.OpenDoor(door);
+                            openedAny = true;
+                        }
+                    }
+                    if (openedAny)
+                    {
+                        _lastSpamOpenTime = UnityEngine.Time.time;
+                    }
+                }
+            }
         }
     }
 
@@ -375,6 +415,8 @@ public static class MalumSabotageCheats
 
         if (CheatToggles.sabotageAllDoors)
             CheatToggles.spamCloseAllDoors = true;
+        else
+            CheatToggles.closeAllDoors = true;
     }
 
     public static void ProcessFungle(FungleShipStatus shipStatus)
