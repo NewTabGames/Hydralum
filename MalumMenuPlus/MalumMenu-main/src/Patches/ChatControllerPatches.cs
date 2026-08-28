@@ -70,19 +70,34 @@ public static class ChatController_AddChat
 [HarmonyPatch(typeof(ChatController), nameof(ChatController.Update))]
 public static class ChatController_Update
 {
-    // Postfix patch of ChatController.Update to unlock longer message length
+    // Postfix patch of ChatController.Update to unlock longer message length and update live color tags
     public static void Postfix(ChatController __instance)
     {
-        if (__instance?.freeChatField?.textArea == null) return;
-
-        if (CheatToggles.longerMessages)
-		{
-			// Increasing the maximum length by 20 characters still avoids anticheat kicks
-            __instance.freeChatField.textArea.characterLimit = 120;
+        if (__instance?.freeChatField?.textArea != null)
+        {
+            if (CheatToggles.longerMessages)
+            {
+                // Increasing the maximum length by 20 characters still avoids anticheat kicks
+                __instance.freeChatField.textArea.characterLimit = 120;
+            }
+            else
+            {
+                __instance.freeChatField.textArea.characterLimit = 100;
+            }
         }
-		else
-		{
-            __instance.freeChatField.textArea.characterLimit = 100;
+
+        if (__instance?.scroller?.Inner != null)
+        {
+            for (int i = 0; i < __instance.scroller.Inner.childCount; i++)
+            {
+                var child = __instance.scroller.Inner.GetChild(i);
+                if (child == null) continue;
+                var bubble = child.GetComponent<ChatBubble>();
+                if (bubble != null)
+                {
+                    MalumESP.UpdateChatBubbleColorTag(bubble);
+                }
+            }
         }
     }
 }

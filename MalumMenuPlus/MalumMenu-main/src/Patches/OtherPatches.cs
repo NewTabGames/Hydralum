@@ -103,6 +103,16 @@ public static class ChatBubble_SetName
     }
 }
 
+[HarmonyPatch(typeof(ChatBubble), nameof(ChatBubble.SetColorblindText))]
+public static class ChatBubble_SetColorblindText
+{
+    public static void Postfix(ChatBubble __instance)
+    {
+        MalumESP.UpdateChatBubbleColorTag(__instance);
+    }
+}
+
+
 [HarmonyPatch(typeof(SystemInfo), nameof(SystemInfo.deviceUniqueIdentifier), MethodType.Getter)]
 public static class SystemInfo_deviceUniqueIdentifier_Getter
 {

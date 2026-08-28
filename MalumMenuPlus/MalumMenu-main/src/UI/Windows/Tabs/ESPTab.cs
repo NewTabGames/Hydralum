@@ -70,6 +70,8 @@ public class ESPTab : ITab
 
         CheatToggles.revealVotes = GUILayout.Toggle(CheatToggles.revealVotes, " Reveal Votes");
 
+        CheatToggles.chatColorTags = GUILayout.Toggle(CheatToggles.chatColorTags, " Chat Color Tags");
+
         CheatToggles.seeLobbyInfo = GUILayout.Toggle(CheatToggles.seeLobbyInfo, " See Lobby Info");
     }
 

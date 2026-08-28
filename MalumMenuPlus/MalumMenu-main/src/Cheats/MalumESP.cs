@@ -227,11 +227,51 @@ public static class MalumESP
         catch { }
     }
 
+    public static void UpdateChatBubbleColorTag(ChatBubble chatBubble)
+    {
+        if (chatBubble == null || chatBubble.ColorBlindName == null || chatBubble.playerInfo == null) return;
+
+        try
+        {
+            if (CheatToggles.chatColorTags)
+            {
+                int colorId = chatBubble.playerInfo.DefaultOutfit != null 
+                    ? chatBubble.playerInfo.DefaultOutfit.ColorId 
+                    : (chatBubble.playerInfo.Object != null && chatBubble.playerInfo.Object.CurrentOutfit != null 
+                        ? chatBubble.playerInfo.Object.CurrentOutfit.ColorId 
+                        : 0);
+
+                string colorName = "";
+                if (Palette.ColorNames != null && colorId >= 0 && colorId < Palette.ColorNames.Length)
+                {
+                    colorName = TranslationController.Instance != null
+                        ? TranslationController.Instance.GetString(Palette.ColorNames[colorId])
+                        : Palette.ColorNames[colorId].ToString();
+                }
+
+                if (!string.IsNullOrEmpty(colorName))
+                {
+                    chatBubble.ColorBlindName.gameObject.SetActive(true);
+                    chatBubble.ColorBlindName.enabled = true;
+                    chatBubble.ColorBlindName.text = colorName;
+                }
+            }
+            else if (AmongUs.Data.DataManager.Settings?.Accessibility != null && !AmongUs.Data.DataManager.Settings.Accessibility.ColorBlindMode)
+            {
+                chatBubble.ColorBlindName.gameObject.SetActive(false);
+            }
+        }
+        catch { }
+    }
+
     public static void ChatNametags(ChatBubble chatBubble)
     {
         try
         {
             if (chatBubble == null || chatBubble.NameText == null) return;
+
+            // Update colorblind text under avatar in chat bubble
+            UpdateChatBubbleColorTag(chatBubble);
 
             // Ensure name does not wrap onto a second line and collide with message text
             chatBubble.NameText.enableWordWrapping = false;
