@@ -6,6 +6,8 @@ namespace HydraMenu.anticheat.rpc
 	{
 		public override bool Validate(PlayerControl player, MessageReader reader)
 		{
+			if (player == null || player.Data == null || reader.BytesRemaining < 1) return false;
+
 			uint taskIndex = reader.ReadPackedUInt32();
 
 			// If there is no instance of ShipStatus (such as if the game has not started yet or the map was despawned), then it is not possible to complete tasks (
@@ -15,8 +17,6 @@ namespace HydraMenu.anticheat.rpc
 				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} tried completing task {taskIndex} when there was no valid instance of ShipStatus.");
 				return false;
 			}
-
-			if(player.Data == null) return false;
 
 			if(player?.Data != null && RoleManager.IsImpostorRole(player.Data.RoleType))
 			{

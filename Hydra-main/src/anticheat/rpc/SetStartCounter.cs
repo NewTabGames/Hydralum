@@ -6,6 +6,8 @@ namespace HydraMenu.anticheat.rpc
 	{
 		public override bool Validate(PlayerControl player, MessageReader reader)
 		{
+			if (player == null || AmongUsClient.Instance == null || reader.BytesRemaining < 2) return false;
+
 			reader.ReadPackedInt32();
 			sbyte counter = reader.ReadSByte();
 
@@ -16,7 +18,7 @@ namespace HydraMenu.anticheat.rpc
 				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent a SetStartCounter RPC with an invalid value: {counter}.");
 
 				// Revert the invalid start counter
-				if(AmongUsClient.Instance.AmHost)
+				if(AmongUsClient.Instance.AmHost && PlayerControl.LocalPlayer != null)
 				{
 					PlayerControl.LocalPlayer.RpcSetStartCounter(-1);
 				}

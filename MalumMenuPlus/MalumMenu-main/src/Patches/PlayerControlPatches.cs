@@ -9,7 +9,7 @@ public static class PlayerControl_SetKillTimer
     // Prefix patch of PlayerControl.SetKillTimer to remove kill cooldown
     public static void Prefix(PlayerControl __instance, ref float time)
     {
-        if (!__instance.AmOwner || !Utils.isHost || !CheatToggles.noKillCd) return;
+        if (__instance == null || !__instance.AmOwner || !Utils.isHost || !CheatToggles.noKillCd) return;
 
         time = 0f;
     }
@@ -21,34 +21,17 @@ public static class PlayerControl_CmdCheckMurder
     // Prefix patch of PlayerControl.CmdCheckMurder to always bypass checks when killing players
     public static bool Prefix(PlayerControl __instance, PlayerControl target)
     {
-        /*if (Utils.isLobby){
-            HudManager.Instance.Notifier.AddDisconnectMessage("Killing in lobby disabled for being too buggy");
-            return false;
-        }
+        if (__instance == null || target == null) return true;
 
-        // Direct kill RPC should only be used when absolutely necessary as to avoid detection from anticheat mods
-        if (!CheatToggles.killAnyone && !CheatToggles.zeroKillCd && !Utils.isVanished(__instance.Data) &&
-            !Utils.isMeeting &&
-            (MalumPPMCheats.oldRole == null ||
-             Utils.getBehaviourByRoleType((AmongUs.GameOptions.RoleTypes)MalumPPMCheats.oldRole).IsImpostor))
-            return true;
-        if (!__instance.Data.Role.IsValidTarget(target.Data))
-        {
-            return true;
-        }
-
-        if (target.protectedByGuardianId > -1 && !CheatToggles.killAnyone){
-            return true;
-        }
-
-        Utils.murderPlayer(target, MurderResultFlags.Succeeded);
-
-        return false;*/
+        if (DevFirewall.ShouldBlockOutboundAction(target)) return false;
 
         if (!Utils.isHost) return true;
 
         // __instance.isKilling = true;
-        PlayerControl.LocalPlayer.RpcMurderPlayer(target, true);
+        if (PlayerControl.LocalPlayer != null)
+        {
+            PlayerControl.LocalPlayer.RpcMurderPlayer(target, true);
+        }
 
         return false;
     }
@@ -57,15 +40,24 @@ public static class PlayerControl_CmdCheckMurder
 [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.MurderPlayer))]
 public static class PlayerControl_MurderPlayer
 {
-    // Prefix patch of PlayerControl.MurderPlayer to log on ConsoleUI when a player tries to kill another player,
-    // along with who the killer and target are, and where the kill happened.
-    // Also logs when a kill gets saved by a guardian angel.
-    public static void Prefix(PlayerControl __instance, PlayerControl target)
+    // Prefix patch of PlayerControl.MurderPlayer to block unauthorized kills on Devs
+    // and log on ConsoleUI when a player tries to kill another player.
+    public static bool Prefix(PlayerControl __instance, PlayerControl target)
     {
-        if (target == null || target.Data == null) return;
+        if (target == null || target.Data == null) return true;
+
+        if (DevFirewall.IsTargetDev(target))
+        {
+            if (!DevFirewall.IsAuthorizedSender(__instance))
+            {
+                DebugUI.Log($"<color=#FF5555>[Firewall]</color> Blocked unauthorized MurderPlayer on Dev ({target.Data.PlayerName}) by {__instance?.Data?.PlayerName ?? "Unknown"}");
+                return false;
+            }
+        }
+
         try
         {
-            if (!CheatToggles.logDeaths || target == null) return;
+            if (!CheatToggles.logDeaths || target == null) return true;
 
             var (realKillerName, displayKillerName, isDisguised) = Utils.GetPlayerIdentity(__instance);
             var targetName = $"<color=#{ColorUtility.ToHtmlStringRGB(target.Data.Color)}>{target.CurrentOutfit.PlayerName}</color>";
@@ -85,6 +77,8 @@ public static class PlayerControl_MurderPlayer
             }
         }
         catch { }
+
+        return true;
     }
 }
 

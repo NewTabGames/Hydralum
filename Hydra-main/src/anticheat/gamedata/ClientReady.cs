@@ -8,6 +8,8 @@ namespace HydraMenu.anticheat.gamedata
 	{
 		public override bool Validate(MessageReader reader)
 		{
+			if (AmongUsClient.Instance == null || reader.BytesRemaining < 1) return false;
+
 			int clientId = reader.ReadPackedInt32();
 
 			ClientData client = AmongUsClient.Instance.FindClientById(clientId);

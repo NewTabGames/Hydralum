@@ -8,6 +8,7 @@ namespace HydraMenu.anticheat.rpc
 	{
 		public override bool Validate(PlayerControl player, MessageReader reader)
 		{
+			if (reader.BytesRemaining < 8) return false;
 			int source = reader.ReadInt32();
 			int target = reader.ReadInt32();
 

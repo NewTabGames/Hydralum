@@ -140,6 +140,8 @@ namespace HydraMenu
 
 		public static void TeleportTo(Vector2 position)
 		{
+			if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.NetTransform == null) return;
+
 			if(UseSnapToRPC)
 			{
 				PlayerControl.LocalPlayer.NetTransform.RpcSnapTo(position);
@@ -152,6 +154,14 @@ namespace HydraMenu
 
 		public static void TeleportPlayerTo(PlayerControl player, Vector2 position)
 		{
+			if (player == null) return;
+
+			if(player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
+			{
+				ui.NotificationManager.AddNotification("Cannot target Developer");
+				return;
+			}
+
 			BatchedMessage batch = new BatchedMessage();
 			batch.QueueSnapTo(player, position);
 			batch.FinishBatch();
@@ -159,32 +169,51 @@ namespace HydraMenu
 
 		public static void TeleportAllTo(Vector2 position)
 		{
+			if (PlayerControl.AllPlayerControls == null) return;
 			BatchedMessage batch = new BatchedMessage();
+			bool hasDev = false;
 
 			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
+				if (player == null) continue;
+				if(player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
+				{
+					hasDev = true;
+					continue;
+				}
 				batch.QueueSnapTo(player, position);
 			}
 
 			batch.FinishBatch();
+			if (hasDev) ui.NotificationManager.AddNotification("Cannot target Developer");
 		}
 
 		public static void TeleportToVent(PlayerControl player, int ventId)
 		{
-			if(ShipStatus.Instance == null)
+			if (player == null) return;
+
+			if(player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
 			{
-				Hydra.notifications.Send("Vent TP", "The game must have started in order for this feature to work.");
+				ui.NotificationManager.AddNotification("Cannot target Developer");
 				return;
 			}
+
+			if(ShipStatus.Instance == null)
+			{
+				Hydra.notifications?.Send("Vent TP", "The game must have started in order for this feature to work.");
+				return;
+			}
+
+			if (AmongUsClient.Instance == null) return;
 
 			bool hasAnticheat = Utilities.IsAnticheatPresent();
 			if(!hasAnticheat || AmongUsClient.Instance.AmHost)
 			{
-				player.MyPhysics.RpcBootFromVent(ventId);
+				if (player.MyPhysics != null) player.MyPhysics.RpcBootFromVent(ventId);
 				return;
 			}
 
-			if (player != null && player.NetTransform != null && player.NetTransform.body != null)
+			if (player.NetTransform != null && player.NetTransform.body != null)
 			{
 				player.NetTransform.body.velocity = Vector2.zero;
 			}

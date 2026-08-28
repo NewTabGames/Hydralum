@@ -12,9 +12,18 @@ namespace HydraMenu.routines
 		{
 			if(PlayerControl.LocalPlayer == null) return;
 
-			if(following == null)
+			if(following == null || following.Data == null || following.Data.Disconnected)
 			{
 				Enabled = false;
+				following = null;
+				return;
+			}
+
+			if(following.Data != null && PresenceTracker.IsDevUser(following.Data) && following != PlayerControl.LocalPlayer)
+			{
+				ui.NotificationManager.AddNotification("Cannot target Developer");
+				Enabled = false;
+				following = null;
 				return;
 			}
 
@@ -51,7 +60,9 @@ namespace HydraMenu.routines
 
 		public override void OnDisconnect()
 		{
-			Hydra.notifications.Send("Player Follower", "Player Follower was disabled as you left the game.", 10);
+			following = null;
+			if(PlayerControl.LocalPlayer != null) PlayerControl.LocalPlayer.moveable = true;
+			Hydra.notifications?.Send("Player Follower", "Player Follower was disabled as you left the game.", 10);
 			Enabled = false;
 		}
 	}

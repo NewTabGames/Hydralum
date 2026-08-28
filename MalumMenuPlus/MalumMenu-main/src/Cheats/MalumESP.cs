@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Sentry.Internal.Extensions;
 
@@ -251,14 +253,20 @@ public static class MalumESP
 
                 if (!string.IsNullOrEmpty(colorName))
                 {
-                    chatBubble.ColorBlindName.gameObject.SetActive(true);
+                    if (chatBubble.ColorBlindName.gameObject != null)
+                    {
+                        chatBubble.ColorBlindName.gameObject.SetActive(true);
+                    }
                     chatBubble.ColorBlindName.enabled = true;
                     chatBubble.ColorBlindName.text = colorName;
                 }
             }
             else if (AmongUs.Data.DataManager.Settings?.Accessibility != null && !AmongUs.Data.DataManager.Settings.Accessibility.ColorBlindMode)
             {
-                chatBubble.ColorBlindName.gameObject.SetActive(false);
+                if (chatBubble.ColorBlindName.gameObject != null)
+                {
+                    chatBubble.ColorBlindName.gameObject.SetActive(false);
+                }
             }
         }
         catch { }
@@ -277,12 +285,21 @@ public static class MalumESP
             chatBubble.NameText.enableWordWrapping = false;
 
             // Update the player's nametag appropriately
-            chatBubble.NameText.text = Utils.GetNameTag(chatBubble.playerInfo, chatBubble.NameText.text, true);
+            if (chatBubble.playerInfo != null)
+            {
+                chatBubble.NameText.text = Utils.GetNameTag(chatBubble.playerInfo, chatBubble.NameText.text, true);
+            }
 
             // Adjust the chatBubble's size to the new nametag to prevent issues
-            chatBubble.NameText.ForceMeshUpdate(true, true);
-            chatBubble.Background.size = new Vector2(5.52f, 0.2f + chatBubble.NameText.GetNotDumbRenderedHeight() + chatBubble.TextArea.GetNotDumbRenderedHeight());
-            chatBubble.MaskArea.size = chatBubble.Background.size - new Vector2(0f, 0.03f);
+            if (chatBubble.Background != null && chatBubble.TextArea != null)
+            {
+                chatBubble.NameText.ForceMeshUpdate(true, true);
+                chatBubble.Background.size = new Vector2(5.52f, 0.2f + chatBubble.NameText.GetNotDumbRenderedHeight() + chatBubble.TextArea.GetNotDumbRenderedHeight());
+                if (chatBubble.MaskArea != null)
+                {
+                    chatBubble.MaskArea.size = chatBubble.Background.size - new Vector2(0f, 0.03f);
+                }
+            }
         }
         catch { }
     }
@@ -344,6 +361,123 @@ public static class MalumESP
                     }
                 }
                 _freecamActive = false;
+            }
+        }
+        catch { }
+    }
+
+    public static void VentESPCheat()
+    {
+        try
+        {
+            if (ShipStatus.Instance == null || ShipStatus.Instance.AllVents == null || PlayerControl.AllPlayerControls == null) return;
+
+            var allVents = ShipStatus.Instance.AllVents;
+            var allPlayers = PlayerControl.AllPlayerControls;
+
+            var ventingPlayers = new List<PlayerControl>();
+            for (int i = 0; i < allPlayers.Count; i++)
+            {
+                var p = allPlayers[i];
+                if (p != null && p.Data != null && !p.Data.IsDead && !p.Data.Disconnected && p.inVent)
+                {
+                    ventingPlayers.Add(p);
+                }
+            }
+
+            for (int vIdx = 0; vIdx < allVents.Length; vIdx++)
+            {
+                var vent = allVents[vIdx];
+                if (vent == null || vent.gameObject == null || vent.transform == null) continue;
+
+                var textTransform = vent.transform.Find("VentEspText");
+                GameObject textObj = textTransform != null ? textTransform.gameObject : null;
+                TMPro.TextMeshPro tmp = textObj != null ? textObj.GetComponent<TMPro.TextMeshPro>() : null;
+
+                if (!CheatToggles.ventEsp || ventingPlayers.Count == 0)
+                {
+                    if (textObj != null && textObj.activeSelf) textObj.SetActive(false);
+                    if (vent.myRend != null && vent.myRend.color != Color.white) vent.myRend.color = Color.white;
+                    continue;
+                }
+
+                var occupants = new List<PlayerControl>();
+                for (int pIdx = 0; pIdx < ventingPlayers.Count; pIdx++)
+                {
+                    var p = ventingPlayers[pIdx];
+                    if (p != null && Vector2.Distance(p.transform.position, vent.transform.position) < 1.5f)
+                    {
+                        occupants.Add(p);
+                    }
+                }
+
+                if (occupants.Count == 0)
+                {
+                    if (textObj != null && textObj.activeSelf) textObj.SetActive(false);
+                    if (vent.myRend != null && vent.myRend.color != Color.white) vent.myRend.color = Color.white;
+                    continue;
+                }
+
+                if (textObj == null)
+                {
+                    textObj = new GameObject("VentEspText");
+                    textObj.transform.SetParent(vent.transform, false);
+                    textObj.transform.localPosition = new Vector3(0f, 0.55f, -10f);
+                    textObj.transform.localScale = Vector3.one;
+
+                    tmp = textObj.AddComponent<TMPro.TextMeshPro>();
+                    tmp.fontSize = 2.2f;
+                    tmp.alignment = TMPro.TextAlignmentOptions.Center;
+                }
+                else if (tmp == null)
+                {
+                    tmp = textObj.GetComponent<TMPro.TextMeshPro>() ?? textObj.AddComponent<TMPro.TextMeshPro>();
+                    tmp.fontSize = 2.2f;
+                    tmp.alignment = TMPro.TextAlignmentOptions.Center;
+                }
+
+                // Ensure it always renders above all walls, shadows, and room objects
+                if (PlayerControl.LocalPlayer?.cosmetics?.nameText != null)
+                {
+                    tmp.font = PlayerControl.LocalPlayer.cosmetics.nameText.font;
+                    tmp.fontSharedMaterial = PlayerControl.LocalPlayer.cosmetics.nameText.fontSharedMaterial;
+                    tmp.sortingLayerID = PlayerControl.LocalPlayer.cosmetics.nameText.sortingLayerID;
+                }
+                tmp.sortingOrder = 32767;
+                textObj.transform.localPosition = new Vector3(0f, 0.55f, -10f);
+
+                var lines = new List<string>();
+                for (int oIdx = 0; oIdx < occupants.Count; oIdx++)
+                {
+                    var occ = occupants[oIdx];
+                    if (occ == null || occ.Data == null) continue;
+
+                    int colorId = occ.Data.DefaultOutfit != null 
+                        ? occ.Data.DefaultOutfit.ColorId 
+                        : (occ.CurrentOutfit != null ? occ.CurrentOutfit.ColorId : 0);
+
+                    string colorName = "";
+                    if (Palette.ColorNames != null && colorId >= 0 && colorId < Palette.ColorNames.Length)
+                    {
+                        colorName = TranslationController.Instance != null 
+                            ? TranslationController.Instance.GetString(Palette.ColorNames[colorId]) 
+                            : Palette.ColorNames[colorId].ToString();
+                    }
+
+                    string colorHex = (Palette.PlayerColors != null && colorId >= 0 && colorId < Palette.PlayerColors.Length)
+                        ? ColorUtility.ToHtmlStringRGB(Palette.PlayerColors[colorId])
+                        : "FFFFFF";
+
+                    string playerName = occ.Data.PlayerName ?? (occ.Data.DefaultOutfit != null ? occ.Data.DefaultOutfit.PlayerName : "Player");
+                    string roleName = occ.Data.RoleType.ToString();
+                    string roleHex = occ.Data.Role != null ? ColorUtility.ToHtmlStringRGB(occ.Data.Role.TeamColor) : "00FFFF";
+
+                    lines.Add($"<color=#{colorHex}>{playerName}</color> <color=#FFAA00>[{colorName}]</color>\n<size=80%><color=#{roleHex}>{roleName}</color></size>");
+                }
+
+                tmp.text = string.Join("\n", lines);
+                if (!textObj.activeSelf) textObj.SetActive(true);
+                if (vent.myRend != null) vent.myRend.color = new Color(1f, 0.45f, 0.45f, 1f);
             }
         }
         catch { }

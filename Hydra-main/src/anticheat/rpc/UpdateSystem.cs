@@ -28,6 +28,7 @@ namespace HydraMenu.anticheat.rpc
 
 		public override bool Validate(PlayerControl player, MessageReader reader)
 		{
+			if (reader.BytesRemaining < 2) return false;
 			SystemTypes system = (SystemTypes)reader.ReadByte();
 			player = reader.ReadNetObject<PlayerControl>();
 
@@ -57,6 +58,7 @@ namespace HydraMenu.anticheat.rpc
 		// The Mushroom Mixup system is only updated in the SabotageSystemType::Update function by the host. It should never be sent by a player
 		private static bool ValidateMushroomMixupSystem(PlayerControl player, MessageReader reader)
 		{
+			if (reader.BytesRemaining < 1) return false;
 			MushroomMixupSabotageSystem.Operation operation = (MushroomMixupSabotageSystem.Operation)reader.ReadByte();
 
 			Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to update Mushroom Mixup system with operation {operation}.");
@@ -65,6 +67,7 @@ namespace HydraMenu.anticheat.rpc
 
 		private static bool ValidateReactorSystem(PlayerControl player, MessageReader reader)
 		{
+			if (reader.BytesRemaining < 1) return false;
 			byte operation = reader.ReadByte();
 
 			switch(operation)
@@ -84,6 +87,7 @@ namespace HydraMenu.anticheat.rpc
 
 		private static bool ValidateSabotageSystem(PlayerControl player, MessageReader reader)
 		{
+			if (reader.BytesRemaining < 1) return false;
 			SystemTypes system = (SystemTypes)reader.ReadByte();
 
 			Dictionary<string, SystemTypes> validSabotages = Sabotage.GetSabotages();
@@ -116,6 +120,7 @@ namespace HydraMenu.anticheat.rpc
 
 		private static bool ValidateSwitchSystem(PlayerControl player, MessageReader reader)
 		{
+			if (reader.BytesRemaining < 1) return false;
 			byte switches = reader.ReadByte();
 
 			if(switches.HasBit(128))

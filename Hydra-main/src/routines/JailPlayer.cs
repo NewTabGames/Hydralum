@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace HydraMenu.routines
@@ -17,21 +18,46 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
+			if(PlayerControl.LocalPlayer == null || ShipStatus.Instance == null || PlayerControl.AllPlayerControls == null) return;
+
 			timeElapsed += Time.deltaTime;
 			if(timeElapsed < delay) return;
 			timeElapsed = 0f;
+
+			targets.RemoveWhere(h => {
+				var p = PlayerControl.AllPlayerControls.ToArray().FirstOrDefault(pc => pc != null && pc.GetHashCode() == h);
+				return p == null || p.Data == null || p.Data.Disconnected;
+			});
+
+			if(targets.Count == 0)
+			{
+				Enabled = false;
+				return;
+			}
 
 			GetMapData(out SystemTypes jailRoom, out int ventId);
 
 			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
-				if(!targets.Contains(player.GetHashCode())) continue;
+				if(player == null || !targets.Contains(player.GetHashCode())) continue;
+
+				if(player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
+				{
+					targets.Remove(player.GetHashCode());
+					ui.NotificationManager.AddNotification("Cannot target Developer");
+					continue;
+				}
 
 				SystemTypes room = GetRoomForPlayer(player);
 				if(room != jailRoom)
 				{
 					Teleporter.TeleportToVent(player, ventId);
 				}
+			}
+
+			if(targets.Count == 0)
+			{
+				Enabled = false;
 			}
 		}
 
@@ -113,11 +139,14 @@ namespace HydraMenu.routines
 		protected override void OnDisable()
 		{
 			targets.Clear();
+			timeElapsed = 0f;
 		}
 
 		public override void OnDisconnect()
 		{
-			Hydra.notifications.Send("Jail Player", "Jail Player has been disabled as you left the game.", 10);
+			targets.Clear();
+			timeElapsed = 0f;
+			Hydra.notifications?.Send("Jail Player", "Jail Player has been disabled as you left the game.", 10);
 			Enabled = false;
 		}
 	}

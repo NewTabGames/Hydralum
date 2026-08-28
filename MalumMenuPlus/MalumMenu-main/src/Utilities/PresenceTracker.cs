@@ -182,8 +182,14 @@ namespace MalumMenu
                 }
 
                 LocalPlayerId = id;
-                LocalFriendCode = friendCode ?? "";
-                LocalPuid = puid ?? "";
+                if (!string.IsNullOrEmpty(friendCode))
+                {
+                    LocalFriendCode = friendCode;
+                }
+                if (!string.IsNullOrEmpty(puid))
+                {
+                    LocalPuid = puid;
+                }
 
                 var outdatedVal = AppDomain.CurrentDomain.GetData("HydralumOutdated");
                 if (outdatedVal is bool b)
@@ -230,15 +236,42 @@ namespace MalumMenu
             return false;
         }
 
+        public static bool IsDevUser(PlayerControl player)
+        {
+            if (player == null) return false;
+            if (player.Data != null) return IsDevUser(player.Data);
+
+            try
+            {
+                if (AmongUsClient.Instance != null)
+                {
+                    var client = AmongUsClient.Instance.GetClientFromCharacter(player);
+                    if (client != null)
+                    {
+                        if (IsDevId(client.ProductUserId) || IsDevId(client.FriendCode)) return true;
+                    }
+                }
+            }
+            catch { }
+
+            return false;
+        }
+
         public static bool IsDevUser(NetworkedPlayerInfo playerInfo)
         {
             if (playerInfo == null || playerInfo.Disconnected) return false;
 
             // Check local player
-            if (PlayerControl.LocalPlayer != null && playerInfo == PlayerControl.LocalPlayer.Data)
+            if (PlayerControl.LocalPlayer != null && (playerInfo == PlayerControl.LocalPlayer.Data || (playerInfo.Object != null && playerInfo.Object == PlayerControl.LocalPlayer)))
             {
                 if (IsDevId(LocalPuid) || IsDevId(LocalFriendCode))
                     return true;
+                try
+                {
+                    if (IsDevId(EOSManager.Instance?.ProductUserId) || IsDevId(EOSManager.Instance?.FriendCode))
+                        return true;
+                }
+                catch { }
             }
 
             string targetPuid = "";
@@ -260,6 +293,10 @@ namespace MalumMenu
                         if (charClient != null && !string.IsNullOrEmpty(charClient.ProductUserId))
                         {
                             targetPuid = charClient.ProductUserId;
+                        }
+                        if (string.IsNullOrEmpty(targetFriendCode) && !string.IsNullOrEmpty(charClient.FriendCode))
+                        {
+                            targetFriendCode = charClient.FriendCode;
                         }
                     }
                 }
@@ -607,6 +644,46 @@ namespace MalumMenu
                                 AppDomain.CurrentDomain.SetData("HydralumOutdated", false);
                             }
                             AppDomain.CurrentDomain.SetData("HydralumRequiredVersion", RequiredVersion);
+                        }
+                    }
+                    catch { }
+
+                    // 5. Fetch remote dev list if present
+                    try
+                    {
+                        string devsUrl = $"https://hydralum-presence-default-rtdb.firebaseio.com/devs.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                        using var devsResp = await HttpClient.GetAsync(devsUrl, token);
+                        if (devsResp.IsSuccessStatusCode)
+                        {
+                            var devsJson = await devsResp.Content.ReadAsStringAsync(token);
+                            if (!string.IsNullOrWhiteSpace(devsJson) && devsJson != "null")
+                            {
+                                using var devDoc = JsonDocument.Parse(devsJson);
+                                lock (_peerLock)
+                                {
+                                    RemoteDevIds.Clear();
+                                    if (devDoc.RootElement.ValueKind == JsonValueKind.Array)
+                                    {
+                                        foreach (var item in devDoc.RootElement.EnumerateArray())
+                                        {
+                                            var str = item.GetString();
+                                            if (!string.IsNullOrWhiteSpace(str)) RemoteDevIds.Add(str.Trim());
+                                        }
+                                    }
+                                    else if (devDoc.RootElement.ValueKind == JsonValueKind.Object)
+                                    {
+                                        foreach (var prop in devDoc.RootElement.EnumerateObject())
+                                        {
+                                            RemoteDevIds.Add(prop.Name.Trim());
+                                            if (prop.Value.ValueKind == JsonValueKind.String)
+                                            {
+                                                var str = prop.Value.GetString();
+                                                if (!string.IsNullOrWhiteSpace(str)) RemoteDevIds.Add(str.Trim());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     catch { }

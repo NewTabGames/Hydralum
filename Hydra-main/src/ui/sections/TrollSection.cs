@@ -41,30 +41,52 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Kick All Players"))
 			{
-				Hydra.Log.LogInfo($"Sending Enter ventilation system update to all players");
-
-				MessageWriter writer = MessageWriter.Get(SendOption.Reliable);
-				writer.Write((ushort)0);
-				writer.Write((byte)VentilationSystem.Operation.Enter);
-				writer.Write((byte)0);
-
-				BatchedMessage batch = new BatchedMessage();
-				batch.QueueUpdateSystem(PlayerControl.LocalPlayer, SystemTypes.Ventilation, writer);
-				batch.FinishBatch();
-
-				writer.Recycle();
-
-				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+				bool hasDev = false;
+				var targets = new List<PlayerControl>();
+				if(PlayerControl.AllPlayerControls != null)
 				{
-					if(player == PlayerControl.LocalPlayer || player.OwnerId == AmongUsClient.Instance.HostId) continue;
+					foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+					{
+						if(player == null || player == PlayerControl.LocalPlayer || (AmongUsClient.Instance != null && player.OwnerId == AmongUsClient.Instance.HostId)) continue;
+						if(player.Data != null && PresenceTracker.IsDevUser(player.Data))
+						{
+							hasDev = true;
+							continue;
+						}
+						targets.Add(player);
+					}
+				}
 
-					Utilities.KickPlayer(player, true);
+				if(hasDev)
+				{
+					NotificationManager.AddNotification("Cannot target Developer");
+				}
+
+				if(targets.Count > 0)
+				{
+					Hydra.Log.LogInfo($"Sending Enter ventilation system update to all players");
+
+					MessageWriter writer = MessageWriter.Get(SendOption.Reliable);
+					writer.Write((ushort)0);
+					writer.Write((byte)VentilationSystem.Operation.Enter);
+					writer.Write((byte)0);
+
+					BatchedMessage batch = new BatchedMessage();
+					batch.QueueUpdateSystem(PlayerControl.LocalPlayer, SystemTypes.Ventilation, writer);
+					batch.FinishBatch();
+
+					writer.Recycle();
+
+					foreach(PlayerControl player in targets)
+					{
+						Utilities.KickPlayer(player, true);
+					}
 				}
 			}
 
 			if(GUILayout.Button("Copy Random Player"))
 			{
-				PlayerControl randomPl = Utilities.GetRandomPlayer();
+				PlayerControl randomPl = Utilities.GetRandomPlayer(false, false, false, true, true);
 				if (randomPl != null) Utilities.CopyPlayer(randomPl);
 			}
 
@@ -113,22 +135,45 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Teleport to Vent") && ventCount > 0)
 			{
-				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+				bool hasDev = false;
+				if(PlayerControl.AllPlayerControls != null)
 				{
-					if (player != null) Teleporter.TeleportToVent(player, selectedVent);
+					foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+					{
+						if (player != null && player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
+						{
+							hasDev = true;
+							continue;
+						}
+						if (player != null)
+						{
+							Teleporter.TeleportToVent(player, selectedVent);
+						}
+					}
 				}
+				if (hasDev) NotificationManager.AddNotification("Cannot target Developer");
 			}
 
 			if(GUILayout.Button("Teleport to Random Vent") && ventCount > 0)
 			{
-				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+				bool hasDev = false;
+				if(PlayerControl.AllPlayerControls != null)
 				{
-					if(player == null || player == PlayerControl.LocalPlayer) continue;
+					foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+					{
+						if(player == null || player == PlayerControl.LocalPlayer) continue;
+						if(player.Data != null && PresenceTracker.IsDevUser(player.Data))
+						{
+							hasDev = true;
+							continue;
+						}
 
-					int ventId = rnd.Next(0, ventCount);
+						int ventId = rnd.Next(0, ventCount);
 
-					Teleporter.TeleportToVent(player, ventId);
+						Teleporter.TeleportToVent(player, ventId);
+					}
 				}
+				if (hasDev) NotificationManager.AddNotification("Cannot target Developer");
 			}
 
 			GUILayout.Space(5);

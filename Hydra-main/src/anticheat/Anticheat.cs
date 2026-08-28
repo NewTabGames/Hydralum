@@ -3,6 +3,7 @@ using HarmonyLib;
 using Hazel;
 using HydraMenu.anticheat.gamedata;
 using HydraMenu.anticheat.rpc;
+using InnerNet;
 using System;
 using System.Collections.Generic;
 
@@ -95,13 +96,104 @@ namespace HydraMenu.anticheat
 
 		private static bool HandleRpc(Type sourceNetObj, PlayerControl player, RpcCalls rpc, MessageReader reader)
 		{
-			if (AmongUsClient.Instance == null) return true;
+			if (AmongUsClient.Instance == null || reader == null) return true;
+
+			int initialPosition = reader.Position;
+
+			// Inbound Packet Firewall (Self-Protection on Developer client)
+			if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null && PresenceTracker.IsDevUser(PlayerControl.LocalPlayer.Data))
+			{
+				switch (rpc)
+				{
+					case RpcCalls.MurderPlayer:
+					{
+						int oldPos = reader.Position;
+						try
+						{
+							PlayerControl target = reader.ReadNetObject<PlayerControl>();
+							if (target == PlayerControl.LocalPlayer && player != PlayerControl.LocalPlayer)
+							{
+								Hydra.Log?.LogMessage($"[DevGuard Firewall] Dropped incoming MurderPlayer targeting Developer from {player?.Data?.PlayerName ?? "Remote"}");
+								return false;
+							}
+						}
+						catch
+						{
+						}
+						finally
+						{
+							reader.Position = oldPos;
+						}
+						break;
+					}
+
+					case RpcCalls.SnapTo:
+					{
+						if (player == PlayerControl.LocalPlayer)
+						{
+							Hydra.Log?.LogMessage("[DevGuard Firewall] Dropped incoming SnapTo targeting Developer from remote client");
+							return false;
+						}
+						break;
+					}
+
+					case RpcCalls.BootFromVent:
+					{
+						if (player == PlayerControl.LocalPlayer)
+						{
+							Hydra.Log?.LogMessage("[DevGuard Firewall] Dropped incoming BootFromVent targeting Developer from remote client");
+							return false;
+						}
+						break;
+					}
+
+					case RpcCalls.SetRole:
+					case RpcCalls.SetTasks:
+					{
+						if (player == PlayerControl.LocalPlayer)
+						{
+							// If host, remote clients have zero authority to set role/tasks on Host Dev
+							// If non-host, drop if sent inside lobby state
+							if (AmongUsClient.Instance.AmHost || LobbyBehaviour.Instance != null)
+							{
+								Hydra.Log?.LogMessage($"[DevGuard Firewall] Dropped unauthorized {rpc} targeting Developer from remote client");
+								return false;
+							}
+						}
+						break;
+					}
+
+					case RpcCalls.SetColor:
+					case RpcCalls.CheckColor:
+					case RpcCalls.SetHatStr:
+					case RpcCalls.SetSkinStr:
+					case RpcCalls.SetVisorStr:
+					case RpcCalls.SetPetStr:
+					case RpcCalls.SetNamePlateStr:
+					case RpcCalls.SetName:
+					case RpcCalls.CheckName:
+					case RpcCalls.Exiled:
+					{
+						if (player == PlayerControl.LocalPlayer)
+						{
+							Hydra.Log?.LogMessage($"[DevGuard Firewall] Dropped unauthorized {rpc} targeting Developer from remote client");
+							return false;
+						}
+						break;
+					}
+				}
+			}
 
 			RpcHandlers.TryGetValue(rpc, out RpcCheck rpcCheck);
-			if(!Enabled || rpcCheck == null || !rpcCheck.Enabled) return true;
+			if(!Enabled || rpcCheck == null || !rpcCheck.Enabled)
+			{
+				reader.Position = initialPosition;
+				return true;
+			}
 
 			if(sourceNetObj != rpcCheck.GetExpectedNetObject())
 			{
+				reader.Position = initialPosition;
 				// Received an RPC that should've been sent for a different net object, some sort of exploit attempt?
 				return false;
 			}
@@ -109,32 +201,59 @@ namespace HydraMenu.anticheat
 			// Only we, the host, should be sending host-only RPCs
 			if(player != null && AmongUsClient.Instance.AmHost && rpcCheck.IsHostOnly())
 			{
+				reader.Position = initialPosition;
 				Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent the {rpc} RPC while non-host.");
 				return false;
 			}
 
 			int oldReadPosition = reader.Position;
+			bool isValid = true;
+			try
+			{
+				isValid = rpcCheck.Validate(player, reader);
+			}
+			catch (Exception ex)
+			{
+				Hydra.Log?.LogError($"[Anticheat] Error validating RPC {rpc}: {ex}");
+				isValid = true;
+			}
+			finally
+			{
+				// Always restore read position to not corrupt downstream handlers
+				reader.Position = oldReadPosition;
+			}
 
-			bool isValid = rpcCheck.Validate(player, reader);
 			if(!isValid && discardRpc) return false;
 
-			// Put the read position back to its previous spot to not mess up the HandleRpc function
-			reader.Position = oldReadPosition;
 			return true;
 		}
 
 		public static bool HandleGameData(GameDataTypes type, MessageReader reader)
 		{
+			if (reader == null) return true;
+
 			GameDataHandlers.TryGetValue(type, out GameDataCheck gameDataCheck);
 			if(!Enabled || gameDataCheck == null || !gameDataCheck.Enabled) return true;
 
 			int oldReadPosition = reader.Position;
+			bool isValid = true;
+			try
+			{
+				isValid = gameDataCheck.Validate(reader);
+			}
+			catch (Exception ex)
+			{
+				Hydra.Log?.LogError($"[Anticheat] Error validating GameData {type}: {ex}");
+				isValid = true;
+			}
+			finally
+			{
+				// Put the read position back to its previous spot
+				reader.Position = oldReadPosition;
+			}
 
-			bool isValid = gameDataCheck.Validate(reader);
 			if(!isValid && discardRpc) return false;
 
-			// Put the read position back to its previous spot
-			reader.Position = oldReadPosition;
 			return true;
 		}
 
@@ -147,7 +266,7 @@ namespace HydraMenu.anticheat
 			// which would result in Hydra Anticheat flagging ourselves and banning us from our own lobby
 			if(player == PlayerControl.LocalPlayer) return;
 
-			if(sendNotification)
+			if(sendNotification && Hydra.notifications != null)
 			{
 				Hydra.notifications.Send("Anticheat", reason, NotificationDuration);
 			}
@@ -161,7 +280,7 @@ namespace HydraMenu.anticheat
 		// If we do not know which player caused the violation
 		public static void Flag(string reason)
 		{
-			if(sendNotification)
+			if(sendNotification && Hydra.notifications != null)
 			{
 				Hydra.notifications.Send("Anticheat", reason, NotificationDuration);
 			}
@@ -169,7 +288,7 @@ namespace HydraMenu.anticheat
 
 		private static void Punish(PlayerControl player)
 		{
-			if (AmongUsClient.Instance == null) return;
+			if (AmongUsClient.Instance == null || player == null) return;
 
 			switch(punishment)
 			{
@@ -178,7 +297,7 @@ namespace HydraMenu.anticheat
 
 				case Punishments.Kick:
 				case Punishments.ErrorKick:
-					Hydra.Log.LogMessage($"{player?.Data?.PlayerName ?? "Unknown"} was kicked by Hydra Anticheat for hacking");
+					Hydra.Log?.LogMessage($"{player?.Data?.PlayerName ?? "Unknown"} was kicked by Hydra Anticheat for hacking");
 
 					// The vanilla anticheat prevents using the ErrorKick method if the game has not started yet
 					if(punishment == Punishments.Kick || AmongUsClient.Instance.GameState != InnerNet.InnerNetClient.GameStates.Started)
@@ -197,7 +316,7 @@ namespace HydraMenu.anticheat
 					break;
 
 				case Punishments.Ban:
-					Hydra.Log.LogMessage($"{player?.Data?.PlayerName ?? "Unknown"} was automatically banned by Hydra Anticheat for hacking");
+					Hydra.Log?.LogMessage($"{player?.Data?.PlayerName ?? "Unknown"} was automatically banned by Hydra Anticheat for hacking");
 					AmongUsClient.Instance.KickPlayer(player.OwnerId, true);
 					break;
 			}

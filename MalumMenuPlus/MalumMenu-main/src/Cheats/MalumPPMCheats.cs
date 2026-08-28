@@ -36,6 +36,7 @@ public static class MalumPPMCheats
                 // Player pick menu to choose any body (alive or dead) and report it
                 PlayerPickMenu.OpenPlayerPickMenu(Utils.GetAllPlayerData(), (Action) (() =>
                 {
+                    if (DevFirewall.ShouldBlockOutboundAction(PlayerPickMenu.targetPlayerData)) return;
                     PlayerControl.LocalPlayer.CmdReportDeadBody(PlayerPickMenu.targetPlayerData);
                 }));
 
@@ -89,6 +90,7 @@ public static class MalumPPMCheats
                 PlayerPickMenu.OpenPlayerPickMenu(playerInfo, (Action)(() =>
                 {
                     NetworkedPlayerInfo playerToEject = PlayerPickMenu.targetPlayerData;
+                    if (DevFirewall.ShouldBlockOutboundAction(playerToEject)) return;
                     if (MeetingHud.Instance != null && playerToEject != null)
                     {
                         var rpcMethod = typeof(MeetingHud).GetMethod(nameof(MeetingHud.RpcVotingComplete));
@@ -146,6 +148,7 @@ public static class MalumPPMCheats
                 // Player pick menu made for killing any player by sending a successful MurderPlayer RPC call
                 PlayerPickMenu.OpenPlayerPickMenu(Utils.GetAllPlayerData(), (Action)(() =>
                 {
+                    if (DevFirewall.ShouldBlockOutboundAction(PlayerPickMenu.targetPlayerData)) return;
                     Utils.MurderPlayer(PlayerPickMenu.targetPlayerData.Object, MurderResultFlags.Succeeded);
                 }));
 
@@ -188,6 +191,7 @@ public static class MalumPPMCheats
                 // and immediatly teleporting back to original position
                 PlayerPickMenu.OpenPlayerPickMenu(Utils.GetAllPlayerData(), (Action)(() =>
                 {
+                    if (DevFirewall.ShouldBlockOutboundAction(PlayerPickMenu.targetPlayerData)) return;
                     var oldPos = PlayerControl.LocalPlayer.GetTruePosition();
                     Utils.MurderPlayer(PlayerPickMenu.targetPlayerData.Object, MurderResultFlags.Succeeded);
                     AmongUsClient.Instance.StartCoroutine(Utils.DelayedSnapTo(oldPos));
@@ -235,6 +239,7 @@ public static class MalumPPMCheats
                 // Player pick menu made for teleporting LocalPlayer to any player's position
                 PlayerPickMenu.OpenPlayerPickMenu(playerDataList, (Action)(() =>
                 {
+                    if (DevFirewall.ShouldBlockOutboundAction(PlayerPickMenu.targetPlayerData)) return;
                     PlayerControl.LocalPlayer.NetTransform.RpcSnapTo(PlayerPickMenu.targetPlayerData.Object.transform.position);
                 }));
 
@@ -510,6 +515,7 @@ public static class MalumPPMCheats
                 // Player pick menu made for spectating the targeted player
                 PlayerPickMenu.OpenPlayerPickMenu(playerDataList, (Action) (() =>
                 {
+                    if (DevFirewall.ShouldBlockOutboundAction(PlayerPickMenu.targetPlayerData)) return;
                     Camera.main.gameObject.GetComponent<FollowerCamera>().SetTarget(PlayerPickMenu.targetPlayerData.Object);
                 }));
 

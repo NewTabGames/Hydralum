@@ -309,13 +309,14 @@ public static class IntroCutscene_CoBegin
             return;
         }
 
-        // Find a player with the forced role to swap roles with
+        // Find a player with the forced role to swap roles with (excluding Devs)
         PlayerControl roleSwapTarget = null;
         if (PlayerControl.AllPlayerControls != null)
         {
             foreach (var player in PlayerControl.AllPlayerControls)
             {
                 if (player == null || player.Data == null || player.Data.RoleType != forcedRole) continue;
+                if (DevFirewall.IsTargetDev(player) && !player.AmOwner) continue;
                 roleSwapTarget = player;
                 break;
             }

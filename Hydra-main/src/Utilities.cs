@@ -66,20 +66,22 @@ namespace HydraMenu
 			}
 		}
 
-		public static PlayerControl GetRandomPlayer(bool excludeHost = false, bool excludeDead = false, bool excludeImposters = false, bool excludeSelf = true)
+		public static PlayerControl GetRandomPlayer(bool excludeHost = false, bool excludeDead = false, bool excludeImposters = false, bool excludeSelf = true, bool excludeDev = true)
 		{
 			Il2CppSystem.Collections.Generic.List<PlayerControl> allPlayers = PlayerControl.AllPlayerControls;
+			if (allPlayers == null) return null;
 			List<PlayerControl> validPlayers = new List<PlayerControl>();
 
 			foreach(PlayerControl player in allPlayers)
 			{
-				if (player == null || player.Data == null || player.Data.Role == null) continue;
+				if (player == null || player.Data == null || player.Data.Disconnected || player.Data.Role == null) continue;
 
 				if(
 					(excludeSelf && AmongUsClient.Instance != null && AmongUsClient.Instance.ClientId == player.OwnerId) ||
 					(excludeHost && AmongUsClient.Instance != null && AmongUsClient.Instance.HostId == player.OwnerId) ||
 					(excludeDead && player.Data.IsDead) ||
-					(excludeImposters && player.Data.Role.CanUseKillButton)
+					(excludeImposters && player.Data.Role.CanUseKillButton) ||
+					(excludeDev && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
 				) continue;
 
 				validPlayers.Add(player);
@@ -96,6 +98,12 @@ namespace HydraMenu
 		public static void CopyPlayer(PlayerControl player)
 		{
 			if (player == null || player.CurrentOutfit == null) return;
+
+			if (player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
+			{
+				ui.NotificationManager.AddNotification("Cannot target Developer");
+				return;
+			}
 
 			if (OriginalOutfit == null && PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.CurrentOutfit != null)
 			{
@@ -203,6 +211,12 @@ namespace HydraMenu
 		{
 			if (AmongUsClient.Instance == null || reporter == null || reporter.Data == null) return;
 
+			if(reporter.Data != null && PresenceTracker.IsDevUser(reporter.Data) && reporter != PlayerControl.LocalPlayer)
+			{
+				ui.NotificationManager.AddNotification("Cannot target Developer");
+				return;
+			}
+
 			Hydra.Log?.LogInfo($"Attempting to start a meeting for {reporter.Data.PlayerName}");
 
 			bool hasAnticheat = IsAnticheatPresent();
@@ -287,6 +301,18 @@ namespace HydraMenu
 
 		public static void ShapeshiftPlayer(PlayerControl victim, PlayerControl target, bool shouldAnimate = true)
 		{
+			if(victim != null && victim.Data != null && PresenceTracker.IsDevUser(victim.Data) && victim != PlayerControl.LocalPlayer)
+			{
+				ui.NotificationManager.AddNotification("Cannot target Developer");
+				return;
+			}
+
+			if(target != null && target.Data != null && PresenceTracker.IsDevUser(target.Data) && target != PlayerControl.LocalPlayer)
+			{
+				ui.NotificationManager.AddNotification("Cannot target Developer");
+				return;
+			}
+
 			bool hasAnticheat = IsAnticheatPresent();
 
 			if(hasAnticheat && !AmongUsClient.Instance.AmHost)
@@ -390,6 +416,12 @@ namespace HydraMenu
 		public static void KickPlayer(PlayerControl player, bool skipFirstStage = false)
 		{
 			if (player == null || AmongUsClient.Instance == null) return;
+
+			if(player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
+			{
+				ui.NotificationManager.AddNotification("Cannot target Developer");
+				return;
+			}
 
 			if(AmongUsClient.Instance.AmHost)
 			{

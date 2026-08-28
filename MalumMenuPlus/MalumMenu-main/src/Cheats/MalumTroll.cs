@@ -16,6 +16,7 @@ public static class MalumTroll
             if (player == null || player.Data == null) continue;
             if (excludeSelf && player.OwnerId == AmongUsClient.Instance.ClientId) continue;
             if (excludeDead && player.Data.IsDead) continue;
+            if (DevFirewall.IsTargetDev(player) && !player.AmOwner) continue;
 
             valid.Add(player);
         }
@@ -38,6 +39,7 @@ public static class MalumTroll
     {
         var localPlayer = PlayerControl.LocalPlayer;
         if (localPlayer == null || target == null) return;
+        if (DevFirewall.ShouldBlockOutboundAction(target)) return;
 
         if (OriginalOutfit == null && localPlayer.CurrentOutfit != null)
         {

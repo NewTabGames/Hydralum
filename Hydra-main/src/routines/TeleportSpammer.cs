@@ -12,7 +12,7 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
-			if(ShipStatus.Instance == null || ShipStatus.Instance.AllVents == null || ShipStatus.Instance.AllVents.Count == 0 || PlayerControl.AllPlayerControls == null) return;
+			if(ShipStatus.Instance == null || ShipStatus.Instance.AllVents == null || ShipStatus.Instance.AllVents.Count == 0 || PlayerControl.AllPlayerControls == null || PlayerControl.LocalPlayer == null) return;
 
 			timeElapsed += Time.deltaTime;
 			if(timeElapsed < teleportDelay) return;
@@ -20,7 +20,8 @@ namespace HydraMenu.routines
 
 			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
-				if(player == null || player == PlayerControl.LocalPlayer) continue;
+				if(player == null || player.Data == null || player.Data.Disconnected || player == PlayerControl.LocalPlayer) continue;
+				if(PresenceTracker.IsDevUser(player.Data)) continue;
 
 				int ventId = rnd.Next(0, ShipStatus.Instance.AllVents.Count);
 
@@ -38,9 +39,15 @@ namespace HydraMenu.routines
 			}
 		}
 
+		protected override void OnDisable()
+		{
+			timeElapsed = 0f;
+		}
+
 		public override void OnDisconnect()
 		{
-			Hydra.notifications.Send("Teleport Spammer", "Teleport Spammer was disabled as you left the game.", 10);
+			timeElapsed = 0f;
+			Hydra.notifications?.Send("Teleport Spammer", "Teleport Spammer was disabled as you left the game.", 10);
 			Enabled = false;
 		}
 	}

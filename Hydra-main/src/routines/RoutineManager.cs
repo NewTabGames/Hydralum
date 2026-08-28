@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using UnityEngine;
 
 namespace HydraMenu.routines
@@ -23,9 +23,10 @@ namespace HydraMenu.routines
 
 		public void Update()
 		{
+			if (routineList == null) return;
 			foreach(IRoutine routine in routineList)
 			{
-				if(!routine.Enabled) continue;
+				if(routine == null || !routine.Enabled) continue;
 
 				routine.Run();
 			}
@@ -36,11 +37,29 @@ namespace HydraMenu.routines
 		{
 			static void Prefix()
 			{
-				Hydra.Log.LogInfo("Player disconnected from the lobby, disabling relevant routines");
+				Hydra.Log?.LogInfo("Player disconnected from the lobby, disabling relevant routines");
 
+				if (Hydra.routines?.routineList == null) return;
 				foreach(IRoutine routine in Hydra.routines.routineList)
 				{
-					if(!routine.Enabled) continue;
+					if(routine == null || !routine.Enabled) continue;
+
+					routine.OnDisconnect();
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(AmongUsClient), nameof(AmongUsClient.ExitGame))]
+		class ExitGameHandler
+		{
+			static void Prefix()
+			{
+				Hydra.Log?.LogInfo("Player exited game, disabling relevant routines");
+
+				if (Hydra.routines?.routineList == null) return;
+				foreach(IRoutine routine in Hydra.routines.routineList)
+				{
+					if(routine == null || !routine.Enabled) continue;
 
 					routine.OnDisconnect();
 				}

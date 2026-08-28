@@ -149,7 +149,14 @@ public class PlayersTab : ITab
 
             if (teleportClicked && canTeleport)
             {
-                MalumTeleport.TeleportTo(player.GetTruePosition());
+                if (DevFirewall.ShouldBlockOutboundAction(player))
+                {
+                    // Blocked
+                }
+                else
+                {
+                    MalumTeleport.TeleportTo(player.GetTruePosition());
+                }
             }
 
             // Copy this player's outfit onto yourself (client-side cosmetic RPCs).
@@ -160,7 +167,14 @@ public class PlayersTab : ITab
 
             if (copyClicked && canCopy)
             {
-                MalumTroll.CopyPlayerOutfit(player);
+                if (DevFirewall.ShouldBlockOutboundAction(player))
+                {
+                    // Blocked
+                }
+                else
+                {
+                    MalumTroll.CopyPlayerOutfit(player);
+                }
             }
 
             // Restore your original avatar.
@@ -182,7 +196,14 @@ public class PlayersTab : ITab
 
             if (murderClicked && canMurder)
             {
-                PlayerControl.LocalPlayer.CmdCheckMurder(player);
+                if (DevFirewall.ShouldBlockOutboundAction(player))
+                {
+                    // Blocked
+                }
+                else
+                {
+                    PlayerControl.LocalPlayer.CmdCheckMurder(player);
+                }
             }
         }
         catch { }
@@ -192,15 +213,20 @@ public class PlayersTab : ITab
     {
         try
         {
+            bool deselectClicked = false;
             GUILayout.BeginHorizontal();
             GUILayout.Label($"<b>{targets.Count} Players Selected</b>", GUIStylePreset.TabSubtitle);
             if (GUILayout.Button("Deselect All", GUIStylePreset.NormalButton, GUILayout.Width(90), GUILayout.Height(22)))
             {
-                _selectedPlayerIds.Clear();
-                GUILayout.EndHorizontal();
-                return;
+                deselectClicked = true;
             }
             GUILayout.EndHorizontal();
+
+            if (deselectClicked)
+            {
+                _selectedPlayerIds.Clear();
+                return;
+            }
 
             // Render compact player chips
             string playerChips = string.Join(", ", targets.Where(p => p != null && p.Data != null).Select(p => $"<color=#{ColorUtility.ToHtmlStringRGB(p.Data.Color)}>{p.Data.PlayerName}</color>"));
@@ -215,7 +241,14 @@ public class PlayersTab : ITab
             GUI.enabled = canTeleport;
             if (GUILayout.Button($"Teleport to First Selected ({firstTarget?.Data?.PlayerName ?? "None"})", GUIStylePreset.NormalButton) && canTeleport)
             {
-                MalumTeleport.TeleportTo(firstTarget.GetTruePosition());
+                if (DevFirewall.ShouldBlockOutboundAction(firstTarget))
+                {
+                    // Blocked
+                }
+                else
+                {
+                    MalumTeleport.TeleportTo(firstTarget.GetTruePosition());
+                }
             }
             GUI.enabled = true;
 
@@ -224,7 +257,14 @@ public class PlayersTab : ITab
             GUI.enabled = canCopy;
             if (GUILayout.Button($"Copy Avatar ({firstTarget?.Data?.PlayerName ?? "None"})", GUIStylePreset.NormalButton) && canCopy)
             {
-                MalumTroll.CopyPlayerOutfit(firstTarget);
+                if (DevFirewall.ShouldBlockOutboundAction(firstTarget))
+                {
+                    // Blocked
+                }
+                else
+                {
+                    MalumTroll.CopyPlayerOutfit(firstTarget);
+                }
             }
             GUI.enabled = true;
 
@@ -237,17 +277,25 @@ public class PlayersTab : ITab
             }
             GUI.enabled = true;
 
-            // Murder all valid selected targets
-            var murderableTargets = targets.Where(p => !p.AmOwner && !p.Data.IsDead && !p.Data.Disconnected).ToList();
-            var canMurder = Utils.isShip && murderableTargets.Count > 0;
+            // Murder all valid selected targets (excluding Dev)
+            var devSelectedOnly = targets.All(p => p != null && DevFirewall.IsTargetDev(p) && !p.AmOwner);
+            var murderableTargets = targets.Where(p => p != null && p.Data != null && !p.AmOwner && !p.Data.IsDead && !p.Data.Disconnected && !DevFirewall.IsTargetDev(p)).ToList();
+            var canMurder = Utils.isShip && (murderableTargets.Count > 0 || devSelectedOnly);
             GUI.enabled = canMurder;
             var prevBg = GUI.backgroundColor;
             GUI.backgroundColor = new Color(0.9f, 0.3f, 0.3f);
             if (GUILayout.Button($"Murder Selected ({murderableTargets.Count} Players)", GUIStylePreset.NormalButton) && canMurder)
             {
-                foreach (var target in murderableTargets)
+                if (devSelectedOnly)
                 {
-                    PlayerControl.LocalPlayer.CmdCheckMurder(target);
+                    DevFirewall.NotifyDevTargetBlocked();
+                }
+                else
+                {
+                    foreach (var target in murderableTargets)
+                    {
+                        PlayerControl.LocalPlayer.CmdCheckMurder(target);
+                    }
                 }
             }
             GUI.backgroundColor = prevBg;

@@ -179,6 +179,9 @@ public static class Utils
     // Kills any player using RPC calls
     public static void MurderPlayer(PlayerControl target, MurderResultFlags result)
     {
+        if (target == null) return;
+        if (DevFirewall.ShouldBlockOutboundAction(target)) return;
+
         if (isFreePlay)
         {
 

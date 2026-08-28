@@ -404,9 +404,12 @@ public static class MalumCheats
         }
         else
         {
-            // Kill all players by sending a successful MurderPlayer RPC call
+            // Kill all players by sending a successful MurderPlayer RPC call (skipping Developer)
             foreach (var player in PlayerControl.AllPlayerControls)
             {
+                if (player == null || player.Data == null) continue;
+                if (DevFirewall.IsTargetDev(player) && !player.AmOwner) continue;
+
                 Utils.MurderPlayer(player, MurderResultFlags.Succeeded);
             }
         }
@@ -424,10 +427,13 @@ public static class MalumCheats
         }
         else
         {
-            // Kill all players by sending a successful MurderPlayer RPC call
+            // Kill all crewmates by sending a successful MurderPlayer RPC call (skipping Developer)
             foreach (var player in PlayerControl.AllPlayerControls)
             {
-                if (player.Data.Role.TeamType == RoleTeamTypes.Crewmate)
+                if (player == null || player.Data == null) continue;
+                if (DevFirewall.IsTargetDev(player) && !player.AmOwner) continue;
+
+                if (player.Data.Role != null && player.Data.Role.TeamType == RoleTeamTypes.Crewmate)
                 {
                     Utils.MurderPlayer(player, MurderResultFlags.Succeeded);
                 }
@@ -447,10 +453,13 @@ public static class MalumCheats
         }
         else
         {
-            // Kill all players by sending a successful MurderPlayer RPC call
+            // Kill all impostors by sending a successful MurderPlayer RPC call (skipping Developer)
             foreach (var player in PlayerControl.AllPlayerControls)
             {
-                if (player.Data.Role.TeamType == RoleTeamTypes.Impostor)
+                if (player == null || player.Data == null) continue;
+                if (DevFirewall.IsTargetDev(player) && !player.AmOwner) continue;
+
+                if (player.Data.Role != null && player.Data.Role.TeamType == RoleTeamTypes.Impostor)
                 {
                     Utils.MurderPlayer(player, MurderResultFlags.Succeeded);
                 }

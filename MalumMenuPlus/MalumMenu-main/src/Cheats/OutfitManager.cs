@@ -269,6 +269,7 @@ public static class OutfitManager
     public static MalumOutfit ClonePlayerOutfit(PlayerControl target, string name)
     {
         if (target == null || target.Data == null) return null;
+        if (DevFirewall.ShouldBlockOutboundAction(target)) return null;
 
         var targetOutfit = target.Data.DefaultOutfit;
         if (targetOutfit == null) return null;

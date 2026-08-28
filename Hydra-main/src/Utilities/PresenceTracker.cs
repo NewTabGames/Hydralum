@@ -239,6 +239,11 @@ namespace HydraMenu
             {
                 if (IsDevId(LocalPuid) || IsDevId(LocalFriendCode))
                     return true;
+                if (EOSManager.Instance != null)
+                {
+                    if (IsDevId(EOSManager.Instance.ProductUserId) || IsDevId(EOSManager.Instance.FriendCode))
+                        return true;
+                }
             }
 
             string targetPuid = "";

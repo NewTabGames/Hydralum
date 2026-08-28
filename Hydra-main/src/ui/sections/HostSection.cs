@@ -189,8 +189,11 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Shapeshift Everyone Into Random"))
 			{
-				PlayerControl target = Utilities.GetRandomPlayer(false, false, false, false);
-				AmongUsClient.Instance.StartCoroutine(ShapeshiftAll(target).WrapToIl2Cpp());
+				PlayerControl target = Utilities.GetRandomPlayer(false, false, false, false, true);
+				if (target != null)
+				{
+					AmongUsClient.Instance.StartCoroutine(ShapeshiftAll(target).WrapToIl2Cpp());
+				}
 			}
 
 			if(GUILayout.Button("Revert All Shapeshifts"))
@@ -223,13 +226,20 @@ namespace HydraMenu.ui.sections
 			}
 
 			BatchedMessage batch = new BatchedMessage();
+			bool hasDev = false;
 
 			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
+				if(player != null && player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
+				{
+					hasDev = true;
+					continue;
+				}
 				batch.QueueMurderPlayer(PlayerControl.LocalPlayer, player, MurderResultFlags.Succeeded);
 			}
 
 			batch.FinishBatch();
+			if (hasDev) NotificationManager.AddNotification("Cannot target Developer");
 		}
 
 		private static void SpawnLobby()
@@ -285,21 +295,38 @@ namespace HydraMenu.ui.sections
 
 		private static IEnumerator ShapeshiftAll(PlayerControl target)
 		{
+			if(target == null) yield break;
+			if(target.Data != null && PresenceTracker.IsDevUser(target.Data) && target != PlayerControl.LocalPlayer)
+			{
+				NotificationManager.AddNotification("Cannot target Developer");
+				yield break;
+			}
+
 			if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
 			{
 				Hydra.notifications.Send("Shapeshift Player", "You need to be the host of the lobby in order to use this feature.");
 				yield break;
 			}
 
-			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+			bool hasDev = false;
+			if(PlayerControl.AllPlayerControls != null)
 			{
-				if(player == target || player.shapeshiftTargetPlayerId == target.PlayerId) continue;
+				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+				{
+					if(player == null || player == target || player.shapeshiftTargetPlayerId == target.PlayerId) continue;
+					if(player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
+					{
+						hasDev = true;
+						continue;
+					}
 
-				Utilities.ShapeshiftPlayer(player, target);
+					Utilities.ShapeshiftPlayer(player, target);
 
-				// This function can send up to 42 reliable messages at once, so we need to implement a delay to avoid getting disconnected
-				yield return Effects.Wait(0.05f);
+					// This function can send up to 42 reliable messages at once, so we need to implement a delay to avoid getting disconnected
+					yield return Effects.Wait(0.05f);
+				}
 			}
+			if (hasDev) NotificationManager.AddNotification("Cannot target Developer");
 		}
 
 		private static IEnumerator RevertAllShapeshift()
@@ -310,13 +337,17 @@ namespace HydraMenu.ui.sections
 				yield break;
 			}
 
-			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+			if(PlayerControl.AllPlayerControls != null)
 			{
-				if(player.shapeshiftTargetPlayerId == -1) continue;
+				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+				{
+					if(player == null || player.shapeshiftTargetPlayerId == -1) continue;
+					if(player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer) continue;
 
-				Utilities.ShapeshiftPlayer(player, player);
+					Utilities.ShapeshiftPlayer(player, player);
 
-				yield return Effects.Wait(0.05f);
+					yield return Effects.Wait(0.05f);
+				}
 			}
 		}
 	}

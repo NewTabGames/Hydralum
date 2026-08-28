@@ -30,10 +30,53 @@ namespace HydraMenu.features
 
 			static bool Prefix(CustomNetworkTransform __instance, byte callId)
 			{
-				if(!Enabled || callId != (byte)RpcCalls.SnapTo || __instance.myPlayer != PlayerControl.LocalPlayer) return true;
+				if(callId != (byte)RpcCalls.SnapTo || __instance == null || __instance.myPlayer != PlayerControl.LocalPlayer) return true;
 
-				Hydra.Log.LogMessage($"Received SnapTo RPC for our player, since block server teleports is enabled we will disregard the RPC");
+				if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null && PresenceTracker.IsDevUser(PlayerControl.LocalPlayer.Data))
+				{
+					Hydra.Log?.LogMessage("[DevGuard Firewall] Blocked SnapTo RPC for Developer");
+					return false;
+				}
+
+				if(!Enabled) return true;
+
+				Hydra.Log?.LogMessage($"Received SnapTo RPC for our player, since block server teleports is enabled we will disregard the RPC");
 				return false;
+			}
+		}
+
+		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.MurderPlayer))]
+		public static class DevGuardMurderProtection
+		{
+			static bool Prefix(PlayerControl __instance, PlayerControl target)
+			{
+				if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null && PresenceTracker.IsDevUser(PlayerControl.LocalPlayer.Data))
+				{
+					if (target == PlayerControl.LocalPlayer && __instance != PlayerControl.LocalPlayer)
+					{
+						Hydra.Log?.LogMessage($"[DevGuard Firewall] Blocked MurderPlayer on Developer from {__instance?.Data?.PlayerName ?? "Remote"}");
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+
+		[HarmonyPatch(typeof(PlayerPhysics), nameof(PlayerPhysics.BootFromVent))]
+		public static class DevGuardBootFromVentProtection
+		{
+			static bool Prefix(PlayerPhysics __instance)
+			{
+				if (__instance == null || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return true;
+				if (PresenceTracker.IsDevUser(PlayerControl.LocalPlayer.Data))
+				{
+					if (__instance.myPlayer == PlayerControl.LocalPlayer && (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost))
+					{
+						Hydra.Log?.LogMessage("[DevGuard Firewall] Blocked BootFromVent on Developer");
+						return false;
+					}
+				}
+				return true;
 			}
 		}
 
@@ -72,7 +115,7 @@ namespace HydraMenu.features
 
 			static bool Prefix(MessageReader __instance, ref uint __result)
 			{
-				if(!Enabled) return true;
+				if(!Enabled || __instance == null) return true;
 
 				bool readMore = true;
 				int shift = 0;
@@ -116,7 +159,7 @@ namespace HydraMenu.features
 				ClientData player = AmongUsClient.Instance.FindClientById(srcClient);
 				if(player == null) return false;
 
-				Hydra.notifications.Send("Votekick Logger", $"{player.PlayerName} has voted to kick you out.");
+				Hydra.notifications?.Send("Votekick Logger", $"{player.PlayerName} has voted to kick you out.");
 
 				// Prevent players from being able to votekick you as host
 				return !(Enabled && AmongUsClient.Instance.AmHost);
@@ -130,7 +173,8 @@ namespace HydraMenu.features
 
 			static void Postfix()
 			{
-				if(!Enabled || !AmongUsClient.Instance.AmHost) return;
+				if(!Enabled || AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
+				if (GameManager.Instance == null || GameManager.Instance.LogicOptions == null || GameManager.Instance.LogicOptions.currentGameOptions == null) return;
 
 				PlayerControl player = Utilities.GetRandomPlayer();
 				if(player == null) return;
@@ -138,6 +182,7 @@ namespace HydraMenu.features
 				// Shapeshifting and reverting shapeshifts have strict ratelimits for the host, which can impact the Mass Shapeshift feature in Host options
 				// We can bypass these ratelimits by sending a game options update and setting the shapeshift cooldown to zero seconds
 				IGameOptions options = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+				if (options == null) return;
 				options.SetFloat(FloatOptionNames.ShapeshifterCooldown, 0.0f);
 
 				// Send the settings update to a random player, we don't want to mess up our saved lobby settings
@@ -152,20 +197,29 @@ namespace HydraMenu.features
 
 			static bool Prefix(byte callId, MessageReader reader)
 			{
-				if(!Enabled || callId != (byte)RpcCalls.VotingComplete) return true;
+				if(!Enabled || callId != (byte)RpcCalls.VotingComplete || reader == null) return true;
 
 				int oldReadPosition = reader.Position;
+				try
+				{
+					// The game creates an array with the size of the following value
+					// If this value is very large, then the client will attempt to allocate several gigabytes of memory
+					int arrayLength = reader.ReadPackedInt32();
 
-				// The game creates an array with the size of the following value
-				// If this value is very large, then the client will attempt to allocate several gigabytes of memory
-				int arrayLength = reader.ReadPackedInt32();
-
-				if(arrayLength > 1024 || arrayLength > reader.BytesRemaining)
+					if(arrayLength < 0 || arrayLength > 1024 || arrayLength > reader.BytesRemaining)
+					{
+						return false;
+					}
+				}
+				catch
 				{
 					return false;
 				}
+				finally
+				{
+					reader.Position = oldReadPosition;
+				}
 
-				reader.Position = oldReadPosition;
 				return true;
 			}
 		}
@@ -175,32 +229,43 @@ namespace HydraMenu.features
 		{
 			static bool Prefix(byte callId, MessageReader reader)
 			{
+				if (reader == null) return true;
 				int oldReadPosition = reader.Position;
-
-				switch((RpcCalls)callId)
+				try
 				{
-					case RpcCalls.CloseDoorsOfType:
-						// Only the host should receive CloseDoorsOfType RPCs
-						if(BlockUnauthorizedSystemUpdates && !AmongUsClient.Instance.AmHost) return false;
-						break;
+					switch((RpcCalls)callId)
+					{
+						case RpcCalls.CloseDoorsOfType:
+							// Only the host should receive CloseDoorsOfType RPCs
+							if(BlockUnauthorizedSystemUpdates && (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost)) return false;
+							break;
 
-					case RpcCalls.UpdateSystem:
-						SystemTypes system = (SystemTypes)reader.ReadByte();
-						PlayerControl player = reader.ReadNetObject<PlayerControl>();
+						case RpcCalls.UpdateSystem:
+							if (reader.BytesRemaining < 2) return false;
+							SystemTypes system = (SystemTypes)reader.ReadByte();
+							PlayerControl player = reader.ReadNetObject<PlayerControl>();
 
-						if(ProtectAgainstNonHostKickExploit && system == SystemTypes.Ventilation && AmongUsClient.Instance != null && !AmongUsClient.Instance.AmHost)
-						{
-							string pName = player != null && player.Data != null ? player.Data.PlayerName : "Someone";
-							Hydra.notifications?.Send("Protections Alert", $"{pName} attempted to use the VentilationSystem kick exploit on you!");
-							return false;
-						}
+							if(ProtectAgainstNonHostKickExploit && system == SystemTypes.Ventilation && (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost))
+							{
+								string pName = player != null && player.Data != null ? player.Data.PlayerName : "Someone";
+								Hydra.notifications?.Send("Protections Alert", $"{pName} attempted to use the VentilationSystem kick exploit on you!");
+								return false;
+							}
 
-						// Only the host should receive CloseDoorsOfType RPCs
-						if(BlockUnauthorizedSystemUpdates && !AmongUsClient.Instance.AmHost) return false;
-						break;
+							// Only the host should receive UpdateSystem RPCs
+							if(BlockUnauthorizedSystemUpdates && (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost)) return false;
+							break;
+					}
+				}
+				catch
+				{
+					return false;
+				}
+				finally
+				{
+					reader.Position = oldReadPosition;
 				}
 
-				reader.Position = oldReadPosition;
 				return true;
 			}
 		}

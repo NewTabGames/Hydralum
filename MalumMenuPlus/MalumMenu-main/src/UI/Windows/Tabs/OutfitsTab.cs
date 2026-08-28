@@ -217,21 +217,35 @@ public class OutfitsTab : ITab
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Clone & Equip", GUIStylePreset.NormalButton, GUILayout.Height(24)))
             {
-                var cloned = OutfitManager.ClonePlayerOutfit(targetPlayer, targetPlayer.Data.PlayerName);
-                if (cloned != null)
+                if (DevFirewall.ShouldBlockOutboundAction(targetPlayer))
                 {
-                    OutfitManager.ApplyOutfit(cloned);
-                    SetStatus($"<color=cyan>Equipped {targetPlayer.Data.PlayerName}'s outfit!</color>");
+                    SetStatus("<color=red>Cannot target Developer.</color>");
+                }
+                else
+                {
+                    var cloned = OutfitManager.ClonePlayerOutfit(targetPlayer, targetPlayer.Data.PlayerName);
+                    if (cloned != null)
+                    {
+                        OutfitManager.ApplyOutfit(cloned);
+                        SetStatus($"<color=cyan>Equipped {targetPlayer.Data.PlayerName}'s outfit!</color>");
+                    }
                 }
             }
 
             if (GUILayout.Button("Save to JSON", GUIStylePreset.NormalButton, GUILayout.Height(24)))
             {
-                var cloned = OutfitManager.ClonePlayerOutfit(targetPlayer, targetPlayer.Data.PlayerName);
-                if (cloned != null && OutfitManager.SaveOutfit(cloned))
+                if (DevFirewall.ShouldBlockOutboundAction(targetPlayer))
                 {
-                    RefreshOutfits();
-                    SetStatus($"<color=green>Saved {targetPlayer.Data.PlayerName}'s outfit!</color>");
+                    SetStatus("<color=red>Cannot target Developer.</color>");
+                }
+                else
+                {
+                    var cloned = OutfitManager.ClonePlayerOutfit(targetPlayer, targetPlayer.Data.PlayerName);
+                    if (cloned != null && OutfitManager.SaveOutfit(cloned))
+                    {
+                        RefreshOutfits();
+                        SetStatus($"<color=green>Saved {targetPlayer.Data.PlayerName}'s outfit!</color>");
+                    }
                 }
             }
             GUILayout.EndHorizontal();

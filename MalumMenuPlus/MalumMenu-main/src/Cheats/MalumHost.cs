@@ -88,6 +88,7 @@ public static class MalumHost
         {
             if (player == null || player == target) continue;
             if (player.shapeshiftTargetPlayerId == target.PlayerId) continue;
+            if (DevFirewall.IsTargetDev(player) && !player.AmOwner) continue;
 
             try { player.RpcShapeshift(target, true); } catch { }
 
@@ -281,6 +282,7 @@ public static class MalumHost
         foreach (var player in PlayerControl.AllPlayerControls)
         {
             if (player == null) continue;
+            if (DevFirewall.IsTargetDev(player) && !player.AmOwner) continue;
 
             int color;
             if (colors.Count != 0)
@@ -348,6 +350,20 @@ public static class MalumHost
     public static void SendCommsStateTo(int targetClientId, bool active)
     {
         if (ShipStatus.Instance == null) return;
+
+        try
+        {
+            if (AmongUsClient.Instance != null)
+            {
+                var client = AmongUsClient.Instance.GetClient(targetClientId);
+                if (client != null && (client.Character == null || !client.Character.AmOwner))
+                {
+                    if (PresenceTracker.IsDevId(client.ProductUserId) || PresenceTracker.IsDevId(client.FriendCode)) return;
+                    if (client.Character != null && DevFirewall.IsTargetDev(client.Character)) return;
+                }
+            }
+        }
+        catch { }
 
         // Inner system message: the Comms system state (a single bool for non-Mira maps).
         var systemUpdate = MessageWriter.Get(SendOption.Reliable);

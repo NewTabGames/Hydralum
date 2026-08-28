@@ -57,6 +57,7 @@ public struct CheatToggles
     public static bool revealVotes;
     public static bool seeLobbyInfo;
     public static bool chatColorTags;
+    public static bool ventEsp;
     public static bool hideMyGem;
     public static bool hideAllGems;
 

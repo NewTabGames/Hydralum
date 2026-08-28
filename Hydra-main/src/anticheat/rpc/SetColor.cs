@@ -6,6 +6,8 @@ namespace HydraMenu.anticheat.rpc
 	{
 		public override bool Validate(PlayerControl player, MessageReader reader)
 		{
+			if (player == null || player.Data == null || reader.BytesRemaining < 5) return false;
+
 			uint netId = reader.ReadUInt32();
 			byte color = reader.ReadByte();
 

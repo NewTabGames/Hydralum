@@ -1,4 +1,4 @@
-﻿using HydraMenu.network;
+using HydraMenu.network;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -17,9 +17,25 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
+			if(PlayerControl.LocalPlayer == null || PlayerControl.AllPlayerControls == null) return;
+
 			timeElapsed += Time.deltaTime;
 			if(timeElapsed < randomizationDelay) return;
 			timeElapsed = 0f;
+
+			if(!IsGlobal)
+			{
+				targets.RemoveWhere(h => {
+					var p = PlayerControl.AllPlayerControls.ToArray().FirstOrDefault(pc => pc != null && pc.GetHashCode() == h);
+					return p == null || p.Data == null || p.Data.Disconnected;
+				});
+
+				if(targets.Count == 0)
+				{
+					Enabled = false;
+					return;
+				}
+			}
 
 			List<int> colors = Enumerable.Range(0, 18).ToList();
 
@@ -27,7 +43,9 @@ namespace HydraMenu.routines
 
 			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
+				if(player == null || player.Data == null || player.Data.Disconnected) continue;
 				if(!IsGlobal && !targets.Contains(player.GetHashCode())) continue;
+				if(PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer) continue;
 
 				// Assign each player a unique color
 				int color;
@@ -73,11 +91,14 @@ namespace HydraMenu.routines
 		protected override void OnDisable()
 		{
 			targets.Clear();
+			timeElapsed = 0f;
 		}
 
 		public override void OnDisconnect()
 		{
-			Hydra.notifications.Send("Disco Party", "Disco Party was disabled as you left the game.", 10);
+			targets.Clear();
+			timeElapsed = 0f;
+			Hydra.notifications?.Send("Disco Party", "Disco Party was disabled as you left the game.", 10);
 			Enabled = false;
 		}
 	}

@@ -72,6 +72,8 @@ public class ESPTab : ITab
 
         CheatToggles.chatColorTags = GUILayout.Toggle(CheatToggles.chatColorTags, " Chat Color Tags");
 
+        CheatToggles.ventEsp = GUILayout.Toggle(CheatToggles.ventEsp, " Vent ESP");
+
         CheatToggles.seeLobbyInfo = GUILayout.Toggle(CheatToggles.seeLobbyInfo, " See Lobby Info");
     }
 

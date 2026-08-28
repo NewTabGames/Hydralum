@@ -7,6 +7,9 @@ namespace HydraMenu.ui
 {
 	internal class NotificationManager : MonoBehaviour
 	{
+		private static readonly object StaticLock = new object();
+		private static readonly List<Notification> PendingNotifications = new List<Notification>();
+
 		public readonly object lockObj = new object();
 		public List<Notification> notifications = new List<Notification>();
 		public bool DisableNotifications = false;
@@ -40,6 +43,18 @@ namespace HydraMenu.ui
 		{
 			try
 			{
+				lock (StaticLock)
+				{
+					if (PendingNotifications.Count > 0)
+					{
+						lock (lockObj)
+						{
+							notifications.AddRange(PendingNotifications);
+						}
+						PendingNotifications.Clear();
+					}
+				}
+
 				lock (lockObj)
 				{
 					int maxNotifs = GetMaxNotifications();
@@ -49,6 +64,14 @@ namespace HydraMenu.ui
 					{
 						if (i >= notifications.Count) break;
 						Notification notification = notifications[i];
+						if (notification == null)
+						{
+							notifications.RemoveAt(i);
+							i--;
+							notificationCount--;
+							continue;
+						}
+
 						notification.lifetime += Time.deltaTime;
 
 						if(notification.HasExpired)
@@ -93,14 +116,15 @@ namespace HydraMenu.ui
 		[HideFromIl2Cpp]
 		private void RenderNotification(byte position, Notification notification)
 		{
+			if (notification == null) return;
 			float boxX = Screen.width - BoxSize.x;
 			float boxY = Screen.height - (int)(BoxSize.y * (position + 1));
 
-			GUI.Box(new Rect(boxX, boxY, BoxSize.x, BoxSize.y), notification.title);
+			GUI.Box(new Rect(boxX, boxY, BoxSize.x, BoxSize.y), notification.title ?? "");
 
-			GUI.Label(new Rect(boxX + BoxContentPadding.x, boxY + BoxHeaderSize.y, BoxContentSize.x, BoxContentSize.y), notification.message);
+			GUI.Label(new Rect(boxX + BoxContentPadding.x, boxY + BoxHeaderSize.y, BoxContentSize.x, BoxContentSize.y), notification.message ?? "");
 
-			GUI.HorizontalSlider(new Rect(boxX, boxY + BoxHeaderSize.y + BoxContentSize.y, BoxSize.x, BoxSize.y), notification.ttl - notification.lifetime, 0, notification.ttl);
+			GUI.HorizontalSlider(new Rect(boxX, boxY + BoxHeaderSize.y + BoxContentSize.y, BoxSize.x, BoxSliderSize.y), Mathf.Clamp(notification.ttl - notification.lifetime, 0, notification.ttl), 0, notification.ttl);
 		}
 
 		public int GetMaxNotifications()
@@ -112,23 +136,54 @@ namespace HydraMenu.ui
 		// The time to live value for a notification should be five seconds if it is a success message, and ten seconds if it is a failure message
 		public void Send(string title, string message, float ttl = 10)
 		{
-			Hydra.Log?.LogMessage($"[Notification] [{title}] {message}");
-
-			if(DisableNotifications) return;
-
-			Notification notification = new Notification(title, message, ttl);
-			lock (lockObj)
+			try
 			{
-				notifications.Add(notification);
+				Hydra.Log?.LogMessage($"[Notification] [{title}] {message}");
+
+				if(DisableNotifications) return;
+
+				Notification notification = new Notification(title, message, ttl);
+				lock (lockObj)
+				{
+					notifications.Add(notification);
+				}
 			}
+			catch { }
 		}
 
 		public void ClearNotifications()
 		{
-			lock (lockObj)
+			try
 			{
-				notifications.Clear();
+				lock (StaticLock)
+				{
+					PendingNotifications.Clear();
+				}
+				lock (lockObj)
+				{
+					notifications.Clear();
+				}
 			}
+			catch { }
+		}
+
+		public static void AddNotification(string message, string title = "Developer Guard", float ttl = 5)
+		{
+			try
+			{
+				if (Hydra.notifications != null)
+				{
+					Hydra.notifications.Send(title, message, ttl);
+				}
+				else
+				{
+					lock (StaticLock)
+					{
+						PendingNotifications.Add(new Notification(title, message, ttl));
+					}
+				}
+			}
+			catch { }
 		}
 	}
 }

@@ -16,7 +16,20 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
-			if(PlayerControl.LocalPlayer == null || target == null || AmongUsClient.Instance == null) return;
+			if(PlayerControl.LocalPlayer == null || AmongUsClient.Instance == null) return;
+			if(target == null || target.Data == null || target.Data.Disconnected)
+			{
+				Enabled = false;
+				target = null;
+				return;
+			}
+			if(target.Data != null && PresenceTracker.IsDevUser(target.Data) && target != PlayerControl.LocalPlayer)
+			{
+				ui.NotificationManager.AddNotification("Cannot target Developer");
+				Enabled = false;
+				target = null;
+				return;
+			}
 			if(PlayerControl.LocalPlayer.cosmetics == null || PlayerControl.LocalPlayer.cosmetics.currentPet == null) return;
 
 			timeElapsed += Time.deltaTime;
@@ -70,6 +83,7 @@ namespace HydraMenu.routines
 		protected override void OnDisable()
 		{
 			target = null;
+			timeElapsed = 0.0f;
 
 			if(PlayerControl.LocalPlayer != null)
 			{
@@ -83,6 +97,16 @@ namespace HydraMenu.routines
 
 		public override void OnDisconnect()
 		{
+			target = null;
+			timeElapsed = 0.0f;
+			if(PlayerControl.LocalPlayer != null)
+			{
+				PlayerControl.LocalPlayer.moveable = true;
+				if (PlayerControl.LocalPlayer.cosmetics != null && PlayerControl.LocalPlayer.cosmetics.PettingHand != null)
+				{
+					PlayerControl.LocalPlayer.cosmetics.PettingHand.StopPetting();
+				}
+			}
 			Hydra.notifications?.Send("Pet Player", "Pet Player was disabled as you left the game.", 10);
 			Enabled = false;
 		}
