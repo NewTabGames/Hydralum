@@ -179,23 +179,6 @@ public static class PlayerControl_HandleRpc_Firewall
                     return false;
                 }
             }
-            else if (callId == (byte)RpcCalls.SetColor)
-            {
-                if (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)
-                {
-                    DebugUI.Log("<color=#FF5555>[Firewall]</color> Blocked unauthorized remote SetColor RPC on Dev");
-                    DevFirewall.IsProcessingRemoteRpc = false;
-                    return false;
-                }
-
-                var hostClient = AmongUsClient.Instance?.GetHost();
-                if (hostClient == null)
-                {
-                    DebugUI.Log("<color=#FF5555>[Firewall]</color> Blocked unauthorized remote SetColor RPC on Dev");
-                    DevFirewall.IsProcessingRemoteRpc = false;
-                    return false;
-                }
-            }
             else if (callId == (byte)RpcCalls.SetRole)
             {
                 if (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)

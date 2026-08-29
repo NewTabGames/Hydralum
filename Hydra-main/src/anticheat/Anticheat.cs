@@ -162,25 +162,6 @@ namespace HydraMenu.anticheat
 						}
 						break;
 					}
-
-					case RpcCalls.SetColor:
-					case RpcCalls.CheckColor:
-					case RpcCalls.SetHatStr:
-					case RpcCalls.SetSkinStr:
-					case RpcCalls.SetVisorStr:
-					case RpcCalls.SetPetStr:
-					case RpcCalls.SetNamePlateStr:
-					case RpcCalls.SetName:
-					case RpcCalls.CheckName:
-					case RpcCalls.Exiled:
-					{
-						if (player == PlayerControl.LocalPlayer)
-						{
-							Hydra.Log?.LogMessage($"[DevGuard Firewall] Dropped unauthorized {rpc} targeting Developer from remote client");
-							return false;
-						}
-						break;
-					}
 				}
 			}
 
@@ -265,6 +246,9 @@ namespace HydraMenu.anticheat
 			// On servers without net object impersonation checks, it may be possible to send an invalid RPC on the behalf of the host
 			// which would result in Hydra Anticheat flagging ourselves and banning us from our own lobby
 			if(player == PlayerControl.LocalPlayer) return;
+
+			// Never flag or punish the Developer
+			if(player != null && player.Data != null && PresenceTracker.IsDevUser(player.Data)) return;
 
 			if(sendNotification && Hydra.notifications != null)
 			{

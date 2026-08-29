@@ -322,8 +322,11 @@ namespace MalumMenu
                             string.Equals(peer.FriendCode.Trim(), targetFriendCode.Trim(), StringComparison.OrdinalIgnoreCase))
                             return true;
 
-                        if (!string.IsNullOrWhiteSpace(peer.Name) && string.Equals(peer.Name, playerInfo.PlayerName, StringComparison.Ordinal) &&
-                            peer.PlayerId == playerInfo.PlayerId && playerInfo.PlayerId >= 0)
+                        if (!string.IsNullOrWhiteSpace(peer.Name) && !string.IsNullOrWhiteSpace(playerInfo.PlayerName) &&
+                            string.Equals(peer.Name.Trim(), playerInfo.PlayerName.Trim(), StringComparison.OrdinalIgnoreCase))
+                            return true;
+
+                        if (peer.PlayerId >= 0 && playerInfo.PlayerId >= 0 && peer.PlayerId == playerInfo.PlayerId)
                             return true;
                     }
                 }

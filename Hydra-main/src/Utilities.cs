@@ -130,10 +130,9 @@ namespace HydraMenu
 			try
 			{
 				PlayerControl.LocalPlayer.CmdCheckColor((byte)outfit.ColorId);
-				PlayerControl.LocalPlayer.SetColor(outfit.ColorId);
-				if (PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.DefaultOutfit != null)
+				if (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)
 				{
-					PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId = outfit.ColorId;
+					PlayerControl.LocalPlayer.RpcSetColor((byte)outfit.ColorId);
 				}
 			}
 			catch { }
@@ -182,10 +181,9 @@ namespace HydraMenu
 				}
 
 				PlayerControl.LocalPlayer.CmdCheckColor(colorId);
-				PlayerControl.LocalPlayer.SetColor(colorId);
-				if (PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.DefaultOutfit != null)
+				if (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)
 				{
-					PlayerControl.LocalPlayer.Data.DefaultOutfit.ColorId = colorId;
+					PlayerControl.LocalPlayer.RpcSetColor(colorId);
 				}
 
 				BatchedMessage batch = new BatchedMessage();

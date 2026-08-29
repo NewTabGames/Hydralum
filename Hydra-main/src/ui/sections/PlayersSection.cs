@@ -244,7 +244,6 @@ namespace HydraMenu.ui.sections
 				Hydra.routines.jailPlayer.Enabled = Controls.PlayerSpecificToggle("Place in Jail", target, ref Hydra.routines.jailPlayer.targets);
 			}
 
-			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Teleport"))
 			{
 				if(IsDevTarget(target))
@@ -256,24 +255,6 @@ namespace HydraMenu.ui.sections
 					Teleporter.TeleportTo(target.transform.position);
 				}
 			}
-
-			if(GUILayout.Button("Teleport to Me"))
-			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else if(AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null) { }
-				else if(AmongUsClient.Instance.AmHost || !hasAnticheat)
-				{
-					Teleporter.TeleportPlayerTo(target, PlayerControl.LocalPlayer.transform.position);
-				}
-				else
-				{
-					Hydra.notifications.Send("Teleport", "Teleporting other players requires Host authority on official servers.");
-				}
-			}
-			GUILayout.EndHorizontal();
 
 			if(GUILayout.Button("Teleport All To"))
 			{
