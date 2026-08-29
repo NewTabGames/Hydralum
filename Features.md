@@ -219,6 +219,7 @@ Comprehensive guide and catalog of all features, toggles, cheats, and protection
 * **Kick All From Vents**: Forces all players out of vents.
 * **Disable Vents**: Disables venting for everyone in the match.
 * **Exclude Yourself**: Keeps your own venting active while disabling vents for others.
+* **Enable Med Scan**: Allows using the Medbay scanner console to perform a realistic visual scan animation at any time, even when not assigned the task or when playing as an Impostor.
 * **Door Controls**: Instant lock and unlock per room across all maps.
 * **Sabotage Map**: Clickable sabotage map overlay to trigger sabotages instantly.
 

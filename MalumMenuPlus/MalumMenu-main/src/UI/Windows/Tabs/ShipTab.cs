@@ -45,6 +45,8 @@ public class ShipTab : ITab
 
         CheatToggles.animMedScan = GUILayout.Toggle(CheatToggles.animMedScan, " Medbay Scan");
 
+        CheatToggles.enableMedScan = GUILayout.Toggle(CheatToggles.enableMedScan, " Enable Med Scan");
+
         CheatToggles.animCamsInUse = GUILayout.Toggle(CheatToggles.animCamsInUse, " Cams In Use");
 
         CheatToggles.animPet = GUILayout.Toggle(CheatToggles.animPet, " Pet Animation");

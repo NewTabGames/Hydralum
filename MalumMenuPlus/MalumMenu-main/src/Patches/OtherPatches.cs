@@ -279,18 +279,354 @@ public static class MushroomDoorSabotageMinigame_Begin
     }
 }
 
-// NEEDS FIX : Blocks usage of consoles to which impostor
-// has access to (like those to fix sabotages) when cheat is disabled
+[HarmonyPatch(typeof(Console), nameof(Console.CanUse))]
+public static class Console_CanUse_MedScanPatch
+{
+    public static void Postfix(Console __instance, NetworkedPlayerInfo pc, ref bool canUse, ref bool couldUse, ref float __result)
+    {
+        if (!CheatToggles.enableMedScan) return;
+        if (PlayerControl.LocalPlayer == null || pc != PlayerControl.LocalPlayer.Data) return;
+        if (PlayerControl.LocalPlayer.Data.IsDead) return;
+        if (__instance == null || __instance.TaskTypes == null) return;
 
-// [HarmonyPatch(typeof(Console), nameof(Console.CanUse))]
-// public static class Console_CanUse
-// {
-//     // Prefix patch of Console.CanUse to allow impostors to do tasks
-//     public static void Prefix(Console __instance)
-//     {
-//         __instance.AllowImpostor = CheatToggles.impostorTasks;
-//     }
-// }
+        bool isMedScan = false;
+        for (int i = 0; i < __instance.TaskTypes.Length; i++)
+        {
+            if (__instance.TaskTypes[i] == TaskTypes.SubmitScan)
+            {
+                isMedScan = true;
+                break;
+            }
+        }
+
+        if (isMedScan)
+        {
+            Vector2 playerPos = PlayerControl.LocalPlayer.GetTruePosition();
+            Vector2 consolePos = __instance.transform.position;
+            float dist = Vector2.Distance(playerPos, consolePos);
+            couldUse = true;
+            if (dist <= __instance.UsableDistance)
+            {
+                canUse = true;
+                __result = dist;
+            }
+        }
+    }
+}
+
+[HarmonyPatch(typeof(Console), nameof(Console.Use))]
+public static class Console_Use_MedScanPatch
+{
+    public static bool Prefix(Console __instance)
+    {
+        if (!CheatToggles.enableMedScan) return true;
+        if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null || PlayerControl.LocalPlayer.Data.IsDead) return true;
+        if (__instance == null || __instance.TaskTypes == null) return true;
+
+        bool isMedScan = false;
+        for (int i = 0; i < __instance.TaskTypes.Length; i++)
+        {
+            if (__instance.TaskTypes[i] == TaskTypes.SubmitScan)
+            {
+                isMedScan = true;
+                break;
+            }
+        }
+
+        if (isMedScan)
+        {
+            // If the local player already has a real SubmitScan task assigned and not completed, let vanilla handle it
+            PlayerTask existingTask = __instance.FindTask(PlayerControl.LocalPlayer);
+            if (existingTask != null && existingTask.TaskType == TaskTypes.SubmitScan && !existingTask.IsComplete)
+            {
+                return true;
+            }
+
+            if (Minigame.Instance != null) return false;
+
+            PlayerTask scanTaskPrefab = FindScanTaskPrefab();
+
+            if (scanTaskPrefab != null && scanTaskPrefab.MinigamePrefab != null)
+            {
+                var normTask = scanTaskPrefab.TryCast<NormalPlayerTask>();
+                if (normTask != null)
+                {
+                    normTask.taskStep = 0;
+                }
+
+                var minigame = UnityEngine.Object.Instantiate<Minigame>(scanTaskPrefab.MinigamePrefab);
+                minigame.transform.SetParent(Camera.main.transform, false);
+                minigame.transform.localPosition = new Vector3(0f, 0f, -50f);
+                minigame.Console = __instance;
+                minigame.Begin(scanTaskPrefab);
+            }
+            else
+            {
+                Utils.ForceSetScanner(PlayerControl.LocalPlayer, true);
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private static PlayerTask FindScanTaskPrefab()
+    {
+        if (ShipStatus.Instance == null) return null;
+
+        if (ShipStatus.Instance.SpecialTasks != null)
+        {
+            for (int i = 0; i < ShipStatus.Instance.SpecialTasks.Count; i++)
+            {
+                var task = ShipStatus.Instance.SpecialTasks[i];
+                if (task != null && task.TaskType == TaskTypes.SubmitScan) return task;
+            }
+        }
+
+        if (ShipStatus.Instance.LongTasks != null)
+        {
+            for (int i = 0; i < ShipStatus.Instance.LongTasks.Count; i++)
+            {
+                var task = ShipStatus.Instance.LongTasks[i];
+                if (task != null && task.TaskType == TaskTypes.SubmitScan) return task;
+            }
+        }
+
+        if (ShipStatus.Instance.CommonTasks != null)
+        {
+            for (int i = 0; i < ShipStatus.Instance.CommonTasks.Count; i++)
+            {
+                var task = ShipStatus.Instance.CommonTasks[i];
+                if (task != null && task.TaskType == TaskTypes.SubmitScan) return task;
+            }
+        }
+
+        if (ShipStatus.Instance.ShortTasks != null)
+        {
+            for (int i = 0; i < ShipStatus.Instance.ShortTasks.Count; i++)
+            {
+                var task = ShipStatus.Instance.ShortTasks[i];
+                if (task != null && task.TaskType == TaskTypes.SubmitScan) return task;
+            }
+        }
+
+        var allTasks = ShipStatus.Instance.GetAllTasks();
+        if (allTasks != null)
+        {
+            for (int i = 0; i < allTasks.Count; i++)
+            {
+                var task = allTasks[i];
+                if (task != null && task.TaskType == TaskTypes.SubmitScan) return task;
+            }
+        }
+
+        return null;
+    }
+}
+
+[HarmonyPatch(typeof(MedScanMinigame), nameof(MedScanMinigame.Begin))]
+public static class MedScanMinigame_Begin_Patch
+{
+    public static void Postfix(MedScanMinigame __instance)
+    {
+        if (!CheatToggles.enableMedScan) return;
+        if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
+        if (__instance == null) return;
+
+        // For fake scans, __instance.medscan might be null because the prefab wasn't initialized with a real MedScanSystem console.
+        // We MUST assign it to prevent WalkToOffset from throwing a NullReferenceException and getting the player stuck.
+        if (__instance.medscan == null && ShipStatus.Instance != null && ShipStatus.Instance.Systems != null)
+        {
+            if (ShipStatus.Instance.Systems.ContainsKey(SystemTypes.MedBay))
+            {
+                __instance.medscan = ShipStatus.Instance.Systems[SystemTypes.MedBay].TryCast<MedScanSystem>();
+            }
+        }
+
+        bool hasRealTask = false;
+        if (PlayerControl.LocalPlayer.myTasks != null)
+        {
+            foreach (var t in PlayerControl.LocalPlayer.myTasks)
+            {
+                if (t != null && t.TaskType == TaskTypes.SubmitScan && !t.IsComplete)
+                {
+                    if (t == __instance.MyTask)
+                    {
+                        hasRealTask = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!hasRealTask && __instance.MyNormTask != null)
+        {
+            __instance.MyNormTask.taskStep = 0;
+        }
+    }
+}
+
+[HarmonyPatch(typeof(MedScanMinigame), nameof(MedScanMinigame.FixedUpdate))]
+public static class MedScanMinigame_FixedUpdate_Patch
+{
+    public static bool Prefix(MedScanMinigame __instance)
+    {
+        if (!CheatToggles.enableMedScan) return true;
+        if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return true;
+        if (__instance == null) return true;
+
+        bool hasRealTask = false;
+        if (PlayerControl.LocalPlayer.myTasks != null)
+        {
+            foreach (var t in PlayerControl.LocalPlayer.myTasks)
+            {
+                if (t != null && t.TaskType == TaskTypes.SubmitScan && !t.IsComplete)
+                {
+                    if (t == __instance.MyTask)
+                    {
+                        hasRealTask = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!hasRealTask)
+        {
+            if (__instance.medscan != null && __instance.medscan.CurrentUser != PlayerControl.LocalPlayer.PlayerId)
+            {
+                __instance.medscan.CurrentUser = PlayerControl.LocalPlayer.PlayerId;
+            }
+
+            if (__instance.medscan != null && __instance.medscan.CurrentUser == PlayerControl.LocalPlayer.PlayerId)
+            {
+                if (__instance.ScanTimer == 0f)
+                {
+                    // Allow the normal RPC to be sent so other players see the visual rings!
+                    PlayerControl.LocalPlayer.RpcSetScanner(true);
+                    PlayerControl.LocalPlayer.SetScanner(true, 0); // ensure local applies
+                    __instance.ScanTimer += 0.0001f;
+                }
+
+                if (__instance.ScanTimer + Time.fixedDeltaTime >= 10f)
+                {
+                    // Nullify tasks so vanilla Close() doesn't call NextStep()
+                    __instance.MyTask = null;
+                    __instance.MyNormTask = null;
+                    
+                    __instance.Close(); // Call vanilla Close() to properly unfreeze the UI!
+                    
+                    return false; // Skip original FixedUpdate only on the final frame
+                }
+                
+                return true; // Let original FixedUpdate run to animate the UI
+            }
+        }
+
+        return true;
+    }
+}
+
+[HarmonyPatch(typeof(MedScanMinigame), nameof(MedScanMinigame.Close))]
+public static class MedScanMinigame_Close_Patch
+{
+    public static void Prefix(MedScanMinigame __instance)
+    {
+        if (!CheatToggles.enableMedScan) return;
+        if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
+        if (__instance == null) return;
+
+        bool hasRealTask = false;
+        if (PlayerControl.LocalPlayer.myTasks != null)
+        {
+            foreach (var t in PlayerControl.LocalPlayer.myTasks)
+            {
+                if (t != null && t.TaskType == TaskTypes.SubmitScan && !t.IsComplete)
+                {
+                    if (t == __instance.MyTask)
+                    {
+                        hasRealTask = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!hasRealTask)
+        {
+            // Nullify tasks before vanilla Close() runs so it skips NextStep()
+            __instance.MyTask = null;
+            __instance.MyNormTask = null;
+            // We allow vanilla Close() to run completely so it cleans up the UI and unfreezes the player!
+            // RpcUpdateSystem is blocked by our ShipStatus_RpcUpdateSystem_Patch.
+        }
+    }
+}
+
+[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.RpcCompleteTask))]
+public static class PlayerControl_RpcCompleteTask_Patch
+{
+    public static bool Prefix(PlayerControl __instance, uint idx)
+    {
+        if (__instance != PlayerControl.LocalPlayer) return true;
+        if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return true;
+
+        // If local player is an Impostor, never send RpcCompleteTask (instant kick by server anticheat)
+        if (PlayerControl.LocalPlayer.Data.Role != null && PlayerControl.LocalPlayer.Data.Role.IsImpostor)
+        {
+            return false;
+        }
+
+        // Fix logic bug: allow valid tasks to be completed, block if tasks is null or index is out of bounds
+        if (PlayerControl.LocalPlayer.myTasks == null || idx >= PlayerControl.LocalPlayer.myTasks.Count)
+        {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+[HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.RpcUpdateSystem), typeof(SystemTypes), typeof(byte))]
+public static class ShipStatus_RpcUpdateSystem_Patch
+{
+    public static bool Prefix(SystemTypes systemType, byte amount)
+    {
+        if (!CheatToggles.enableMedScan) return true;
+        if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return true;
+        if (systemType != SystemTypes.MedBay) return true;
+
+        // Block if Impostor (anticheat immediately kicks Impostors sending system updates for Medbay)
+        if (PlayerControl.LocalPlayer.Data.Role != null && PlayerControl.LocalPlayer.Data.Role.IsImpostor)
+        {
+            return false;
+        }
+
+        // Check if player has an actual uncompleted Medbay scan task
+        bool hasRealTask = false;
+        if (PlayerControl.LocalPlayer.myTasks != null)
+        {
+            for (int i = 0; i < PlayerControl.LocalPlayer.myTasks.Count; i++)
+            {
+                var t = PlayerControl.LocalPlayer.myTasks[i];
+                if (t != null && t.TaskType == TaskTypes.SubmitScan && !t.IsComplete)
+                {
+                    hasRealTask = true;
+                    break;
+                }
+            }
+        }
+
+        // Block RpcUpdateSystem if this is a faked scan
+        if (!hasRealTask)
+        {
+            return false;
+        }
+
+        return true;
+    }
+}
 
 [HarmonyPatch(typeof(IntroCutscene), "CoBegin")]
 public static class IntroCutscene_CoBegin

@@ -126,6 +126,7 @@ public struct CheatToggles
     public static bool animAsteroids;
     public static bool animEmptyGarbage;
     public static bool animMedScan;
+    public static bool enableMedScan;
     public static bool animCamsInUse;
     public static bool animPet;
     public static bool moonWalk;
