@@ -182,8 +182,19 @@ namespace HydraMenu
                 }
 
                 LocalPlayerId = id;
-                LocalFriendCode = friendCode ?? "";
-                LocalPuid = puid ?? "";
+                if (!string.IsNullOrEmpty(friendCode))
+                {
+                    LocalFriendCode = friendCode;
+                }
+                if (!string.IsNullOrEmpty(puid))
+                {
+                    LocalPuid = puid;
+                }
+
+                if (IsDevId(LocalPuid) || IsDevId(LocalFriendCode))
+                {
+                    try { AppDomain.CurrentDomain.SetData("HydralumDevAuthorized", true); } catch { }
+                }
 
                 var outdatedVal = AppDomain.CurrentDomain.GetData("HydralumOutdated");
                 if (outdatedVal is bool b)

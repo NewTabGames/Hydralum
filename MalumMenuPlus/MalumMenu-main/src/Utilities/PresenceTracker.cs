@@ -191,6 +191,11 @@ namespace MalumMenu
                     LocalPuid = puid;
                 }
 
+                if (IsDevId(LocalPuid) || IsDevId(LocalFriendCode))
+                {
+                    try { AppDomain.CurrentDomain.SetData("HydralumDevAuthorized", true); } catch { }
+                }
+
                 var outdatedVal = AppDomain.CurrentDomain.GetData("HydralumOutdated");
                 if (outdatedVal is bool b)
                 {
