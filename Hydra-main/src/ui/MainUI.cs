@@ -66,37 +66,6 @@ namespace HydraMenu.ui
 			AnnouncementManager.Update();
 			PresenceTracker.UpdateMainThread();
 
-			if(Input.GetKeyDown(KeyCode.F6))
-			{
-				if (IsMalumOpen())
-				{
-					CloseMalumMenu();
-					visible = false;
-					HydraConfig.Save();
-				}
-				else
-				{
-					visible = !visible;
-					if(visible)
-					{
-						CloseMalumMenu();
-						SetMalumLastOpened(true);
-
-						if(HydraConfig.OpenOnCursor != null && HydraConfig.OpenOnCursor.Value)
-						{
-							Vector2 mousePos = Input.mousePosition;
-							float x = Mathf.Clamp(mousePos.x, 0, Mathf.Max(0, Screen.width - WindowSize.x));
-							float y = Mathf.Clamp(Screen.height - mousePos.y, 0, Mathf.Max(0, Screen.height - WindowSize.y));
-							windowPosition = new Vector2(x, y);
-						}
-					}
-					else
-					{
-						HydraConfig.Save();
-					}
-				}
-			}
-
 			if(!visible) return;
 
 			// Handle changing the current section through arrow keys

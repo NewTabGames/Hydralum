@@ -33,8 +33,8 @@ public class InfoTab : ITab
             GUILayout.Label("<b>Keybind Reference & Shortcuts:</b>", GUIStylePreset.TabSubtitle);
             GUILayout.Space(4);
 
-            DrawKeybindRow("Delete", "Toggle MalumMenu (Customizable in Config Tab)");
-            DrawKeybindRow("F6", "Toggle HydraMenu");
+            DrawKeybindRow("Delete", "Toggle Active Menu (Customizable in Config Tab)");
+            DrawKeybindRow("Switch (Button)", "Switch between MalumMenu and HydraMenu in-place");
             DrawKeybindRow("Escape (Important)", "Dismiss Match Info Guide, dialogs, and fix menu softlocks");
             DrawKeybindRow("Left / Right Arrow", "Cycle Previous / Next Vent (with Vent Cheats)");
 

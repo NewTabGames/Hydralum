@@ -23,7 +23,7 @@ This package comes pre-packaged with BepInEx 6 IL2CPP and the Hydralum DLLs.
    - Steam: Right-click Among Us -> Manage -> Browse local files.
    - Epic Games: Open your Among Us installation folder.
 4. Extract all files from the zip directly into your game folder (where `Among Us.exe` is located).
-5. Launch the game. Press `Delete` to open MalumMenu or `F6` for HydraMenu.
+5. Launch the game. Press `Delete` to open the menu, and click the "Switch" button in the top header to toggle between MalumMenu and HydraMenu.
 
 ### Option 2: Manual Install (Existing BepInEx 6 Users)
 
@@ -41,12 +41,12 @@ Among Us uses Unity IL2CPP, so standard BepInEx 5 will not work. You need BepInE
 2. Extract the zip into your Among Us folder so `winhttp.dll` and the `BepInEx` folder sit next to `Among Us.exe`.
 3. Run the game once to generate folders, then close it and add the mod DLLs to `BepInEx/plugins/`.
 
-## Keybinds
+## Keybinds & Navigation
 
-| Key | Action | Description |
+| Key / Control | Action | Description |
 | :--- | :--- | :--- |
-| `Delete` | Toggle MalumMenu | Opens or closes MalumMenu (changeable in Config tab). |
-| `F6` | Toggle HydraMenu | Opens or closes HydraMenu. |
+| `Delete` | Toggle Menu | Opens or closes the active menu (changeable in MalumMenu's Config tab). |
+| `Switch` (Button) | Switch Menus | Located in the top header of both menus to switch between MalumMenu and HydraMenu in-place. |
 | `Escape` **(Important)** | Close Menus & Fix Softlocks | Dismisses Match Info Guide, outfit laptop menus, dialogs, and resolves menu softlocks. |
 | `Left / Right Arrow` | Vent Hop | Cycles between vents when vent walk is active. |
 
