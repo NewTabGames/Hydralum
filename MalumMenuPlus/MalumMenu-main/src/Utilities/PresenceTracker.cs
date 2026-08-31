@@ -17,7 +17,7 @@ namespace MalumMenu
         private static CancellationTokenSource _cts;
         private static bool _started = false;
 
-        public const string CurrentHydralumVersion = "1.3.2";
+        public const string CurrentHydralumVersion = "1.3.3";
         public const string GitHubActionsUrl = "https://github.com/NewTabGames/Hydralum/actions";
         public static bool IsOutdated { get; set; } = false;
         public static string RequiredVersion { get; set; } = "1.2.0";
@@ -69,9 +69,14 @@ namespace MalumMenu
             return Math.Max(1, OnlineCount);
         }
 
+        private static float lastUpdateTime = 0f;
+        
         // Called on Unity Main Thread (e.g. MenuUI.Update)
         public static void UpdateMainThread()
         {
+            if (UnityEngine.Time.unscaledTime - lastUpdateTime < 1f) return;
+            lastUpdateTime = UnityEngine.Time.unscaledTime;
+            
             try
             {
                 bool inOnlineGame = false;
@@ -513,6 +518,7 @@ namespace MalumMenu
                         {
                             int active = 0;
                             var matchedPeers = new List<PeerData>();
+                            var staleSessionIds = new List<string>();
 
                             try
                             {
@@ -521,8 +527,13 @@ namespace MalumMenu
                                 {
                                     try
                                     {
+                                        string sessionIdKey = prop.Name;
                                         var el = prop.Value;
-                                        if (el.ValueKind != JsonValueKind.Object) continue;
+                                        if (el.ValueKind != JsonValueKind.Object)
+                                        {
+                                            if (sessionIdKey != SessionId) staleSessionIds.Add(sessionIdKey);
+                                            continue;
+                                        }
 
                                         long lastSeen = 0;
                                         if (el.TryGetProperty("last_seen", out var lsProp))
@@ -532,7 +543,7 @@ namespace MalumMenu
                                             else if (long.TryParse(lsProp.GetString(), out var lsParsed)) lastSeen = lsParsed;
                                         }
 
-                                        long age = Math.Abs(now - lastSeen);
+                                        long age = lastSeen > 0 ? Math.Abs(now - lastSeen) : 999999;
                                         if (age < 90)
                                         {
                                             active++;
@@ -540,7 +551,7 @@ namespace MalumMenu
                                             string room = el.TryGetProperty("room", out var rProp) ? rProp.GetString() ?? "" : "";
                                             if (!string.IsNullOrEmpty(roomCode) &&
                                                 string.Equals(room, roomCode, StringComparison.OrdinalIgnoreCase) &&
-                                                prop.Name != SessionId)
+                                                sessionIdKey != SessionId)
                                             {
                                                 string peerName = el.TryGetProperty("name", out var nProp) ? nProp.GetString() ?? "" : "";
                                                 int peerId = el.TryGetProperty("p_id", out var idProp) && idProp.TryGetInt32(out var idVal) ? idVal : -1;
@@ -556,16 +567,31 @@ namespace MalumMenu
                                                 });
                                             }
                                         }
-                                        else if (prop.Name != SessionId && age > 180)
+                                        else if (sessionIdKey != SessionId)
                                         {
-                                            // Prune stale session from Firebase (fire-and-forget with proper disposal)
-                                            _ = Task.Run(async () => { try { using var r = await HttpClient.DeleteAsync($"{FirebaseUrl}/{prop.Name}.json", token); } catch { } });
+                                            staleSessionIds.Add(sessionIdKey);
                                         }
                                     }
                                     catch { }
                                 }
                             }
                             catch { }
+
+                            // Prune stale sessions asynchronously from Firebase
+                            if (staleSessionIds.Count > 0)
+                            {
+                                _ = Task.Run(async () =>
+                                {
+                                    foreach (var staleId in staleSessionIds)
+                                    {
+                                        try
+                                        {
+                                            using var delResp = await HttpClient.DeleteAsync($"{FirebaseUrl}/{staleId}.json");
+                                        }
+                                        catch { }
+                                    }
+                                });
+                            }
 
                                 lock (_peerLock)
                                 {

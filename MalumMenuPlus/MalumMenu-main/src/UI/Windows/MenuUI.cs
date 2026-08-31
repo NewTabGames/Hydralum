@@ -329,14 +329,26 @@ public class MenuUI : MonoBehaviour
         GUI.DragWindow();
     }
 
-    private static System.Type _cachedHydraUIType;
+    private static System.Type _cachedHydraUIType = null;
+    private static System.Reflection.FieldInfo _cachedHydraVisField = null;
+    private static System.Reflection.FieldInfo _cachedHydraPosField = null;
+    private static System.Reflection.PropertyInfo _cachedHydraSizeProp = null;
+    private static bool _hydraReflectionCached = false;
+
     public static System.Type GetHydraUIType()
     {
         if (_cachedHydraUIType != null) return _cachedHydraUIType;
         foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
         {
             _cachedHydraUIType = asm.GetType("HydraMenu.ui.MainUI");
-            if (_cachedHydraUIType != null) break;
+            if (_cachedHydraUIType != null)
+            {
+                _cachedHydraVisField = _cachedHydraUIType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                _cachedHydraPosField = _cachedHydraUIType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                _cachedHydraSizeProp = _cachedHydraUIType.GetProperty("WindowSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                _hydraReflectionCached = true;
+                break;
+            }
         }
         return _cachedHydraUIType;
     }
@@ -347,21 +359,16 @@ public class MenuUI : MonoBehaviour
         isGUIActive = false;
         try
         {
-            System.Type hydraType = GetHydraUIType();
-
-            if (hydraType != null)
+            if (GetHydraUIType() != null && _hydraReflectionCached)
             {
-                // Seamless in-place switch: match MalumMenu's current window position
-                var posField = hydraType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (posField != null)
+                if (_cachedHydraPosField != null)
                 {
-                    posField.SetValue(null, new Vector2(_windowRect.x, _windowRect.y));
+                    _cachedHydraPosField.SetValue(null, new Vector2(_windowRect.x, _windowRect.y));
                 }
 
-                var visField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (visField != null)
+                if (_cachedHydraVisField != null)
                 {
-                    visField.SetValue(null, true);
+                    _cachedHydraVisField.SetValue(null, true);
                     return;
                 }
             }
@@ -380,32 +387,27 @@ public class MenuUI : MonoBehaviour
         isGUIActive = false;
         try
         {
-            System.Type hydraType = GetHydraUIType();
-
-            if (hydraType != null)
+            if (GetHydraUIType() != null && _hydraReflectionCached)
             {
                 if (MalumMenu.menuOpenOnMouse.Value)
                 {
-                    var posField = hydraType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                    var sizeProp = hydraType.GetProperty("WindowSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                    if (posField != null)
+                    if (_cachedHydraPosField != null)
                     {
                         Vector2 mousePosition = Input.mousePosition;
                         Vector2 windowSize = new Vector2(500f, 470f);
-                        if (sizeProp != null)
+                        if (_cachedHydraSizeProp != null)
                         {
-                            windowSize = (Vector2)sizeProp.GetValue(null, null);
+                            windowSize = (Vector2)_cachedHydraSizeProp.GetValue(null, null);
                         }
                         float x = Mathf.Clamp(mousePosition.x, 0, Mathf.Max(0, Screen.width - windowSize.x));
                         float y = Mathf.Clamp(Screen.height - mousePosition.y, 0, Mathf.Max(0, Screen.height - windowSize.y));
-                        posField.SetValue(null, new Vector2(x, y));
+                        _cachedHydraPosField.SetValue(null, new Vector2(x, y));
                     }
                 }
 
-                var visField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (visField != null)
+                if (_cachedHydraVisField != null)
                 {
-                    visField.SetValue(null, true);
+                    _cachedHydraVisField.SetValue(null, true);
                     return;
                 }
             }
@@ -422,14 +424,11 @@ public class MenuUI : MonoBehaviour
     {
         try
         {
-            System.Type hydraType = GetHydraUIType();
-
-            if (hydraType != null)
+            if (GetHydraUIType() != null && _hydraReflectionCached)
             {
-                var visField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (visField != null)
+                if (_cachedHydraVisField != null)
                 {
-                    visField.SetValue(null, false);
+                    _cachedHydraVisField.SetValue(null, false);
                 }
             }
         }
@@ -440,14 +439,11 @@ public class MenuUI : MonoBehaviour
     {
         try
         {
-            System.Type hydraType = GetHydraUIType();
-
-            if (hydraType != null)
+            if (GetHydraUIType() != null && _hydraReflectionCached)
             {
-                var visField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (visField != null)
+                if (_cachedHydraVisField != null)
                 {
-                    return (bool)visField.GetValue(null);
+                    return (bool)_cachedHydraVisField.GetValue(null);
                 }
             }
         }
@@ -459,16 +455,12 @@ public class MenuUI : MonoBehaviour
     {
         try
         {
-            System.Type hydraType = GetHydraUIType();
-            if (hydraType != null)
+            if (GetHydraUIType() != null && _hydraReflectionCached)
             {
-                var visField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (visField != null && (bool)visField.GetValue(null))
+                if (_cachedHydraVisField != null && (bool)_cachedHydraVisField.GetValue(null))
                 {
-                    var posField = hydraType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                    var sizeProp = hydraType.GetProperty("WindowSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                    Vector2 pos = posField != null ? (Vector2)posField.GetValue(null) : new Vector2(250, 100);
-                    Vector2 size = sizeProp != null ? (Vector2)sizeProp.GetValue(null, null) : new Vector2(500, 470);
+                    Vector2 pos = _cachedHydraPosField != null ? (Vector2)_cachedHydraPosField.GetValue(null) : new Vector2(250, 100);
+                    Vector2 size = _cachedHydraSizeProp != null ? (Vector2)_cachedHydraSizeProp.GetValue(null, null) : new Vector2(500, 470);
                     return new Rect(pos.x, pos.y, size.x, size.y);
                 }
             }

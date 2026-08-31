@@ -233,6 +233,11 @@ namespace HydraMenu.ui
 		}
 
 		private static Type _cachedMalumUIType;
+		private static System.Reflection.FieldInfo _cachedMalumRectField = null;
+		private static System.Reflection.FieldInfo _cachedMalumIsGUIActiveField = null;
+		private static System.Reflection.FieldInfo _cachedMalumLastOpenedField = null;
+		private static bool _malumReflectionCached = false;
+
 		public static Type GetMalumUIType()
 		{
 			if (_cachedMalumUIType != null) return _cachedMalumUIType;
@@ -241,7 +246,14 @@ namespace HydraMenu.ui
 				try
 				{
 					_cachedMalumUIType = asm.GetType("MalumMenu.MenuUI");
-					if (_cachedMalumUIType != null) break;
+					if (_cachedMalumUIType != null)
+					{
+						_cachedMalumRectField = _cachedMalumUIType.GetField("_windowRect", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+						_cachedMalumIsGUIActiveField = _cachedMalumUIType.GetField("isGUIActive", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+						_cachedMalumLastOpenedField = _cachedMalumUIType.GetField("lastOpenedWasHydra", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+						_malumReflectionCached = true;
+						break;
+					}
 				}
 				catch { }
 			}
@@ -254,30 +266,24 @@ namespace HydraMenu.ui
 			visible = false;
 			try
 			{
-				Type malumUIType = GetMalumUIType();
-
-				if (malumUIType != null)
+				if (GetMalumUIType() != null && _malumReflectionCached)
 				{
-					// Seamless in-place switch: match HydraMenu's current window position
-					var rectField = malumUIType.GetField("_windowRect", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-					if (rectField != null)
+					if (_cachedMalumRectField != null)
 					{
-						Rect r = (Rect)rectField.GetValue(null);
+						Rect r = (Rect)_cachedMalumRectField.GetValue(null);
 						r.x = windowPosition.x;
 						r.y = windowPosition.y;
-						rectField.SetValue(null, r);
+						_cachedMalumRectField.SetValue(null, r);
 					}
 
-					var lastOpenedField = malumUIType.GetField("lastOpenedWasHydra", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-					if (lastOpenedField != null)
+					if (_cachedMalumLastOpenedField != null)
 					{
-						lastOpenedField.SetValue(null, false);
+						_cachedMalumLastOpenedField.SetValue(null, false);
 					}
 
-					var field = malumUIType.GetField("isGUIActive", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-					if (field != null)
+					if (_cachedMalumIsGUIActiveField != null)
 					{
-						field.SetValue(null, true);
+						_cachedMalumIsGUIActiveField.SetValue(null, true);
 						return;
 					}
 				}
@@ -294,14 +300,11 @@ namespace HydraMenu.ui
 		{
 			try
 			{
-				Type malumUIType = GetMalumUIType();
-
-				if (malumUIType != null)
+				if (GetMalumUIType() != null && _malumReflectionCached)
 				{
-					var field = malumUIType.GetField("isGUIActive", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-					if (field != null)
+					if (_cachedMalumIsGUIActiveField != null)
 					{
-						field.SetValue(null, false);
+						_cachedMalumIsGUIActiveField.SetValue(null, false);
 					}
 				}
 			}
@@ -312,13 +315,11 @@ namespace HydraMenu.ui
 		{
 			try
 			{
-				Type malumUIType = GetMalumUIType();
-				if (malumUIType != null)
+				if (GetMalumUIType() != null && _malumReflectionCached)
 				{
-					var field = malumUIType.GetField("isGUIActive", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-					if (field != null)
+					if (_cachedMalumIsGUIActiveField != null)
 					{
-						return (bool)field.GetValue(null);
+						return (bool)_cachedMalumIsGUIActiveField.GetValue(null);
 					}
 				}
 			}
@@ -330,13 +331,11 @@ namespace HydraMenu.ui
 		{
 			try
 			{
-				Type malumUIType = GetMalumUIType();
-				if (malumUIType != null)
+				if (GetMalumUIType() != null && _malumReflectionCached)
 				{
-					var field = malumUIType.GetField("lastOpenedWasHydra", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-					if (field != null)
+					if (_cachedMalumLastOpenedField != null)
 					{
-						field.SetValue(null, wasHydra);
+						_cachedMalumLastOpenedField.SetValue(null, wasHydra);
 					}
 				}
 			}
