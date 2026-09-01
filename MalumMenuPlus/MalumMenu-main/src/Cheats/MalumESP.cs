@@ -45,10 +45,18 @@ public static class MalumESP
         }
 
         bool keepOpen = MalumMenu.menuKeepSubwindowsOpen?.Value ?? false;
-        if (CheatToggles.showConsole && (MenuUI.isGUIActive || keepOpen) && ConsoleUI.windowRect.Contains(guiMousePos))
+        bool subwindowsActive = !MalumMenu.isPanicked && (MenuUI.isGUIActive || keepOpen);
+        if (subwindowsActive)
         {
-            return true;
+            if (CheatToggles.showConsole && ConsoleUI.windowRect.Contains(guiMousePos)) return true;
+            if (CheatToggles.showDebugConsole && DebugUI.windowRect.Contains(guiMousePos)) return true;
+            if (CheatToggles.showDoorsMenu && DoorsUI.windowRect.Contains(guiMousePos)) return true;
+            if (CheatToggles.showProtectMenu && ProtectUI.windowRect.Contains(guiMousePos)) return true;
+            if (CheatToggles.showRolesMenu && RolesUI.windowRect.Contains(guiMousePos)) return true;
+            if (CheatToggles.showTasksMenu && TasksUI.windowRect.Contains(guiMousePos)) return true;
         }
+
+        if (CheatToggles.showWardrobeOverlay && InventoryOutfitsUI.windowRect.Contains(guiMousePos)) return true;
 
         var hydraRect = MenuUI.GetHydraRect();
         if (hydraRect.width > 0 && hydraRect.Contains(guiMousePos))

@@ -7,7 +7,7 @@ public class DebugUI : MonoBehaviour
 {
     public static int windowHeight = 350;
     public static int windowWidth = 550;
-    private Rect _windowRect;
+    public static Rect windowRect;
 
     private GUIStyle _logStyle;
     private static Vector2 _scrollPosition = Vector2.zero;
@@ -19,7 +19,7 @@ public class DebugUI : MonoBehaviour
     private void Start()
     {
         // Instantiate 2D area of DebugUI on the left side of the screen
-        _windowRect = new(
+        windowRect = new(
             30f,
             Screen.height / 2f - windowHeight / 2f,
             windowWidth,
@@ -40,7 +40,7 @@ public class DebugUI : MonoBehaviour
 
         UIHelpers.ApplyUIColor();
 
-        _windowRect = GUI.Window((int)WindowId.DebugUI, _windowRect, (GUI.WindowFunction)DebugWindow, "RPC Console");
+        windowRect = GUI.Window((int)WindowId.DebugUI, windowRect, (GUI.WindowFunction)DebugWindow, "RPC Console");
     }
 
     private void DebugWindow(int windowID)
