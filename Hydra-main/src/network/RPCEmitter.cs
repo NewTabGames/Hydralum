@@ -1,4 +1,4 @@
-using Hazel;
+﻿using Hazel;
 
 namespace HydraMenu.network
 {
@@ -9,8 +9,6 @@ namespace HydraMenu.network
 		// If we want the scan animation to show up even if visual tasks are enabled, then we will need to reimplement it
 		public static void SendSetScanner(bool scanning)
 		{
-			if (PlayerControl.LocalPlayer == null || AmongUsClient.Instance == null) return;
-
 			byte scanCount = ++PlayerControl.LocalPlayer.scannerCount;
 
 			// Render the medbay animation for ourselves
@@ -33,8 +31,6 @@ namespace HydraMenu.network
 		// If we want the task animation to show up even if visual tasks are enabled, then we will need to reimplement it
 		public static void SendPlayAnimation(byte animation)
 		{
-			if (PlayerControl.LocalPlayer == null || AmongUsClient.Instance == null) return;
-
 			// Render the task animation for ourselves
 			PlayerControl.LocalPlayer.PlayAnimation(animation);
 

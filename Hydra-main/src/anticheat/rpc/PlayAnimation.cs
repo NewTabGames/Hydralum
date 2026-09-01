@@ -1,4 +1,4 @@
-using Hazel;
+﻿using Hazel;
 
 namespace HydraMenu.anticheat.rpc
 {
@@ -10,19 +10,19 @@ namespace HydraMenu.anticheat.rpc
 
 			if(LobbyBehaviour.Instance)
 			{
-				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent the PlayAnimation RPC for task {animation} inside the lobby.");
+				Anticheat.Flag(player, $"{player.Data.PlayerName} sent the PlayAnimation RPC for task {animation} inside the lobby.");
 				return false;
 			}
 
-			if(player?.Data != null && RoleManager.IsImpostorRole(player.Data.RoleType))
+			if(RoleManager.IsImpostorRole(player.Data.RoleType))
 			{
-				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent the PlayAnimation RPC for task {animation} when they are an imposter.");
+				Anticheat.Flag(player, $"{player.Data.PlayerName} sent the PlayAnimation RPC for task {animation} when they are an imposter.");
 				return false;
 			}
 
 			if(!GameManager.Instance.LogicOptions.GetVisualTasks())
 			{
-				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent the PlayAnimation RPC for task {animation} when visual tasks are off.");
+				Anticheat.Flag(player, $"{player.Data.PlayerName} sent the PlayAnimation RPC for task {animation} when visual tasks are off.");
 				return false;
 			}
 

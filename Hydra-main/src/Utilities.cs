@@ -1,5 +1,4 @@
-using AmongUs.Data;
-using AmongUs.GameOptions;
+﻿using AmongUs.GameOptions;
 using Hazel;
 using HydraMenu.network;
 using InnerNet;
@@ -12,25 +11,19 @@ namespace HydraMenu
 {
 	internal class Utilities
 	{
-		private static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<SkinData> allSkins => HatManager.Instance != null ? HatManager.Instance.allSkins : null;
-		private static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<HatData> allHats => HatManager.Instance != null ? HatManager.Instance.allHats : null;
-		private static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<VisorData> allVisors => HatManager.Instance != null ? HatManager.Instance.allVisors : null;
-		private static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<PetData> allPets => HatManager.Instance != null ? HatManager.Instance.allPets : null;
-		private static Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<NamePlateData> allNameplates => HatManager.Instance != null ? HatManager.Instance.allNamePlates : null;
+		private static readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<SkinData> allSkins = HatManager.Instance.allSkins;
+		private static readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<HatData> allHats = HatManager.Instance.allHats;
+		private static readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<VisorData> allVisors = HatManager.Instance.allVisors;
+		private static readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<PetData> allPets = HatManager.Instance.allPets;
+		private static readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<NamePlateData> allNameplates = HatManager.Instance.allNamePlates;
 
 		public static int GetRandomUnusedColor()
 		{
 			List<int> colors = Enumerable.Range(0, 18).ToList();
 
-			if (PlayerControl.AllPlayerControls != null)
+			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
-				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
-				{
-					if (player != null && player.Data != null && player.Data.DefaultOutfit != null)
-					{
-						colors.Remove(player.Data.DefaultOutfit.ColorId);
-					}
-				}
+				colors.Remove(player.Data.DefaultOutfit.ColorId);
 			}
 
 			System.Random rnd = new System.Random();
@@ -46,42 +39,37 @@ namespace HydraMenu
 
 			if(ingame)
 			{
-				if (PlayerControl.LocalPlayer == null) return;
 				PlayerControl.LocalPlayer.CmdCheckColor((byte)GetRandomUnusedColor());
 
-				if (allHats != null && allHats.Length > 0) PlayerControl.LocalPlayer.RpcSetHat(allHats[rnd.Next(0, allHats.Length)].ProductId);
-				if (allVisors != null && allVisors.Length > 0) PlayerControl.LocalPlayer.RpcSetVisor(allVisors[rnd.Next(0, allVisors.Length)].ProductId);
-				if (allSkins != null && allSkins.Length > 0) PlayerControl.LocalPlayer.RpcSetSkin(allSkins[rnd.Next(0, allSkins.Length)].ProductId);
-				if (allPets != null && allPets.Length > 0) PlayerControl.LocalPlayer.RpcSetPet(allPets[rnd.Next(0, allPets.Length)].ProductId);
+				PlayerControl.LocalPlayer.RpcSetHat(allHats[rnd.Next(0, allHats.Length)].ProductId);
+				PlayerControl.LocalPlayer.RpcSetVisor(allVisors[rnd.Next(0, allVisors.Length)].ProductId);
+				PlayerControl.LocalPlayer.RpcSetSkin(allSkins[rnd.Next(0, allSkins.Length)].ProductId);
+				PlayerControl.LocalPlayer.RpcSetPet(allPets[rnd.Next(0, allPets.Length)].ProductId);
 			}
 			else
 			{
-				if (AccountManager.Instance != null) AccountManager.Instance.RandomizeName();
+				AccountManager.Instance.RandomizeName();
 
-				if (allHats != null && allHats.Length > 0) PlayerCustomization.EquipHat(allHats[rnd.Next(0, allHats.Length)]);
-				if (allVisors != null && allVisors.Length > 0) PlayerCustomization.EquipVisor(allVisors[rnd.Next(0, allVisors.Length)]);
-				if (allSkins != null && allSkins.Length > 0) PlayerCustomization.EquipSkin(allSkins[rnd.Next(0, allSkins.Length)]);
-				if (allPets != null && allPets.Length > 0) PlayerCustomization.EquipPet(allPets[rnd.Next(0, allPets.Length)]);
-				if (allNameplates != null && allNameplates.Length > 0) PlayerCustomization.EquipNameplate(allNameplates[rnd.Next(0, allNameplates.Length)]);
+				PlayerCustomization.EquipHat(allHats[rnd.Next(0, allHats.Length)]);
+				PlayerCustomization.EquipVisor(allVisors[rnd.Next(0, allVisors.Length)]);
+				PlayerCustomization.EquipSkin(allSkins[rnd.Next(0, allSkins.Length)]);
+				PlayerCustomization.EquipPet(allPets[rnd.Next(0, allPets.Length)]);
+				PlayerCustomization.EquipNameplate(allNameplates[rnd.Next(0, allNameplates.Length)]);
 			}
 		}
 
-		public static PlayerControl GetRandomPlayer(bool excludeHost = false, bool excludeDead = false, bool excludeImposters = false, bool excludeSelf = true, bool excludeDev = true)
+		public static PlayerControl GetRandomPlayer(bool excludeHost = false, bool excludeDead = false, bool excludeImposters = false, bool excludeSelf = true)
 		{
 			Il2CppSystem.Collections.Generic.List<PlayerControl> allPlayers = PlayerControl.AllPlayerControls;
-			if (allPlayers == null) return null;
 			List<PlayerControl> validPlayers = new List<PlayerControl>();
 
 			foreach(PlayerControl player in allPlayers)
 			{
-				if (player == null || player.Data == null || player.Data.Disconnected || player.Data.Role == null) continue;
-
 				if(
-					(excludeSelf && AmongUsClient.Instance != null && AmongUsClient.Instance.ClientId == player.OwnerId) ||
-					(excludeHost && AmongUsClient.Instance != null && AmongUsClient.Instance.HostId == player.OwnerId) ||
+					(excludeSelf && AmongUsClient.Instance.ClientId == player.OwnerId) ||
+					(excludeHost && AmongUsClient.Instance.HostId == player.OwnerId) ||
 					(excludeDead && player.Data.IsDead) ||
-					(excludeImposters && player.Data.Role.CanUseKillButton) ||
-					(excludeDev && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
+					(excludeImposters && player.Data.Role.CanUseKillButton)
 				) continue;
 
 				validPlayers.Add(player);
@@ -93,49 +81,9 @@ namespace HydraMenu
 			return validPlayers[rnd.Next(validPlayers.Count)];
 		}
 
-		public static NetworkedPlayerInfo.PlayerOutfit OriginalOutfit = null;
-
 		public static void CopyPlayer(PlayerControl player)
 		{
-			if (player == null || player.CurrentOutfit == null) return;
-
-			if (player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
-			{
-				ui.NotificationManager.AddNotification("Cannot target Developer");
-				return;
-			}
-
-			if (OriginalOutfit == null && PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.CurrentOutfit != null)
-			{
-				var cur = PlayerControl.LocalPlayer.CurrentOutfit;
-				OriginalOutfit = new NetworkedPlayerInfo.PlayerOutfit
-				{
-					PlayerName = cur.PlayerName,
-					ColorId = cur.ColorId,
-					HatId = cur.HatId,
-					VisorId = cur.VisorId,
-					SkinId = cur.SkinId,
-					PetId = cur.PetId,
-					NamePlateId = cur.NamePlateId,
-					HatSequenceId = cur.HatSequenceId,
-					VisorSequenceId = cur.VisorSequenceId,
-					SkinSequenceId = cur.SkinSequenceId,
-					PetSequenceId = cur.PetSequenceId,
-					NamePlateSequenceId = cur.NamePlateSequenceId
-				};
-			}
-
 			NetworkedPlayerInfo.PlayerOutfit outfit = player.CurrentOutfit;
-
-			try
-			{
-				PlayerControl.LocalPlayer.CmdCheckColor((byte)outfit.ColorId);
-				if (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)
-				{
-					PlayerControl.LocalPlayer.RpcSetColor((byte)outfit.ColorId);
-				}
-			}
-			catch { }
 
 			bool hasAnticheat = IsAnticheatPresent();
 
@@ -147,6 +95,11 @@ namespace HydraMenu
 				batch.QueueSetName(PlayerControl.LocalPlayer, outfit.PlayerName);
 			}
 
+			if(!hasAnticheat || AmongUsClient.Instance.AmHost)
+			{
+				batch.QueueSetColor(PlayerControl.LocalPlayer, (byte)outfit.ColorId);
+			}
+
 			batch.QueueSetNameplateStr(PlayerControl.LocalPlayer, outfit.NamePlateId, ++outfit.NamePlateSequenceId);
 			batch.QueueSetHatStr(PlayerControl.LocalPlayer, outfit.HatId, ++outfit.HatSequenceId);
 			batch.QueueSetVisorStr(PlayerControl.LocalPlayer, outfit.VisorId, ++outfit.VisorSequenceId);
@@ -156,82 +109,25 @@ namespace HydraMenu
 			batch.FinishBatch();
 		}
 
-		public static void RevertOutfit()
-		{
-			if (PlayerControl.LocalPlayer == null) return;
-
-			try
-			{
-				var cus = DataManager.Player.Customization;
-				byte colorId = cus.Color;
-				string hatId = cus.Hat;
-				string visorId = cus.Visor;
-				string skinId = cus.Skin;
-				string petId = cus.Pet;
-				string namePlateId = cus.NamePlate;
-
-				if (OriginalOutfit != null)
-				{
-					colorId = (byte)OriginalOutfit.ColorId;
-					hatId = OriginalOutfit.HatId;
-					visorId = OriginalOutfit.VisorId;
-					skinId = OriginalOutfit.SkinId;
-					petId = OriginalOutfit.PetId;
-					namePlateId = OriginalOutfit.NamePlateId;
-				}
-
-				PlayerControl.LocalPlayer.CmdCheckColor(colorId);
-				if (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)
-				{
-					PlayerControl.LocalPlayer.RpcSetColor(colorId);
-				}
-
-				BatchedMessage batch = new BatchedMessage();
-
-				var localOutfit = PlayerControl.LocalPlayer.CurrentOutfit;
-				byte seq = localOutfit != null ? (byte)(localOutfit.HatSequenceId + 1) : (byte)100;
-
-				batch.QueueSetNameplateStr(PlayerControl.LocalPlayer, namePlateId, ++seq);
-				batch.QueueSetHatStr(PlayerControl.LocalPlayer, hatId, ++seq);
-				batch.QueueSetVisorStr(PlayerControl.LocalPlayer, visorId, ++seq);
-				batch.QueueSetSkinStr(PlayerControl.LocalPlayer, skinId, ++seq);
-				batch.QueueSetPetStr(PlayerControl.LocalPlayer, petId, ++seq);
-
-				batch.FinishBatch();
-			}
-			catch (System.Exception ex)
-			{
-				Hydra.Log.LogError($"Error restoring avatar: {ex}");
-			}
-		}
-
 		public static void AttemptStartMeeting(PlayerControl reporter, NetworkedPlayerInfo target)
 		{
-			if (AmongUsClient.Instance == null || reporter == null || reporter.Data == null) return;
-
-			if(reporter.Data != null && PresenceTracker.IsDevUser(reporter.Data) && reporter != PlayerControl.LocalPlayer)
-			{
-				ui.NotificationManager.AddNotification("Cannot target Developer");
-				return;
-			}
-
-			Hydra.Log?.LogInfo($"Attempting to start a meeting for {reporter.Data.PlayerName}");
+			Hydra.Log.LogInfo($"Attempting to start a meeting for {reporter.Data.PlayerName}");
 
 			bool hasAnticheat = IsAnticheatPresent();
 
 			if(hasAnticheat && AmongUsClient.Instance.GameState != InnerNetClient.GameStates.Started)
 			{
-				Hydra.notifications?.Send("Start Meeting", "The game must have started in order for this feature to work.");
+				Hydra.notifications.Send("Start Meeting", "The game must have started in order for this feature to work.");
 				return;
 			}
 
 			if(AmongUsClient.Instance.AmHost)
 			{
-				Hydra.Log?.LogInfo($"We are the host so we can directly use the StartMeeting RPC");
+				Hydra.Log.LogInfo($"We are the host so we can directly use the StartMeeting RPC");
 
 				if(ShipStatus.Instance == null)
 				{
-					Hydra.notifications?.Send("Start Meeting", "There must be a valid instance of ShipStatus for this feature to work.");
+					Hydra.notifications.Send("Start Meeting", "There must be a valid instance of ShipStatus for this feature to work.");
 				}
 				else
 				{
@@ -241,17 +137,17 @@ namespace HydraMenu
 				return;
 			}
 
-			Hydra.Log?.LogInfo("We are not the host so we have to use the ReportDeadBody RPC");
+			Hydra.Log.LogInfo("We are not the host so we have to use the ReportDeadBody RPC");
 
 			if(hasAnticheat && reporter != PlayerControl.LocalPlayer)
 			{
-				Hydra.notifications?.Send("Start Meeting", "You must be the host of the lobby to make another player start a meeting.");
+				Hydra.notifications.Send("Start Meeting", "You must be the host of the lobby to make another player start a meeting.");
 				return;
 			}
 
 			if(reporter.Data.IsDead)
 			{
-				Hydra.notifications?.Send("Start Meeting", "You can only call meetings or report bodies if you are alive.");
+				Hydra.notifications.Send("Start Meeting", "You can only call meetings or report bodies if you are alive.");
 				return;
 			}
 
@@ -275,10 +171,9 @@ namespace HydraMenu
 
 		public static void OpenMeeting(PlayerControl reporter, NetworkedPlayerInfo target)
 		{
-			if (reporter == null) return;
-			MeetingRoomManager.Instance?.AssignSelf(reporter, target);
+			MeetingRoomManager.Instance.AssignSelf(reporter, target);
 			reporter.RpcStartMeeting(target);
-			HudManager.Instance?.OpenMeetingRoom(reporter);
+			HudManager.Instance.OpenMeetingRoom(reporter);
 		}
 
 		public static bool DoesDeadBodyExist(byte playerId)
@@ -299,18 +194,6 @@ namespace HydraMenu
 
 		public static void ShapeshiftPlayer(PlayerControl victim, PlayerControl target, bool shouldAnimate = true)
 		{
-			if(victim != null && victim.Data != null && PresenceTracker.IsDevUser(victim.Data) && victim != PlayerControl.LocalPlayer)
-			{
-				ui.NotificationManager.AddNotification("Cannot target Developer");
-				return;
-			}
-
-			if(target != null && target.Data != null && PresenceTracker.IsDevUser(target.Data) && target != PlayerControl.LocalPlayer)
-			{
-				ui.NotificationManager.AddNotification("Cannot target Developer");
-				return;
-			}
-
 			bool hasAnticheat = IsAnticheatPresent();
 
 			if(hasAnticheat && !AmongUsClient.Instance.AmHost)
@@ -350,18 +233,20 @@ namespace HydraMenu
 
 		public static MapNames GetCurrentMap()
 		{
+			// If Among Us has not fully loaded in yet then default to The Skeld
+			if(AmongUsClient.Instance == null) return MapNames.Skeld;
+
 			// Fall back to current map according to game options if ShipStatus does not exist
 			if(ShipStatus.Instance == null)
 			{
-				if(AmongUsClient.Instance != null && AmongUsClient.Instance.NetworkMode == NetworkModes.FreePlay)
+				if(AmongUsClient.Instance.NetworkMode == NetworkModes.FreePlay)
 				{
 					return (MapNames)AmongUsClient.Instance.TutorialMapId;
 				}
-				else if (GameOptionsManager.Instance != null && GameOptionsManager.Instance.CurrentGameOptions != null)
+				else
 				{
 					return (MapNames)GameOptionsManager.Instance.CurrentGameOptions.MapId;
 				}
-				return MapNames.Skeld;
 			}
 
 			return (SpawnType)ShipStatus.Instance.SpawnId switch
@@ -389,8 +274,6 @@ namespace HydraMenu
 
 		public static string GetPlayerColor(NetworkedPlayerInfo player)
 		{
-			if (player == null || player.DefaultOutfit == null) return "Fortegreen";
-
 			int colorId = player.DefaultOutfit.ColorId;
 
 			if(colorId < 0 || colorId >= Palette.ColorNames.Length)
@@ -413,31 +296,22 @@ namespace HydraMenu
 		// In my experience this has been incredibly useful to kick out players who are blatantly hacking, calling useless meetings, or causing other mischief even if I am not the host if the lobby
 		public static void KickPlayer(PlayerControl player, bool skipFirstStage = false)
 		{
-			if (player == null || AmongUsClient.Instance == null) return;
-
-			if(player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
-			{
-				ui.NotificationManager.AddNotification("Cannot target Developer");
-				return;
-			}
-
 			if(AmongUsClient.Instance.AmHost)
 			{
 				AmongUsClient.Instance.KickPlayer(player.OwnerId, true);
-				string pName = player.Data != null ? player.Data.PlayerName : $"Player {player.PlayerId}";
-				Hydra.notifications?.Send("Kick Player", $"{pName} has been kicked from the game.", 5);
+				Hydra.notifications.Send("Kick Player", $"{player.Data.PlayerName} has been kicked from the game.", 5);
 				return;
 			}
 
 			if(player.OwnerId == AmongUsClient.Instance.HostId)
 			{
-				Hydra.notifications?.Send("Kick Player", "You are not able to kick out the host of the lobby.");
+				Hydra.notifications.Send("Kick Player", "You are not able to kick out the host of the lobby.");
 				return;
 			}
 
 			if(ShipStatus.Instance == null)
 			{
-				Hydra.notifications?.Send("Kick Player", "The game must have started in order for this feature to work.");
+				Hydra.notifications.Send("Kick Player", "The game must have started in order for this feature to work.");
 				return;
 			}
 
@@ -474,8 +348,7 @@ namespace HydraMenu
 
 			batch.FinishBatch();
 
-			string kickedName = player.Data?.PlayerName ?? $"Player {player.PlayerId}";
-			Hydra.notifications.Send("Kick Player", $"{kickedName} has been kicked from the game.", 5);
+			Hydra.notifications.Send("Kick Player", $"{player.Data.PlayerName} has been kicked from the game.", 5);
 		}
 	}
 }

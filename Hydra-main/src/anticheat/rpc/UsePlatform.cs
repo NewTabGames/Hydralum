@@ -1,4 +1,4 @@
-using Hazel;
+﻿using Hazel;
 
 namespace HydraMenu.anticheat.rpc
 {
@@ -9,19 +9,19 @@ namespace HydraMenu.anticheat.rpc
 			MapNames map = Utilities.GetCurrentMap();
 			if(map != MapNames.Airship)
 			{
-				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} tried to use a platform outside of the proper map.");
+				Anticheat.Flag(player, $"{player.Data.PlayerName} tried to use a platform outside of the proper map.");
 				return false;
 			}
 
 			if(ShipStatus.Instance == null)
 			{
-				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} tried to use a platform when there is no instance of ShipStatus.");
+				Anticheat.Flag(player, $"{player.Data.PlayerName} tried to use a platform when there is no instance of ShipStatus.");
 				return false;
 			}
 
 			if(GameManager.Instance.IsHideAndSeek())
 			{
-				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} tried to use a platform while in Hide and Seek.");
+				Anticheat.Flag(player, $"{player.Data.PlayerName} tried to use a platform while in Hide and Seek.");
 				return false;
 			}
 

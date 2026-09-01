@@ -1,3 +1,4 @@
+﻿using HydraMenu.modules;
 using HydraMenu.network;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,47 +6,32 @@ using UnityEngine;
 
 namespace HydraMenu.routines
 {
-	public class DiscoHostRoutine : IRoutine
+	public class DiscoHostRoutine : Routine
 	{
 		public DiscoHostRoutine() : base("DiscoHost") { }
-		public HashSet<int> targets = new HashSet<int>();
+		public readonly HashSet<int> targets = new HashSet<int>();
 
-		public float randomizationDelay = 0.5f;
+		public float RandomizationDelay { get; set; } = 0.5f;
 		private float timeElapsed = 0f;
 
-		private System.Random rnd = new System.Random();
+		private readonly System.Random rnd = new System.Random();
 
 		public override void Run()
 		{
-			if(PlayerControl.LocalPlayer == null || PlayerControl.AllPlayerControls == null) return;
-
 			timeElapsed += Time.deltaTime;
-			if(timeElapsed < randomizationDelay) return;
+			if(timeElapsed < RandomizationDelay) return;
 			timeElapsed = 0f;
-
-			if(!IsGlobal)
-			{
-				targets.RemoveWhere(h => {
-					var p = PlayerControl.AllPlayerControls.ToArray().FirstOrDefault(pc => pc != null && pc.GetHashCode() == h);
-					return p == null || p.Data == null || p.Data.Disconnected;
-				});
-
-				if(targets.Count == 0)
-				{
-					Enabled = false;
-					return;
-				}
-			}
 
 			List<int> colors = Enumerable.Range(0, 18).ToList();
 
+			// On +25 modded protocol lobbies, we are able to send SetColor RPCs as non-host
+			// however we are still affected by message packing limits
+			int packingLimit = AmongUsClient.Instance.GetMaxMessagePackingLimit();
 			BatchedMessage batch = new BatchedMessage();
 
 			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
-				if(player == null || player.Data == null || player.Data.Disconnected) continue;
 				if(!IsGlobal && !targets.Contains(player.GetHashCode())) continue;
-				if(PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer) continue;
 
 				// Assign each player a unique color
 				int color;
@@ -60,15 +46,27 @@ namespace HydraMenu.routines
 					color = rnd.Next(0, 18);
 				}
 
+				if(batch.msgCount >= packingLimit)
+				{
+					batch.FinishBatch();
+					batch = new BatchedMessage();
+				}
+
 				batch.QueueSetColor(player, (byte)color);
 			}
 
 			batch.FinishBatch();
 		}
 
-		public bool IsGlobal
+		private bool IsGlobal
 		{
 			get { return targets.Count == 1 && targets.Contains(int.MaxValue); }
+		}
+
+		private void OnDisconnect()
+		{
+			Hydra.notifications.Send("Disco Party", "Disco Party was disabled as you left the game.", 10);
+			Enabled = false;
 		}
 
 		protected override void OnEnable()
@@ -86,20 +84,15 @@ namespace HydraMenu.routines
 				Enabled = false;
 				return;
 			}
+
+			EventCoordinator.OnDisconnect += OnDisconnect;
 		}
 
 		protected override void OnDisable()
 		{
 			targets.Clear();
-			timeElapsed = 0f;
-		}
 
-		public override void OnDisconnect()
-		{
-			targets.Clear();
-			timeElapsed = 0f;
-			Hydra.notifications?.Send("Disco Party", "Disco Party was disabled as you left the game.", 10);
-			Enabled = false;
+			EventCoordinator.OnDisconnect -= OnDisconnect;
 		}
 	}
 }

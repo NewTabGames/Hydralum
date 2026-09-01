@@ -1,4 +1,4 @@
-using AmongUs.InnerNet.GameDataMessages;
+﻿using AmongUs.InnerNet.GameDataMessages;
 using Hazel;
 using InnerNet;
 
@@ -8,8 +8,6 @@ namespace HydraMenu.anticheat.gamedata
 	{
 		public override bool Validate(MessageReader reader)
 		{
-			if (AmongUsClient.Instance == null || reader.BytesRemaining < 1) return false;
-
 			int clientId = reader.ReadPackedInt32();
 
 			ClientData client = AmongUsClient.Instance.FindClientById(clientId);
@@ -21,7 +19,7 @@ namespace HydraMenu.anticheat.gamedata
 
 			if(client.IsReady)
 			{
-				Anticheat.Flag(client.Character, $"{client?.Character?.Data?.PlayerName ?? "Unknown"} sent a ClientReady message while already ready.");
+				Anticheat.Flag(client.Character, $"{client.Character.Data.PlayerName} sent a ClientReady message while already ready.");
 				return false;
 			}
 

@@ -1,12 +1,13 @@
-﻿using UnityEngine;
+﻿using HydraMenu.modules;
+using UnityEngine;
 
 namespace HydraMenu.routines
 {
-	public class DoorTrollerRoutine : IRoutine
+	public class DoorTrollerRoutine : Routine
 	{
-		public DoorTrollerRoutine() : base("Door Troller") { }
+		public DoorTrollerRoutine() : base("DoorTroller") { }
 
-		public float lockAndUnlockDelay = 0.5f;
+		public float LockAndUnlockDelay { get; set; } = 0.5f;
 		private float timeElapsed = 0f;
 		private bool doorsLocked = false;
 
@@ -15,7 +16,7 @@ namespace HydraMenu.routines
 			if(ShipStatus.Instance == null) return;
 
 			timeElapsed += Time.deltaTime;
-			if(timeElapsed < lockAndUnlockDelay) return;
+			if(timeElapsed < LockAndUnlockDelay) return;
 
 			if(doorsLocked)
 			{
@@ -28,6 +29,12 @@ namespace HydraMenu.routines
 
 			doorsLocked = !doorsLocked;
 			timeElapsed = 0;
+		}
+
+		private void OnDisconnect()
+		{
+			Hydra.notifications.Send("Door Troller", "Door Troller was disabled as you left the game.", 10);
+			Enabled = false;
 		}
 
 		protected override void OnEnable()
@@ -52,12 +59,13 @@ namespace HydraMenu.routines
 				Enabled = false;
 				return;
 			}
+
+			EventCoordinator.OnDisconnect += OnDisconnect;
 		}
 
-		public override void OnDisconnect()
+		protected override void OnDisable()
 		{
-			Hydra.notifications.Send("Door Troller", "Door Troller was disabled as you left the game.", 10);
-			Enabled = false;
+			EventCoordinator.OnDisconnect -= OnDisconnect;
 		}
 	}
 }

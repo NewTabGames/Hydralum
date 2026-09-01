@@ -1,22 +1,22 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace HydraMenu.assets
 {
 	internal class MapAssets
 	{
-		public static Dictionary<string, TaskTypes> skeldAnimations = new Dictionary<string, TaskTypes>()
+		public static readonly Dictionary<string, TaskTypes> skeldAnimations = new Dictionary<string, TaskTypes>()
 		{
 			{ "Clear Asteroids", TaskTypes.ClearAsteroids },
 			{ "Empty Garbage", TaskTypes.EmptyGarbage },
 			{ "Prime Shields", TaskTypes.PrimeShields }
 		};
 
-		public static Dictionary<string, TaskTypes> polusAnimations = new Dictionary<string, TaskTypes>()
+		public static readonly Dictionary<string, TaskTypes> polusAnimations = new Dictionary<string, TaskTypes>()
 		{
 			{ "Clear Asteroids", TaskTypes.ClearAsteroids }
 		};
 
-		public static Dictionary<int, string> skeldVents = new Dictionary<int, string>()
+		public static readonly SortedDictionary<int, string> skeldVents = new SortedDictionary<int, string>()
 		{
 			{ 0, "Admin" },
 			{ 1, "Hallway" },
@@ -34,7 +34,25 @@ namespace HydraMenu.assets
 			{ 13, "Lower Navigation" }
 		};
 
-		public static Dictionary<int, string> polusVents = new Dictionary<int, string>()
+		public static readonly SortedDictionary<int, string> miraVents = new SortedDictionary<int, string>()
+		{
+			// Mira HQ has no vent with the ID of 0
+			// Fortebass' explanation on why this is the case can be found at https://github.com/roobscoob/among-us-protocol/blob/master/images/mirahq_vents_quote.png
+			// Very informative as you can see... At least we know why the game uses 255 as a default value frequently in the code
+			{ 1, "Balcony" },
+			{ 2, "Above Cafeteria" },
+			{ 3, "Reactor" },
+			{ 4, "Laboratory" },
+			{ 5, "Office" },
+			{ 6, "Admin" },
+			{ 7, "Greenhouse" },
+			{ 8, "Medbay" },
+			{ 9, "Decontamination" },
+			{ 10, "Locker Room" },
+			{ 11, "Launchpad" }
+		};
+
+		public static readonly SortedDictionary<int, string> polusVents = new SortedDictionary<int, string>()
 		{
 			{ 0, "Electrical" },
 			{ 1, "Outside Electrical" },
@@ -50,6 +68,36 @@ namespace HydraMenu.assets
 			{ 11, "Outside Office" }
 		};
 
+		public static readonly SortedDictionary<int, string> airshipVents = new SortedDictionary<int, string>()
+		{
+			{ 0, "Vault" },
+			{ 1, "Cockpit" },
+			{ 2, "Viewing Deck" },
+			{ 3, "Engine Room" },
+			{ 4, "Kitchen" },
+			{ 5, "Bedroom 1" },
+			{ 6, "Janitor Roomw" },
+			{ 7, "Gap Room Right" },
+			{ 8, "Gap Room Left" },
+			{ 9, "Showers" },
+			{ 10, "Records" },
+			{ 11, "Cargo Bay" }
+		};
+
+		public static readonly SortedDictionary<int, string> fungleVents = new SortedDictionary<int, string>()
+		{
+			{ 0, "Comms" },
+			{ 1, "Kitchen" },
+			{ 2, "Lookout" },
+			{ 3, "Above Meeting Room" },
+			{ 4, "Laboratory" },
+			{ 5, "Reactor" },
+			{ 6, "Jungle" },
+			{ 7, "Jungle Bottom" },
+			{ 8, "Splash Zone" },
+			{ 9, "Outside Dropship" }
+		};
+
 		public static Dictionary<string, TaskTypes> GetAnimations()
 		{
 			MapNames currentMap = Utilities.GetCurrentMap();
@@ -59,21 +107,24 @@ namespace HydraMenu.assets
 				MapNames.Skeld or MapNames.Dleks => skeldAnimations,
 				MapNames.Polus => polusAnimations,
 				// These maps do not have any task animations, other than medbay scan
-				MapNames.MiraHQ or MapNames.Airship or MapNames.Fungle => new Dictionary<string, TaskTypes>(),
-				// If we do not have any known animations for the current map then just default to the Skeld ones
+				MapNames.MiraHQ or MapNames.Airship or MapNames.Fungle => [],
+				// If we do not any known animations for the current map then just default to the Skeld ones
 				_ => skeldAnimations
 			};
 		}
 
-		public static Dictionary<int, string> GetVents()
+		public static SortedDictionary<int, string> GetVents()
 		{
 			MapNames currentMap = Utilities.GetCurrentMap();
 
 			return currentMap switch
 			{
-				MapNames.Skeld => skeldVents,
+				MapNames.Skeld or MapNames.Dleks => skeldVents,
+				MapNames.MiraHQ => miraVents,
 				MapNames.Polus => polusVents,
-				// If we do not have any known vents for the current map then just default to the Skeld ones
+				MapNames.Airship => airshipVents,
+				MapNames.Fungle => fungleVents,
+				// If we do not any known vents for the current map then just default to the Skeld ones
 				_ => skeldVents
 			};
 		}

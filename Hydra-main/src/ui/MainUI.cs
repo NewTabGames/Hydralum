@@ -1,5 +1,4 @@
 using HydraMenu.ui.sections;
-using Il2CppInterop.Runtime.Attributes;
 using System;
 using UnityEngine;
 
@@ -8,7 +7,8 @@ namespace HydraMenu.ui
 	public class MainUI : MonoBehaviour
 	{
 		// Current window
-		public static bool visible = false;
+		public KeyCode menuKey = KeyCode.Insert;
+		public bool visible = false;
 		public static float scale = 1.0f;
 
 		private bool isDragging = false;
@@ -17,7 +17,7 @@ namespace HydraMenu.ui
 		public static Vector2 windowPosition = new Vector2(250, 100);
 		public static Vector2 WindowSize
 		{
-			get { return new Vector2(520, 470) * scale; }
+			get { return new Vector2(500, 470) * scale; }
 		}
 
 		// UI Header
@@ -32,12 +32,12 @@ namespace HydraMenu.ui
 		}
 
 		// UI Section Pane
-		private readonly ISection[] sections = { new GeneralSection(), new SelfSection(), new TrollSection(), new SabotageSection(), new HostSection(), new PlayersSection(), new MovementSection(), new VisualSection(), new ProtectionsSection(), new AnticheatSection(), new SpooferSection(), new MenuSection(), new InfoSection() };
+		private readonly Section[] sections = { new GeneralSection(), new SelfSection(), new TrollSection(), new HostSection(), new RolesSection(), new PlayersSection(), new VisualSection(), new ProtectionsSection(), new AnticheatSection(), new SpooferSection(), new ThemesSection(), new MenuSection(), new InfoSection() };
 		public byte activeTab = 0;
 
 		public static Vector2 SectionListSize
 		{
-			get { return new Vector2(120 * scale, WindowSize.y - HeaderSize.y); }
+			get { return new Vector2(100 * scale, WindowSize.y - HeaderSize.y); }
 		}
 
 		public static Vector2 SectionListPosition
@@ -63,8 +63,41 @@ namespace HydraMenu.ui
 
 		public void Update()
 		{
-			AnnouncementManager.Update();
 			PresenceTracker.UpdateMainThread();
+			Event currentEvent = Event.current;
+			if(currentEvent == null) return;
+
+			// Input::GetKeyDown(KeyCodes.Insert) returns true if you press the dedicated Insert key, but not the numpad Insert key
+			// so we have to rely on Event.current here
+			if(currentEvent.type == EventType.KeyDown && currentEvent.keyCode == menuKey)
+			{
+				bool malumOpen = IsMalumOpen();
+				if (visible || malumOpen)
+				{
+					SetMalumLastOpened(malumOpen);
+					visible = false;
+					CloseMalumMenu();
+				}
+				else
+				{
+					bool lastMalum = false;
+					if (_cachedMalumLastOpenedField != null)
+					{
+						try { lastMalum = (bool)_cachedMalumLastOpenedField.GetValue(null); } catch { }
+					}
+					if (!lastMalum)
+					{
+						visible = true;
+					}
+				}
+			}
+
+			// Tool to test the notifications system
+			if(Input.GetKeyDown(KeyCode.F6))
+			{
+				System.Random random = new System.Random();
+				Hydra.notifications.Send("Test", $"The quick brown fox jumps over the lazy dog. {random.Next(0, 100)}");
+			}
 
 			if(!visible) return;
 
@@ -82,86 +115,51 @@ namespace HydraMenu.ui
 
 				sections[activeTab].HandleSubsectionMove(offset);
 			}
-		}
 
-		public void OnDisable()
-		{
-			HydraConfig.Save();
+			HandleBoxMovement();
 		}
 
 		public void OnGUI()
 		{
-			try
-			{
-				if (PresenceTracker.IsOutdated || (AppDomain.CurrentDomain.GetData("HydralumOutdated") is bool b && b))
-				{
-					return;
-				}
-			}
-			catch { }
-
-			try
-			{
-				AnnouncementManager.RenderToastGUI();
-			}
-			catch { }
-
 			// https://docs.unity3d.com/6000.3/Documentation/Manual/GUIScriptingGuide.html
+			PresenceTracker.RenderLockoutModalGUI();
+			if (PresenceTracker.IsOutdated || (AppDomain.CurrentDomain.GetData("HydralumOutdated") is bool b && b)) return;
+			AnnouncementManager.RenderToastGUI();
+
 			if(!visible) return;
 
-			try
+			GUI.skin.label.fontSize = (int)(13 * scale);
+
+			// Render UI box
+			GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum v{PresenceTracker.CurrentHydralumVersion} - Hydra v{MyPluginInfo.PLUGIN_VERSION}  |  Online: {PresenceTracker.GetOnlineCount()}", Styles.MainBox);
+
+			Rect switchBtnRect = new Rect(windowPosition.x + WindowSize.x - 95 * scale, windowPosition.y + 2 * scale, 90 * scale, 20 * scale);
+			Color previousColor = GUI.backgroundColor;
+			GUI.backgroundColor = UIHelpers.GetGradientColor();
+			if(GUI.Button(switchBtnRect, "Switch"))
 			{
-				GUI.skin.label.fontSize = (int)(13 * scale);
-
-				// Render UI box
-				GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum v{PresenceTracker.CurrentHydralumVersion} - Hydra v{MyPluginInfo.PLUGIN_VERSION}  |  Online: {PresenceTracker.GetOnlineCount()}", Styles.MainBox);
-
-				// Switch button on top header matching the Hydralum mock design
-				Rect switchBtnRect = new Rect(windowPosition.x + WindowSize.x - 95 * scale, windowPosition.y + 2 * scale, 90 * scale, 20 * scale);
-				Color previousColor = GUI.backgroundColor;
-				GUI.backgroundColor = new Color(0.6f, 0.2f, 0.8f);
-				if(GUI.Button(switchBtnRect, "Switch"))
-				{
-					SwitchToMalum();
-				}
-				GUI.backgroundColor = previousColor;
-
-				for(byte i = 0; i < sections.Length; i++)
-				{
-					ISection section = sections[i];
-
-					// Add the tab to the left-pane
-					RenderTab(i, section);
-
-					if(i == activeTab)
-					{
-						GUILayout.BeginArea(new Rect(FeaturePanePosition.x, FeaturePanePosition.y, FeaturePaneSize.x, FeaturePaneSize.y));
-						try
-						{
-							section.scrollVector = GUILayout.BeginScrollView(section.scrollVector);
-							try
-							{
-								section.Render();
-							}
-							catch (Exception ex)
-							{
-								GUILayout.Label($"<color=red>Error rendering {section.name} section:</color>\n<size=11>{ex.Message}</size>");
-							}
-							finally
-							{
-								GUILayout.EndScrollView();
-							}
-						}
-						finally
-						{
-							GUILayout.EndArea();
-						}
-					}
-				}
-
-				HandleBoxMovement();
+				SwitchToMalum();
 			}
-			catch { }
+			GUI.backgroundColor = previousColor;
+
+			for(byte i = 0; i < sections.Length; i++)
+			{
+				Section section = sections[i];
+
+				// Add the tab to the left-pane
+				RenderTab(i, section);
+
+				if(i == activeTab)
+				{
+					GUILayout.BeginArea(new Rect(FeaturePanePosition.x, FeaturePanePosition.y, FeaturePaneSize.x, FeaturePaneSize.y));
+					section.scrollVector = GUILayout.BeginScrollView(section.scrollVector);
+
+					section.Render();
+
+					GUILayout.EndScrollView();
+					GUILayout.EndArea();
+				}
+			}
 		}
 
 		private void HandleBoxMovement()
@@ -189,11 +187,7 @@ namespace HydraMenu.ui
 					break;
 
 				case EventType.MouseUp:
-					if (isDragging)
-					{
-						isDragging = false;
-						HydraConfig.Save();
-					}
+					isDragging = false;
 					break;
 			}
 		}
@@ -207,8 +201,7 @@ namespace HydraMenu.ui
 				mousePos.y <= (windowPosition.y + WindowSize.y);
 		}
 
-		[HideFromIl2Cpp]
-		private void RenderTab(byte position, ISection section)
+		private void RenderTab(byte position, Section section)
 		{
 			Rect rect = new Rect(
 				SectionListPosition.x,
@@ -217,19 +210,59 @@ namespace HydraMenu.ui
 				SectionButtonSize.y
 			);
 
-			Color prevBg = GUI.backgroundColor;
-			if(activeTab == position)
-			{
-				GUI.backgroundColor = Styles.GetActiveColor(position * 35f);
-			}
-
 			GUIStyle style = activeTab == position ? Styles.SectionBoxActive : Styles.SectionBox;
+			Color defaultBg = GUI.backgroundColor;
+			if (activeTab == position) UIHelpers.ApplyUIColor(position * 35f);
 			if(GUI.Button(rect, section.name, style))
 			{
 				activeTab = position;
 			}
+			GUI.backgroundColor = defaultBg;
+		}
 
-			GUI.backgroundColor = prevBg;
+		public class MainUIConfig
+		{
+			public KeyCode MenuKey { get; set; }
+			public Styles.UIColors PrimaryColor { get; set; }
+			public string ThemeColor { get; set; }
+			public bool RgbMode { get; set; }
+			public float MenuOpacity { get; set; }
+			public float UiScale { get; set; }
+			public bool DisableNotifications { get; set; }
+		}
+
+		public MainUIConfig GetConfigData()
+		{
+			return new MainUIConfig
+			{
+				MenuKey = menuKey,
+				PrimaryColor = Styles.primaryColor,
+				ThemeColor = this.ThemeColor,
+				RgbMode = this.RgbMode,
+				MenuOpacity = Styles.menuOpacity,
+				UiScale = scale,
+				DisableNotifications = Hydra.notifications.disableNotifications
+			};
+		}
+
+		public string ThemeColor { get; set; }
+		public bool RgbMode { get; set; }
+
+		public void LoadConfigData(MainUIConfig configData)
+		{
+			if(configData == null) return;
+
+			if(configData.MenuKey != KeyCode.None)
+			{
+				Hydra.mainUI.menuKey = configData.MenuKey;
+			}
+
+			Styles.primaryColor = (Styles.UIColors)Math.Clamp((int)configData.PrimaryColor, 0, Styles.ColorValues.Count - 1);
+			this.ThemeColor = configData.ThemeColor;
+			this.RgbMode = configData.RgbMode;
+			Styles.menuOpacity = Mathf.Clamp(configData.MenuOpacity, 0.0f, 1.0f);
+			scale = Mathf.Clamp(configData.UiScale, 0.5f, 2.0f);
+			Hydra.notifications.disableNotifications = configData.DisableNotifications;
 		}
 
 		private static Type _cachedMalumUIType;
@@ -262,8 +295,8 @@ namespace HydraMenu.ui
 
 		public static void SwitchToMalum()
 		{
-			HydraConfig.Save();
-			visible = false;
+			Hydra.config.SaveConfig(Hydra.config.currentConfig);
+			Hydra.mainUI.visible = false;
 			try
 			{
 				if (GetMalumUIType() != null && _malumReflectionCached)

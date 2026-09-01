@@ -1,4 +1,4 @@
-using Hazel;
+﻿using Hazel;
 
 namespace HydraMenu.anticheat.rpc
 {
@@ -9,12 +9,8 @@ namespace HydraMenu.anticheat.rpc
 
 		public override bool Validate(PlayerControl player, MessageReader reader)
 		{
-			if (player == null) return false;
-
 			// On modded lobbies, it is common for players to have custom names
 			if(!Utilities.IsAnticheatPresent()) return true;
-
-			if (reader.BytesRemaining < 4) return false;
 
 			uint netId = reader.ReadUInt32();
 			string requestedName = reader.ReadString();
@@ -42,11 +38,10 @@ namespace HydraMenu.anticheat.rpc
 
 		private uint GetExpectedNetId(PlayerControl player)
 		{
-			if (player == null) return 0;
 			// In host authority, the host sends the SetName RPC with the net id of the player's NetworkedPlayerInfo net object
 			// In server authority, the server sends the SetName RPC with the net id of the player's PlayerControl net object
 			// I don't know why this discrepancy exists, or why the SetName RPC even includes the net id field
-			return Utilities.IsAnticheatPresent() ? player.NetId : (player.Data != null ? player.Data.NetId : player.NetId);
+			return Utilities.IsAnticheatPresent() ? player.NetId : player.Data.NetId;
 		}
 
 		public override RpcCalls GetId()

@@ -1,4 +1,4 @@
-using Hazel;
+﻿using Hazel;
 
 namespace HydraMenu.anticheat.rpc
 {
@@ -7,7 +7,7 @@ namespace HydraMenu.anticheat.rpc
 		public override bool Validate(PlayerControl player, MessageReader reader)
 		{
 			// The Exiled RPC is unused and is never sent in-game
-			Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent an invalid Exiled RPC.");
+			Anticheat.Flag(player, $"{player.Data.PlayerName} sent an invalid Exiled RPC.");
 			return false;
 		}
 

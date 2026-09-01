@@ -1,32 +1,46 @@
+﻿using HydraMenu.modules;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace HydraMenu.routines
 {
-	public class TeleportSpammer : IRoutine
+	public class TeleportSpammer : Routine
 	{
 		public TeleportSpammer() : base("TeleportSpammer") { }
 
-		private System.Random rnd = new System.Random();
-		private float teleportDelay = 0.5f;
+		public readonly HashSet<int> targets = new HashSet<int>();
+
+		private readonly System.Random rnd = new System.Random();
+		private readonly float TELEPORT_DELAY = 0.5f;
 		private float timeElapsed = 0f;
 
 		public override void Run()
 		{
-			if(ShipStatus.Instance == null || ShipStatus.Instance.AllVents == null || ShipStatus.Instance.AllVents.Count == 0 || PlayerControl.AllPlayerControls == null || PlayerControl.LocalPlayer == null) return;
+			if(ShipStatus.Instance == null) return;
 
 			timeElapsed += Time.deltaTime;
-			if(timeElapsed < teleportDelay) return;
+			if(timeElapsed < TELEPORT_DELAY) return;
 			timeElapsed = 0f;
 
 			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
-				if(player == null || player.Data == null || player.Data.Disconnected || player == PlayerControl.LocalPlayer) continue;
-				if(PresenceTracker.IsDevUser(player.Data)) continue;
+				if(player == PlayerControl.LocalPlayer || (!IsGlobal && !targets.Contains(player.GetHashCode()))) continue;
 
 				int ventId = rnd.Next(0, ShipStatus.Instance.AllVents.Count);
 
 				Teleporter.TeleportToVent(player, ventId);
 			}
+		}
+
+		private bool IsGlobal
+		{
+			get { return targets.Count == 1 && targets.Contains(int.MaxValue); }
+		}
+
+		private void OnDisconnect()
+		{
+			Hydra.notifications.Send("Teleport Spammer", "Teleport Spammer was disabled as you left the game.", 10);
+			Enabled = false;
 		}
 
 		protected override void OnEnable()
@@ -37,18 +51,15 @@ namespace HydraMenu.routines
 				Enabled = false;
 				return;
 			}
+
+			EventCoordinator.OnDisconnect += OnDisconnect;
 		}
 
 		protected override void OnDisable()
 		{
-			timeElapsed = 0f;
-		}
+			targets.Clear();
 
-		public override void OnDisconnect()
-		{
-			timeElapsed = 0f;
-			Hydra.notifications?.Send("Teleport Spammer", "Teleport Spammer was disabled as you left the game.", 10);
-			Enabled = false;
+			EventCoordinator.OnDisconnect -= OnDisconnect;
 		}
 	}
 }

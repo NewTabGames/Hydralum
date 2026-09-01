@@ -1,9 +1,10 @@
+﻿using HydraMenu.modules;
 using HydraMenu.network;
 using UnityEngine;
 
 namespace HydraMenu.routines
 {
-	public class AutoTriggerSporesRoutine : IRoutine
+	public class AutoTriggerSporesRoutine : Routine
 	{
 		public AutoTriggerSporesRoutine() : base("AutoTriggerSpores") { }
 
@@ -12,24 +13,28 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
-			if(ShipStatus.Instance == null || PlayerControl.LocalPlayer == null || Utilities.GetCurrentMap() != MapNames.Fungle) return;
+			if(ShipStatus.Instance == null) return;
 
 			timeElapsed += Time.deltaTime;
 			if(timeElapsed < SPORE_TRIGGER_DURATION) return;
 			timeElapsed = 0f;
 
-			FungleShipStatus shipStatus = ShipStatus.Instance.TryCast<FungleShipStatus>();
-			if (shipStatus == null || shipStatus.sporeMushrooms == null) return;
+			FungleShipStatus shipStatus = ShipStatus.Instance.Cast<FungleShipStatus>();
 
 			BatchedMessage batch = new BatchedMessage();
 
 			foreach(Mushroom mushroom in shipStatus.sporeMushrooms.Values)
 			{
-				if (mushroom != null)
-					batch.QueueTriggerSpore(PlayerControl.LocalPlayer, mushroom);
+				batch.QueueTriggerSpore(PlayerControl.LocalPlayer, mushroom);
 			}
 
 			batch.FinishBatch();
+		}
+
+		private void OnDisconnect()
+		{
+			Hydra.notifications.Send("Trigger Spores", "Auto-Trigger Spores was disabled as you left the game.", 10);
+			Enabled = false;
 		}
 
 		protected override void OnEnable()
@@ -47,12 +52,13 @@ namespace HydraMenu.routines
 				Enabled = false;
 				return;
 			}
+
+			EventCoordinator.OnDisconnect += OnDisconnect;
 		}
 
-		public override void OnDisconnect()
+		protected override void OnDisable()
 		{
-			Hydra.notifications.Send("Trigger Spores", "Auto-Trigger Spores was disabled as you left the game.", 10);
-			Enabled = false;
+			EventCoordinator.OnDisconnect -= OnDisconnect;
 		}
 	}
 }

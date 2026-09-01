@@ -1,6 +1,7 @@
-using AmongUs.GameOptions;
+﻿using AmongUs.GameOptions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace HydraMenu.ui
@@ -14,18 +15,18 @@ namespace HydraMenu.ui
 		public static readonly List<RoleTypes> RolesList = new List<RoleTypes>()
 		{
 			RoleTypes.Crewmate,
-			RoleTypes.Impostor,
 			RoleTypes.Scientist,
 			RoleTypes.Engineer,
-			RoleTypes.GuardianAngel,
-			RoleTypes.Shapeshifter,
 			RoleTypes.Noisemaker,
-			RoleTypes.Phantom,
 			RoleTypes.Tracker,
 			RoleTypes.Detective,
+			RoleTypes.Judge,
+			RoleTypes.Impostor,
+			RoleTypes.Shapeshifter,
+			RoleTypes.Phantom,
 			RoleTypes.Viper,
-			(RoleTypes)19,
 			RoleTypes.CrewmateGhost,
+			RoleTypes.GuardianAngel,
 			RoleTypes.ImpostorGhost
 		};
 
@@ -48,24 +49,31 @@ namespace HydraMenu.ui
 			Banana,
 			Gray,
 			Tan,
-			Coral
+			Coral,
+			Fortegreen
 		}
 
 		public static RoleTypes HorizontalRoleSlider(RoleTypes currentRole)
 		{
-			int currentValue = Math.Max(0, RolesList.IndexOf(currentRole));
+			int currentValue = RolesList.IndexOf(currentRole);
 
 			byte newValue = (byte)GUILayout.HorizontalSlider(currentValue, 0, RolesList.Count - 1);
-			newValue = Math.Max((byte)0, Math.Min(newValue, (byte)(RolesList.Count - 1)));
 
 			return RolesList[newValue];
 		}
 
 		public static PlayerColors HorizontalColorSlider(PlayerColors currentColor)
 		{
-			int maxIndex = Palette.ColorNames != null ? Math.Max(0, Palette.ColorNames.Length - 1) : 17;
-			int clamped = Math.Clamp((int)currentColor, 0, maxIndex);
-			return (PlayerColors)Math.Clamp((int)GUILayout.HorizontalSlider(clamped, 0, maxIndex), 0, maxIndex);
+			return (PlayerColors)GUILayout.HorizontalSlider((int)currentColor, 0, Palette.ColorNames.Length);
+		}
+
+		public static int HorizontalVentSlider(SortedDictionary<int, string> vents, int currentVent)
+		{
+			// Reset current vent if it is out ouf bounds
+			int firstKey = vents.Keys.First();
+			if(currentVent < firstKey || currentVent >= vents.Count) currentVent = firstKey;
+
+			return (int)GUILayout.HorizontalSlider(currentVent, firstKey, vents.Count - 1);
 		}
 
 		public static bool PlayerSpecificToggle(string label, PlayerControl selectedPlayer, ref PlayerControl currentPlayer)
@@ -93,13 +101,10 @@ namespace HydraMenu.ui
 			return currentPlayer != null;
 		}
 
-		public static bool PlayerSpecificToggle(string label, PlayerControl selectedPlayer, ref HashSet<int> currentPlayers)
+		public static bool PlayerSpecificToggle(string label, PlayerControl selectedPlayer, HashSet<int> currentPlayers)
 		{
-			if (currentPlayers == null) return false;
-			int hashCode = selectedPlayer != null ? selectedPlayer.GetHashCode() : 0;
-
 			GUIStyle toggle = new GUIStyle(GUI.skin.toggle);
-			bool isSelected = selectedPlayer != null && currentPlayers.Contains(hashCode);
+			bool isSelected = selectedPlayer != null && currentPlayers.Contains(selectedPlayer.GetHashCode());
 
 			if(isSelected)
 			{
@@ -111,22 +116,22 @@ namespace HydraMenu.ui
 			// The GUILayout::Toggle function always returns the current state of the toggle
 			// It is possible to determine when the toggle is changed, however it requires messy hacks involving getters and setters
 			// Using a GUILayout.Button disguised as a toggle that triggers only when the button is pressed is more practical here
-			if(GUILayout.Button(label, toggle))
+			if(GUILayout.Button(label, toggle) && selectedPlayer != null)
 			{
 				if(!isSelected)
 				{
-					currentPlayers.Add(hashCode);
+					currentPlayers.Add(selectedPlayer.GetHashCode());
 				}
 				else
 				{
-					currentPlayers.Remove(hashCode);
+					currentPlayers.Remove(selectedPlayer.GetHashCode());
 				}
 			}
 
 			return currentPlayers.Count != 0;
 		}
 
-		public static bool GlobalPlayerSpecificToggle(string label, ref HashSet<int> currentPlayers)
+		public static bool GlobalPlayerSpecificToggle(string label, HashSet<int> currentPlayers)
 		{
 			GUIStyle toggle = new GUIStyle(GUI.skin.toggle);
 			bool enabled = currentPlayers.Count != 0;

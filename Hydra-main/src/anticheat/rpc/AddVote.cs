@@ -1,4 +1,4 @@
-using Hazel;
+﻿using Hazel;
 using InnerNet;
 using System;
 
@@ -8,29 +8,27 @@ namespace HydraMenu.anticheat.rpc
 	{
 		public override bool Validate(PlayerControl player, MessageReader reader)
 		{
-			if (reader.BytesRemaining < 8) return false;
 			int source = reader.ReadInt32();
 			int target = reader.ReadInt32();
 
-			if (AmongUsClient.Instance == null) return false;
 			ClientData client = AmongUsClient.Instance.FindClientById(source);
-			if(client == null || client.Character == null || client.Character.Data == null)
+			if(client == null || client.Character == null)
 			{
-				Hydra.Log.LogInfo($"An unknown client id ({source}) or client with null character data attempted to votekick {target}");
+				Hydra.Log.LogInfo($"An unknown client id ({source}) attempted to votekick {target}");
 				return false;
 			}
 
 			player = client.Character;
 
-			if(player?.Data != null && player.Data.IsDead)
+			if(player.Data.IsDead)
 			{
-				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to votekick a player while dead.");
+				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to votekick a player while dead.");
 				return false;
 			}
 
 			if(MeetingHud.Instance == null)
 			{
-				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} attempted to votekick a player outside of a meeting.");
+				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to votekick a player outside of a meeting.");
 				return false;
 			}
 

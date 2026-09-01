@@ -1,12 +1,13 @@
+﻿using HydraMenu.modules;
 using UnityEngine;
 
 namespace HydraMenu.routines
 {
-	public class ReportBodySpam : IRoutine
+	public class ReportBodySpam : Routine
 	{
 		public ReportBodySpam() : base("ReportBodySpam") { }
 
-		public float reportDelay = 2.5f;
+		public readonly float REPORT_DELAY = 2.5f;
 		private float timeElapsed = 0f;
 
 		public override void Run()
@@ -14,11 +15,10 @@ namespace HydraMenu.routines
 			if(ShipStatus.Instance == null) return;
 
 			timeElapsed += Time.deltaTime;
-			if(timeElapsed < reportDelay) return;
+			if(timeElapsed < REPORT_DELAY) return;
 			timeElapsed = 0f;
 
 			PlayerControl player = Utilities.GetRandomPlayer(false, false, false, false);
-			if (player == null || player.Data == null || PlayerControl.LocalPlayer == null) return;
 
 			if(MeetingHud.Instance == null)
 			{
@@ -26,6 +26,12 @@ namespace HydraMenu.routines
 			}
 
 			PlayerControl.LocalPlayer.RpcStartMeeting(player.Data);
+		}
+
+		private void OnDisconnect()
+		{
+			Hydra.notifications.Send("Report Body Spam", "Report Body Spam was disabled as you left the game.", 10);
+			Enabled = false;
 		}
 
 		protected override void OnEnable()
@@ -43,12 +49,13 @@ namespace HydraMenu.routines
 				Enabled = false;
 				return;
 			}
+
+			EventCoordinator.OnDisconnect += OnDisconnect;
 		}
 
-		public override void OnDisconnect()
+		protected override void OnDisable()
 		{
-			Hydra.notifications.Send("Report Body Spam", "Report Body Spam was disabled as you left the game.", 10);
-			Enabled = false;
+			EventCoordinator.OnDisconnect -= OnDisconnect;
 		}
 	}
 }

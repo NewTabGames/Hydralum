@@ -1,69 +1,49 @@
-using BepInEx.Unity.IL2CPP.Utils.Collections;
-using HydraMenu.features;
+﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using HydraMenu.modules;
 using HydraMenu.network;
 using InnerNet;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace HydraMenu.ui.sections
 {
-	internal class HostSection : ISection
+	internal class HostSection : Section
 	{
 		public HostSection() : base("Host") { }
 
 		private byte selectedMap = 0;
+		private Controls.PlayerColors selectedColor = 0;
+
+		public static readonly Queue<InnerNetObject> lobbyList = new Queue<InnerNetObject>();
+		public static readonly Queue<InnerNetObject> shipList = new Queue<InnerNetObject>();
 
 		public override void Render()
 		{
 			if(PlayerControl.LocalPlayer == null)
 			{
 				GUILayout.Label("You are not currently in a game, these options will not work.");
-				return;
 			}
 			else if(!AmongUsClient.Instance.AmHost)
 			{
 				GUILayout.Label("You are not the host of the current lobby. Using these options will either do nothing or get you banned by the anticheat");
 			}
 
-			bool prevBan = Host.BanMidGame.Enabled;
-			Host.BanMidGame.Enabled = GUILayout.Toggle(Host.BanMidGame.Enabled, "Be able to ban players mid-game");
-			if (Host.BanMidGame.Enabled != prevBan) HydraConfig.Save();
+			ModuleManager.banMidGame.Enabled = GUILayout.Toggle(ModuleManager.banMidGame.Enabled, "Be able to ban players mid-game");
 
-			bool prevFlip = Host.FlippedSkeld;
-			Host.FlippedSkeld = GUILayout.Toggle(Host.FlippedSkeld, "Use Flipped Skeld Map");
-			if (Host.FlippedSkeld != prevFlip) HydraConfig.Save();
+			ModuleManager.flipSkeld.Enabled = GUILayout.Toggle(ModuleManager.flipSkeld.Enabled, "Use Flipped Skeld Map");
 
-			bool prevSab = Host.DisableSabotages.Enabled;
-			Host.DisableSabotages.Enabled = GUILayout.Toggle(Host.DisableSabotages.Enabled, "Disable Sabotages");
-			if (Host.DisableSabotages.Enabled != prevSab) HydraConfig.Save();
+			ModuleManager.disableGameEnd.Enabled = GUILayout.Toggle(ModuleManager.disableGameEnd.Enabled, "Disable Game End");
+			ModuleManager.disableVentClean.Enabled = GUILayout.Toggle(ModuleManager.disableVentClean.Enabled, "Disable Vent Clean");
 
-			bool prevDoors = Host.DisableCloseDoors.Enabled;
-			Host.DisableCloseDoors.Enabled = GUILayout.Toggle(Host.DisableCloseDoors.Enabled, "Disable Close Doors");
-			if (Host.DisableCloseDoors.Enabled != prevDoors) HydraConfig.Save();
-
-			bool prevCams = Host.DisableCameras.Enabled;
-			Host.DisableCameras.Enabled = GUILayout.Toggle(Host.DisableCameras.Enabled, "Disable Security Cameras");
-			if (Host.DisableCameras.Enabled != prevCams) HydraConfig.Save();
-
-			bool prevEnd = Host.DisableGameEnd.Enabled;
-			Host.DisableGameEnd.Enabled = GUILayout.Toggle(Host.DisableGameEnd.Enabled, "Disable Game End");
-			if (Host.DisableGameEnd.Enabled != prevEnd) HydraConfig.Save();
-
-			bool prevKillCd = Host.NoKillCooldown.Enabled;
-			Host.NoKillCooldown.Enabled = GUILayout.Toggle(Host.NoKillCooldown.Enabled, "No Kill Cooldown");
-			if (Host.NoKillCooldown.Enabled != prevKillCd) HydraConfig.Save();
+			ModuleManager.fakeShapeshiftBubble.Enabled = GUILayout.Toggle(ModuleManager.fakeShapeshiftBubble.Enabled, "Fake Shapeshift Bubble");
 
 			GUILayout.BeginHorizontal();
-			bool prevLowLevels = Host.BlockLowLevels.Enabled;
-			Host.BlockLowLevels.Enabled = GUILayout.Toggle(Host.BlockLowLevels.Enabled, $"Kick players with less than {Host.BlockLowLevels.MinLevel} levels");
-			if (Host.BlockLowLevels.Enabled != prevLowLevels) HydraConfig.Save();
-
-			uint prevMinLvl = Host.BlockLowLevels.MinLevel;
-			Host.BlockLowLevels.MinLevel = (uint)GUILayout.HorizontalSlider(Host.BlockLowLevels.MinLevel, 0, 100);
-			if (Host.BlockLowLevels.MinLevel != prevMinLvl) HydraConfig.Save();
+			ModuleManager.blockLowLevels.Enabled = GUILayout.Toggle(ModuleManager.blockLowLevels.Enabled, $"Kick players with less than {ModuleManager.blockLowLevels.MinLevel} levels");
+			ModuleManager.blockLowLevels.MinLevel = (uint)GUILayout.HorizontalSlider(ModuleManager.blockLowLevels.MinLevel, 0, 100);
 			GUILayout.EndHorizontal();
 
 			if(GUILayout.Button("Force Start Game"))
@@ -80,7 +60,7 @@ namespace HydraMenu.ui.sections
 			if(GUILayout.Button("Force Crewmate Victory"))
 			{
 				// Just in case the user has this enabled
-				Host.DisableGameEnd.Enabled = false;
+				ModuleManager.disableGameEnd.Enabled = false;
 
 				GameManager.Instance.RpcEndGame(GameOverReason.CrewmatesByTask, false);
 				Hydra.notifications.Send("Game Finished", "You ended the game with a crewmate victory.", 5);
@@ -89,7 +69,7 @@ namespace HydraMenu.ui.sections
 			if(GUILayout.Button("Force Imposter Victory"))
 			{
 				// Just in case the user has this enabled
-				Host.DisableGameEnd.Enabled = false;
+				ModuleManager.disableGameEnd.Enabled = false;
 
 				GameManager.Instance.RpcEndGame(GameOverReason.ImpostorsByKill, false);
 				Hydra.notifications.Send("Game Finished", "You ended the game with an imposter victory.", 5);
@@ -105,14 +85,16 @@ namespace HydraMenu.ui.sections
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Despawn Map"))
 			{
-				if(ShipStatus.Instance != null)
+				if(shipList.Count != 0)
 				{
-					ShipStatus.Instance.Despawn();
+					InnerNetObject ship = shipList.Dequeue();
+					ship.Despawn();
+
 					Hydra.notifications.Send("Game Map", "The current map has been despawned.", 5);
 				}
 				else
 				{
-					Hydra.notifications.Send("Game Map", "The game map has already been despawned.", 5);
+					Hydra.notifications.Send("Game Map", "The game map has already been despawned.", 10);
 				}
 			}
 
@@ -125,14 +107,16 @@ namespace HydraMenu.ui.sections
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Despawn Lobby"))
 			{
-				if(LobbyBehaviour.Instance != null)
+				if(lobbyList.Count > 0)
 				{
-					LobbyBehaviour.Instance.Despawn();
+					InnerNetObject lobby = lobbyList.Dequeue();
+					lobby.Despawn();
+
 					Hydra.notifications.Send("Lobby Map", "The lobby map has been despawned.", 5);
 				}
 				else
 				{
-					Hydra.notifications.Send("Lobby Map", "The lobby map has already been despawned.", 5);
+					Hydra.notifications.Send("Lobby Map", "The lobby map has already been despawned.", 10);
 				}
 			}
 
@@ -144,24 +128,16 @@ namespace HydraMenu.ui.sections
 
 			GUILayout.Space(5);
 			GUILayout.Label("Assign roles for next round:");
-			bool prevAlwaysImp = Host.AlwaysImposter.Enabled;
-			Host.AlwaysImposter.Enabled = GUILayout.Toggle(Host.AlwaysImposter.Enabled, "Enabled");
-			if (Host.AlwaysImposter.Enabled != prevAlwaysImp) HydraConfig.Save();
-
-			GUILayout.Label($"Role to assign: {Host.AlwaysImposter.assignedRole}");
-			AmongUs.GameOptions.RoleTypes prevRole = Host.AlwaysImposter.assignedRole;
-			Host.AlwaysImposter.assignedRole = Controls.HorizontalRoleSlider(Host.AlwaysImposter.assignedRole);
-			if (Host.AlwaysImposter.assignedRole != prevRole) HydraConfig.Save();
+			ModuleManager.assignRoles.Enabled = GUILayout.Toggle(ModuleManager.assignRoles.Enabled, "Enabled");
+			GUILayout.Label($"Role to assign: {ModuleManager.assignRoles.AssignedRole}");
+			ModuleManager.assignRoles.AssignedRole = Controls.HorizontalRoleSlider(ModuleManager.assignRoles.AssignedRole);
 
 			GUILayout.Space(5);
 			GUILayout.Label("Meeting Controls:");
-			bool prevDisMeet = Host.DisableMeetings.Enabled;
-			Host.DisableMeetings.Enabled = GUILayout.Toggle(Host.DisableMeetings.Enabled, "Disable Meetings");
-			if (Host.DisableMeetings.Enabled != prevDisMeet) HydraConfig.Save();
-
-			bool prevSpamRep = Hydra.routines.reportBodySpam.Enabled;
+			ModuleManager.disableMeetings.Enabled = GUILayout.Toggle(ModuleManager.disableMeetings.Enabled, "Disable Meetings");
 			Hydra.routines.reportBodySpam.Enabled = GUILayout.Toggle(Hydra.routines.reportBodySpam.Enabled, "Spam Report Bodies");
-			if (Hydra.routines.reportBodySpam.Enabled != prevSpamRep) HydraConfig.Save();
+			ModuleManager.voteImmune.Enabled = Controls.PlayerSpecificToggle("Vote Immune", PlayerControl.LocalPlayer, ModuleManager.voteImmune.targets);
+			Hydra.routines.voteSpammer.Enabled = Controls.GlobalPlayerSpecificToggle("Spam Votes", Hydra.routines.voteSpammer.targets);
 
 			if(GUILayout.Button("Close Meeting"))
 			{
@@ -189,11 +165,8 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Shapeshift Everyone Into Random"))
 			{
-				PlayerControl target = Utilities.GetRandomPlayer(false, false, false, false, true);
-				if (target != null)
-				{
-					AmongUsClient.Instance.StartCoroutine(ShapeshiftAll(target).WrapToIl2Cpp());
-				}
+				PlayerControl target = Utilities.GetRandomPlayer(false, false, false, false);
+				AmongUsClient.Instance.StartCoroutine(ShapeshiftAll(target).WrapToIl2Cpp());
 			}
 
 			if(GUILayout.Button("Revert All Shapeshifts"))
@@ -201,12 +174,28 @@ namespace HydraMenu.ui.sections
 				AmongUsClient.Instance.StartCoroutine(RevertAllShapeshift().WrapToIl2Cpp());
 			}
 
-			Hydra.routines.discoHost.Enabled = Controls.GlobalPlayerSpecificToggle("Disco Party", ref Hydra.routines.discoHost.targets);
+			GUILayout.Space(5);
+			GUILayout.Label("Color Controls:");
 
-			GUILayout.Label($"Color randomization delay: {Hydra.routines.discoHost.randomizationDelay:F2}s");
-			float prevDiscoDelay = Hydra.routines.discoHost.randomizationDelay;
-			Hydra.routines.discoHost.randomizationDelay = GUILayout.HorizontalSlider(Hydra.routines.discoHost.randomizationDelay, 0.1f, 2.0f);
-			if (Math.Abs(Hydra.routines.discoHost.randomizationDelay - prevDiscoDelay) > 0.001f) HydraConfig.Save();
+			GUILayout.Label($"Change everyone's color to: {selectedColor}");
+			selectedColor = Controls.HorizontalColorSlider(selectedColor);
+
+			if(GUILayout.Button("Change Colors"))
+			{
+				BatchedMessage batch = new BatchedMessage();
+
+				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+				{
+					batch.QueueSetColor(player, (byte)selectedColor);
+				}
+
+				batch.FinishBatch();
+			}
+
+			Hydra.routines.discoHost.Enabled = Controls.GlobalPlayerSpecificToggle("Disco Party", Hydra.routines.discoHost.targets);
+
+			GUILayout.Label($"Color randomization delay: {Hydra.routines.discoHost.RandomizationDelay:F2}s");
+			Hydra.routines.discoHost.RandomizationDelay = GUILayout.HorizontalSlider(Hydra.routines.discoHost.RandomizationDelay, 0.1f, 2.0f);
 		}
 
 		private static void KillAllPlayers()
@@ -225,21 +214,23 @@ namespace HydraMenu.ui.sections
 				return;
 			}
 
+			// On +25 modded protocol lobbies, we are able to send SetColor RPCs as non-host
+			// however we are still affected by message packing limits
+			int packingLimit = AmongUsClient.Instance.GetMaxMessagePackingLimit();
 			BatchedMessage batch = new BatchedMessage();
-			bool hasDev = false;
 
 			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
-				if(player != null && player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
+				if(batch.msgCount >= packingLimit)
 				{
-					hasDev = true;
-					continue;
+					batch.FinishBatch();
+					batch = new BatchedMessage();
 				}
+
 				batch.QueueMurderPlayer(PlayerControl.LocalPlayer, player, MurderResultFlags.Succeeded);
 			}
 
 			batch.FinishBatch();
-			if (hasDev) NotificationManager.AddNotification("Cannot target Developer");
 		}
 
 		private static void SpawnLobby()
@@ -295,38 +286,21 @@ namespace HydraMenu.ui.sections
 
 		private static IEnumerator ShapeshiftAll(PlayerControl target)
 		{
-			if(target == null) yield break;
-			if(target.Data != null && PresenceTracker.IsDevUser(target.Data) && target != PlayerControl.LocalPlayer)
-			{
-				NotificationManager.AddNotification("Cannot target Developer");
-				yield break;
-			}
-
 			if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
 			{
 				Hydra.notifications.Send("Shapeshift Player", "You need to be the host of the lobby in order to use this feature.");
 				yield break;
 			}
 
-			bool hasDev = false;
-			if(PlayerControl.AllPlayerControls != null)
+			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
-				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
-				{
-					if(player == null || player == target || player.shapeshiftTargetPlayerId == target.PlayerId) continue;
-					if(player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
-					{
-						hasDev = true;
-						continue;
-					}
+				if(player == target || player.shapeshiftTargetPlayerId == target.PlayerId) continue;
 
-					Utilities.ShapeshiftPlayer(player, target);
+				Utilities.ShapeshiftPlayer(player, target);
 
-					// This function can send up to 42 reliable messages at once, so we need to implement a delay to avoid getting disconnected
-					yield return Effects.Wait(0.05f);
-				}
+				// This function can send up to 42 reliable messages at once, so we need to implement a delay to avoid getting disconnected
+				yield return Effects.Wait(0.05f);
 			}
-			if (hasDev) NotificationManager.AddNotification("Cannot target Developer");
 		}
 
 		private static IEnumerator RevertAllShapeshift()
@@ -337,17 +311,13 @@ namespace HydraMenu.ui.sections
 				yield break;
 			}
 
-			if(PlayerControl.AllPlayerControls != null)
+			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
-				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
-				{
-					if(player == null || player.shapeshiftTargetPlayerId == -1) continue;
-					if(player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer) continue;
+				if(player.shapeshiftTargetPlayerId == -1) continue;
 
-					Utilities.ShapeshiftPlayer(player, player);
+				Utilities.ShapeshiftPlayer(player, player);
 
-					yield return Effects.Wait(0.05f);
-				}
+				yield return Effects.Wait(0.05f);
 			}
 		}
 	}

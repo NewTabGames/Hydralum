@@ -135,13 +135,15 @@ namespace HydraMenu
 			return AmongUsClient.Instance.AmHost || map == MapNames.Polus || map == MapNames.Airship || map == MapNames.Fungle;
 		}
 
-		public static void SabotageSystem(SystemTypes system)
+		public static void SabotageSystem(SystemTypes system, int targetClientId = -2)
 		{
 			if(!UpdateSystemsDirectly)
 			{
 				ShipStatus.Instance.RpcUpdateSystem(SystemTypes.Sabotage, (byte)system);
 				return;
 			}
+
+			BatchedMessage batch = new BatchedMessage(targetClientId == -2 ? AmongUsClient.Instance.HostId : targetClientId);
 
 			switch(system)
 			{
@@ -150,7 +152,7 @@ namespace HydraMenu
 				case SystemTypes.HeliSabotage:
 				case SystemTypes.LifeSupp:
 				case SystemTypes.Comms:
-					ShipStatus.Instance.RpcUpdateSystem(system, 128);
+					batch.QueueUpdateSystem(PlayerControl.LocalPlayer, system, 128);
 					break;
 
 				// Electrical sabotage requires us to update each individual light switch
@@ -166,17 +168,25 @@ namespace HydraMenu
 						}
 					}
 
-					ShipStatus.Instance.RpcUpdateSystem(SystemTypes.Electrical, (byte)(amount | 128));
+					batch.QueueUpdateSystem(PlayerControl.LocalPlayer, SystemTypes.Electrical, (byte)(amount | 128));
 					break;
 
 				case SystemTypes.MushroomMixupSabotage:
-					ShipStatus.Instance.RpcUpdateSystem(system, 1);
+					batch.QueueUpdateSystem(PlayerControl.LocalPlayer, system, (byte)MushroomMixupSabotageSystem.Operation.TriggerSabotage);
+					break;
+
+				default:
+					Hydra.Log.LogError($"Attempted to sabotage unknown system {system}");
 					break;
 			}
+
+			batch.FinishBatch();
 		}
 
-		public static void FixSabotage(SystemTypes system)
+		public static void FixSabotage(SystemTypes system, int targetClientId = -2)
 		{
+			BatchedMessage batch = new BatchedMessage(targetClientId == -2 ? AmongUsClient.Instance.HostId : targetClientId);
+
 			switch(system)
 			{
 				// ShipStatus::RepairCriticalSabotages uses amount value of 16 to instantly fix sabotages
@@ -184,14 +194,14 @@ namespace HydraMenu
 				case SystemTypes.Reactor:
 				case SystemTypes.Laboratory:
 				case SystemTypes.LifeSupp:
-					ShipStatus.Instance.RpcUpdateSystem(system, 16);
+					batch.QueueUpdateSystem(PlayerControl.LocalPlayer, system, 16);
 					break;
 
 				// Comms in Mira HQ and HeliSabotage require two different updates in order to complete
 				case SystemTypes.Comms:
 				case SystemTypes.HeliSabotage:
-					ShipStatus.Instance.RpcUpdateSystem(system, 16);
-					ShipStatus.Instance.RpcUpdateSystem(system, 17);
+					batch.QueueUpdateSystem(PlayerControl.LocalPlayer, system, 16 | 0);
+					batch.QueueUpdateSystem(PlayerControl.LocalPlayer, system, 16 | 1);
 					break;
 
 				case SystemTypes.Electrical:
@@ -210,7 +220,7 @@ namespace HydraMenu
 					// If it is on, then the amount value is a binary representation of what switches should be toggled
 					// So if we had an amount value of 172 (which in binary is 1000 1101), that would mean light switches 0, 2, and 3 would be toggled
 					// I don't think the 8th bit is actually ever used outside SabotageSystemType, so anticheats can detect this
-					ShipStatus.Instance.RpcUpdateSystem(SystemTypes.Electrical, (byte)(amount | 128));
+					batch.QueueUpdateSystem(PlayerControl.LocalPlayer, SystemTypes.Electrical, (byte)(amount | 128));
 					break;
 
 				case SystemTypes.MushroomMixupSabotage:
@@ -233,7 +243,13 @@ namespace HydraMenu
 					mixupSystem.currentSecondsUntilHeal = 0.1f;
 					mixupSystem.IsDirty = true;
 					break;
+
+				default:
+					Hydra.Log.LogError($"Attempted to fix unknown sabotage system {system}");
+					break;
 			}
+
+			batch.FinishBatch();
 		}
 
 		public static bool IsSabotageActive(SystemTypes system)

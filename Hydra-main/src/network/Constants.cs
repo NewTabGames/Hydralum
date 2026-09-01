@@ -1,4 +1,6 @@
-﻿namespace HydraMenu.network
+﻿using System;
+
+namespace HydraMenu.network
 {
 	internal class Constants
 	{
@@ -26,6 +28,30 @@
 			NetworkedPlayerInfo = 11,
 			VoteBanSystem = 12,
 			FungleShipStatus = 13
+		}
+
+		[Flags]
+		public enum HudOverrideSystemOperation
+		{
+			// All other bits are treated as Fix
+			Sabotage = 128
+		}
+
+		[Flags]
+		public enum LifeSuppSystemOperation
+		{
+			Fix = 16,
+			RepairConsole = 64,
+			Sabotage = 128
+		}
+
+		[Flags]
+		public enum ReactorSystemOperation
+		{
+			Fix = 16,
+			UnrepairConsole = 32,
+			RepairConsole = 64,
+			Sabotage = 128
 		}
 	}
 }

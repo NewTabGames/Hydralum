@@ -17,7 +17,7 @@ public class InfoTab : ITab
 
     public void Draw()
     {
-        GUILayout.Label($"<b>Hydralum</b> v{PresenceTracker.CurrentHydralumVersion} (Malum Menu v{MalumMenu.malumVersion} | Hydra Menu v1.10.0)", GUIStylePreset.TabSubtitle);
+        GUILayout.Label($"<b>Hydralum</b> v{PresenceTracker.CurrentHydralumVersion} (Malum Menu v{MalumMenu.malumVersion} | Hydra Menu v2.0.0)", GUIStylePreset.TabSubtitle);
         GUILayout.Label("A fork of MalumMenu, with features drawn from Hydra.");
         GUILayout.Space(6);
         int online = PresenceTracker.GetOnlineCount();

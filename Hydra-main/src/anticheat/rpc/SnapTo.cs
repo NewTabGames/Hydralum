@@ -1,6 +1,5 @@
-using Hazel;
+﻿using Hazel;
 using System;
-using UnityEngine;
 
 namespace HydraMenu.anticheat.rpc
 {
@@ -13,7 +12,7 @@ namespace HydraMenu.anticheat.rpc
 
 			if(LobbyBehaviour.Instance != null)
 			{
-				Anticheat.Flag(player, $"{player?.Data?.PlayerName ?? "Unknown"} sent the SnapTo RPC while inside the lobby.");
+				Anticheat.Flag(player, $"{player.Data.PlayerName} sent the SnapTo RPC while inside the lobby.");
 
 				// We are not able to send SnapTo RPCs with other player's NetTransform net ids on Vanilla servers
 				if(AmongUsClient.Instance.AmHost && !Utilities.IsAnticheatPresent())

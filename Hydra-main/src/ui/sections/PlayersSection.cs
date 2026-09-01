@@ -2,18 +2,17 @@ using AmongUs.Data;
 using AmongUs.GameOptions;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using HydraMenu.assets;
-using HydraMenu.features;
+using HydraMenu.modules;
 using HydraMenu.network;
 using InnerNet;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace HydraMenu.ui.sections
 {
-	internal class PlayersSection : ISection
+	internal class PlayersSection : Section
 	{
 		public PlayersSection() : base("Players") { }
 
@@ -48,7 +47,6 @@ namespace HydraMenu.ui.sections
 		}
 
 		public static PlayerControl selectedPlayer;
-		public static readonly HashSet<byte> selectedPlayerIds = new();
 		private Vector2 subsectionScrollVector;
 
 		private Controls.PlayerColors selectedColor = Controls.PlayerColors.Red;
@@ -62,11 +60,6 @@ namespace HydraMenu.ui.sections
 			int newPosition = Math.Clamp(currentPlayer + offset, 0, PlayerControl.AllPlayerControls.Count - 1);
 
 			selectedPlayer = PlayerControl.AllPlayerControls[newPosition];
-			selectedPlayerIds.Clear();
-			if(selectedPlayer != null)
-			{
-				selectedPlayerIds.Add(selectedPlayer.PlayerId);
-			}
 		}
 
 		public override void Render()
@@ -79,63 +72,25 @@ namespace HydraMenu.ui.sections
 
 			GUI.Box(new Rect(0, 0, PlayerPaneSize.x, PlayerPaneSize.y), "", Styles.MainBox);
 
-			// Clean up disconnected or despawned players from selection set
-			selectedPlayerIds.RemoveWhere(id => {
-				var p = PlayerControl.AllPlayerControls.ToArray().FirstOrDefault(pc => pc != null && pc.PlayerId == id);
-				return p == null || p.Data == null || p.Data.Disconnected;
-			});
-
-			// If no player is selected at all and we have online players, default select the first player once
-			if(selectedPlayerIds.Count == 0 && selectedPlayer == null && PlayerControl.AllPlayerControls.Count > 0)
-			{
-				var first = PlayerControl.AllPlayerControls.ToArray().FirstOrDefault(p => p != null && p.Data != null && !p.Data.Disconnected);
-				if(first?.Data != null)
-				{
-					selectedPlayerIds.Add(first.PlayerId);
-					selectedPlayer = first;
-				}
-			}
-
-			// Render all player selection buttons first (so button clicks update selectedPlayerIds immediately)
-			byte visualIndex = 0;
-			for(int i = 0; i < PlayerControl.AllPlayerControls.Count; i++)
+			for(byte i = 0; i < PlayerControl.AllPlayerControls.Count; i++)
 			{
 				PlayerControl player = PlayerControl.AllPlayerControls[i];
-				if(player == null || player.Data == null) continue;
+				// Wait for player data to fully load
+				if(player.Data == null) continue;
 
-				RenderPlayerSelection(visualIndex++, player);
-			}
+				RenderPlayerSelection(i, player);
 
-			// Gather selected players AFTER buttons have updated selectedPlayerIds on this frame
-			List<PlayerControl> selectedList = new();
-			for(int i = 0; i < PlayerControl.AllPlayerControls.Count; i++)
-			{
-				PlayerControl player = PlayerControl.AllPlayerControls[i];
-				if(player != null && player.Data != null && !player.Data.Disconnected && selectedPlayerIds.Contains(player.PlayerId))
+				if(player == selectedPlayer)
 				{
-					selectedList.Add(player);
+					GUILayout.BeginArea(new Rect(PlayerPaneSize.x, 0, PlayerOptionsSize.x, PlayerOptionsSize.y));
+					subsectionScrollVector = GUILayout.BeginScrollView(subsectionScrollVector);
+
+					RenderPlayerControls(player);
+
+					GUILayout.EndScrollView();
+					GUILayout.EndArea();
 				}
 			}
-
-			GUILayout.BeginArea(new Rect(PlayerPaneSize.x, 0, PlayerOptionsSize.x, PlayerOptionsSize.y));
-			subsectionScrollVector = GUILayout.BeginScrollView(subsectionScrollVector);
-
-			if(selectedList.Count > 1)
-			{
-				RenderMultiPlayerControls(selectedList);
-			}
-			else if(selectedList.Count == 1)
-			{
-				selectedPlayer = selectedList[0];
-				RenderPlayerControls(selectedList[0]);
-			}
-			else
-			{
-				GUILayout.Label("Select a player on the left.\n<color=#888888>(Hold Ctrl to select multiple)</color>");
-			}
-
-			GUILayout.EndScrollView();
-			GUILayout.EndArea();
 		}
 
 		private void RenderPlayerSelection(byte position, PlayerControl player)
@@ -143,41 +98,22 @@ namespace HydraMenu.ui.sections
 			Rect playerInfo = new Rect(0, position * PlayerButtonSize.y, PlayerButtonSize.x, PlayerButtonSize.y);
 
 			string playerName = player.Data.PlayerName;
-			if(AmongUsClient.Instance != null && player.OwnerId == AmongUsClient.Instance.HostId)
-			{
-				playerName = $"<color=#FFD700>{playerName}</color>";
-			}
 			playerName += $"\n<color=\"{GetRoleColor(player.Data.RoleType)}\">{player.Data.RoleType}</color>";
 
-			bool isSelected = selectedPlayerIds.Contains(player.PlayerId);
-			GUIStyle style = isSelected ? Styles.PlayerBoxActive : Styles.PlayerBox;
+			GUIStyle style = player == selectedPlayer ? Styles.PlayerBoxActive : Styles.PlayerBox;
 
+			if(player.OwnerId == AmongUsClient.Instance.HostId)
+			{
+				style.normal.textColor = new Color(1.0f, 0.84f, 0.0f); // #FFD700
+			}
+
+			Color defaultBg = GUI.backgroundColor;
+			if (player == selectedPlayer) UIHelpers.ApplyUIColor(position * 35f);
 			if(GUI.Button(playerInfo, playerName, style))
 			{
-				bool isCtrl = (Event.current != null && Event.current.control) || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
-				if(isCtrl)
-				{
-					if(selectedPlayerIds.Contains(player.PlayerId))
-					{
-						selectedPlayerIds.Remove(player.PlayerId);
-						if(selectedPlayer == player)
-						{
-							selectedPlayer = PlayerControl.AllPlayerControls.ToArray().FirstOrDefault(p => p?.Data != null && selectedPlayerIds.Contains(p.PlayerId));
-						}
-					}
-					else
-					{
-						selectedPlayerIds.Add(player.PlayerId);
-						selectedPlayer = player;
-					}
-				}
-				else
-				{
-					selectedPlayerIds.Clear();
-					selectedPlayerIds.Add(player.PlayerId);
-					selectedPlayer = player;
-				}
+				selectedPlayer = player;
 			}
+			GUI.backgroundColor = defaultBg;
 
 			Rect playerColor = new Rect(0, position * PlayerButtonSize.y, PlayerColorBoxSize.x, PlayerColorBoxSize.y);
 			Controls.DrawCrewmateColorBox(playerColor, player.Data);
@@ -198,103 +134,63 @@ namespace HydraMenu.ui.sections
 
 			bool hasAnticheat = Utilities.IsAnticheatPresent();
 
+			// If we want to get a player's name, we have to use NetworkedPlayerInfo::PlayerName instead of PlayerControl::name to avoid
+			// getting the incorrect name if the player is shapeshifted to another player
 			string playerInfo =
 				$"Name: {target.Data.PlayerName} ({Utilities.GetPlayerColor(target.Data)})" +
 				$"\nRole: {target.Data.RoleType}" +
 				$"\nState: " + (target.Data.IsDead ? "Dead" : "Alive");
 
-			ClientData clientData = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetClientFromCharacter(target) : null;
+			ClientData clientData = AmongUsClient.Instance.GetClientFromCharacter(target);
 			if(clientData != null)
 			{
-				var platform = clientData.PlatformData;
+				PlatformSpecificData platform = clientData.PlatformData;
+
 				bool streamerMode = DataManager.Settings.Gameplay.StreamerMode;
-				string friendCodeStr = !string.IsNullOrEmpty(target.Data.FriendCode) ? target.Data.FriendCode : (clientData.FriendCode ?? "-");
-				string puidStr = !string.IsNullOrEmpty(clientData.ProductUserId) ? clientData.ProductUserId : "-";
 
 				playerInfo +=
-					$"\nFriendcode: " + (streamerMode ? "REDACTED" : friendCodeStr) +
+					$"\nFriendcode: " + (streamerMode ? "REDACTED" : target.Data.FriendCode) +
+					$"\nPUID: " + (streamerMode ? "REDACTED" : target.Data.Puid) +
 					$"\nLevel: {target.Data.PlayerLevel + 1}" +
-					$"\nDevice: {platform?.Platform}" +
-					(AmongUsClient.Instance != null && target.OwnerId == AmongUsClient.Instance.HostId ? "\nHost: true" : "");
+					$"\nDevice: {platform.Platform}" +
+					(target.OwnerId == AmongUsClient.Instance.HostId ? "\nHost: true" : "");
 			}
 
 			GUILayout.Label(playerInfo);
 
-			Visuals.SpectatePlayer.Enabled = Controls.PlayerSpecificToggle("Spectate", target, ref Visuals.SpectatePlayer.target);
+			ModuleManager.spectatePlayer.Enabled = Controls.PlayerSpecificToggle("Spectate", target, ref ModuleManager.spectatePlayer.target);
+			Hydra.routines.petPlayer.Enabled = Controls.PlayerSpecificToggle("Pet Player", target, ref Hydra.routines.petPlayer.target);
+			Hydra.routines.playerFollower.Enabled = Controls.PlayerSpecificToggle("Follow", target, ref Hydra.routines.playerFollower.target);
+			Hydra.routines.jailPlayer.Enabled = Controls.PlayerSpecificToggle("Place in Jail", target, Hydra.routines.jailPlayer.targets);
+			Hydra.routines.teleportSpammer.Enabled = Controls.PlayerSpecificToggle("Spam Teleports", target, Hydra.routines.teleportSpammer.targets);
+			Hydra.routines.ziplineSpammer.Enabled = Controls.PlayerSpecificToggle("Spam Zipline", target, Hydra.routines.ziplineSpammer.targets);
 
-			if(IsDevTarget(target))
-			{
-				if(GUILayout.Button("Pet Player"))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				if(GUILayout.Button("Follow"))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				if(GUILayout.Button("Place in Jail"))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-			}
-			else
-			{
-				Hydra.routines.petPlayer.Enabled = Controls.PlayerSpecificToggle("Pet Player", target, ref Hydra.routines.petPlayer.target);
-				Hydra.routines.playerFollower.Enabled = Controls.PlayerSpecificToggle("Follow", target, ref Hydra.routines.playerFollower.following);
-				Hydra.routines.jailPlayer.Enabled = Controls.PlayerSpecificToggle("Place in Jail", target, ref Hydra.routines.jailPlayer.targets);
-			}
-
+			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Teleport"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else
-				{
-					Teleporter.TeleportTo(target.transform.position);
-				}
+				// We do not want to use PlayerControl::GetTruePosition() here as it would teleport us to the player's feet
+				Teleporter.TeleportTo(target.transform.position);
 			}
 
-			if(GUILayout.Button("Teleport All To"))
+			if(!hasAnticheat && GUILayout.Button("Teleport to Me"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else if(AmongUsClient.Instance == null) { }
-				else if(AmongUsClient.Instance.AmHost || !hasAnticheat)
-				{
-					Teleporter.TeleportAllTo(target.transform.position);
-				}
-				else
-				{
-					Hydra.notifications.Send("Teleport", "Teleporting all players requires Host authority on official servers.");
-				}
+				Teleporter.TeleportPlayerTo(target, PlayerControl.LocalPlayer.transform.position);
+			}
+			GUILayout.EndHorizontal();
+
+			if(!hasAnticheat && GUILayout.Button("Teleport All To"))
+			{
+				Teleporter.TeleportAllTo(target.transform.position);
 			}
 
 			if(GUILayout.Button("Murder"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else
-				{
-					AttemptMurder(target);
-				}
+				AttemptMurder(target);
 			}
 
 			if(GUILayout.Button("Copy Avatar"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else
-				{
-					Utilities.CopyPlayer(target);
-				}
+				Utilities.CopyPlayer(target);
 			}
 
 			if(GUILayout.Button("Report Body"))
@@ -304,87 +200,46 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Kick Player"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else
-				{
-					Utilities.KickPlayer(target);
-				}
+				Utilities.KickPlayer(target);
 			}
 
-			Dictionary<int, string> vents = MapAssets.GetVents();
+			SortedDictionary<int, string> vents = MapAssets.GetVents();
 
-			int ventCount = vents != null && vents.Count > 0 ? vents.Count : (ShipStatus.Instance != null && ShipStatus.Instance.AllVents != null ? ShipStatus.Instance.AllVents.Count : 0);
-			string ventName = vents != null && vents.ContainsKey(selectedVent) ? vents[selectedVent] : selectedVent.ToString();
-			GUILayout.Label($"Teleport player to vent: {ventName}");
-			selectedVent = (int)GUILayout.HorizontalSlider(selectedVent, 0, Math.Max(0, ventCount - 1));
-			if(GUILayout.Button("Teleport") && ventCount > 0)
+			GUILayout.Label($"Teleport player to vent: {vents.GetValueOrDefault(selectedVent, "N/A")}");
+			selectedVent = Controls.HorizontalVentSlider(vents, selectedVent);
+			if(GUILayout.Button("Teleport"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else
-				{
-					Teleporter.TeleportToVent(target, selectedVent);
-				}
+				Teleporter.TeleportToVent(target, selectedVent);
 			}
 
 			GUILayout.Space(5);
-			GUILayout.Label("Host Only Features:" + (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost ? "" : "\n(Using these will get you kicked!)"));
+			GUILayout.Label("Host Only Features:" + (AmongUsClient.Instance.AmHost ? "" : "\n(Using these will get you kicked!)"));
 
-			if(IsDevTarget(target))
-			{
-				if(GUILayout.Button("Auto Report Bodies As"))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				if(GUILayout.Button("Disco Mode"))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-			}
-			else
-			{
-				Troll.AutoReportBodies.Enabled = Controls.PlayerSpecificToggle("Auto Report Bodies As", target, ref Troll.AutoReportBodies.source);
-				Hydra.routines.discoHost.Enabled = Controls.PlayerSpecificToggle("Disco Mode", target, ref Hydra.routines.discoHost.targets);
-			}
+			Hydra.routines.discoHost.Enabled = Controls.PlayerSpecificToggle("Disco Mode", target, Hydra.routines.discoHost.targets);
+			ModuleManager.voteImmune.Enabled = Controls.PlayerSpecificToggle("Vote Immune", target, ModuleManager.voteImmune.targets);
+			Hydra.routines.voteSpammer.Enabled = Controls.PlayerSpecificToggle("Spam Votes As", target, Hydra.routines.voteSpammer.targets);
 
 			if(GUILayout.Button("Force Meeting As"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else
-				{
-					Utilities.AttemptStartMeeting(target, null);
-				}
+				Utilities.AttemptStartMeeting(target, null);
 			}
 
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Force All Votes To"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else if(MeetingHud.Instance == null)
+				if(MeetingHud.Instance == null)
 				{
 					Hydra.notifications.Send("Vote Forcer", "This option can only be used when there is an active meeting.");
 				}
 				else
 				{
-					var voters = PlayerControl.AllPlayerControls.ToArray().Where(p => p != null && p.Data != null && !p.Data.Disconnected && (!PresenceTracker.IsDevUser(p.Data) || p == PlayerControl.LocalPlayer)).ToList();
-					MeetingHud.VoterState[] array = new MeetingHud.VoterState[voters.Count];
+					MeetingHud.VoterState[] array = new MeetingHud.VoterState[PlayerControl.AllPlayerControls.Count];
 
 					for(int i = 0; i < array.Length; i++)
 					{
-						MeetingHud.VoterState state = new MeetingHud.VoterState();
+						MeetingHud.VoterState state = array[i];
 
-						state.VoterId = voters[i].PlayerId;
+						state.VoterId = (byte)i;
 						state.VotedForId = target.PlayerId;
 
 						array[i] = state;
@@ -398,83 +253,50 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Eject"))
 			{
-				if(IsDevTarget(target))
+				BatchedMessage batch = new BatchedMessage();
+
+				if(MeetingHud.Instance == null)
 				{
-					NotificationManager.AddNotification("Cannot target Developer");
+					MeetingHud.Instance = UnityEngine.Object.Instantiate<MeetingHud>(HudManager.Instance.MeetingPrefab);
+					batch.QueueSpawn(MeetingHud.Instance, -2, SpawnFlags.None);
 				}
-				else
-				{
-					BatchedMessage batch = new BatchedMessage();
 
-					if(MeetingHud.Instance == null)
-					{
-						MeetingHud.Instance = UnityEngine.Object.Instantiate<MeetingHud>(HudManager.Instance.MeetingPrefab);
-					}
+				MeetingHud.VoterState[] votes = Array.Empty<MeetingHud.VoterState>();
 
-					MeetingHud.VoterState[] votes = Array.Empty<MeetingHud.VoterState>();
-
-					batch.QueueVotingComplete(votes, target.Data, false, false, 0);
-					batch.QueueCloseMeeting();
-					batch.FinishBatch();
-				}
+				batch.QueueVotingComplete(votes, target.Data, false, false, 0);
+				// If we created a MeetingHud object then it will be destroyed by the RpcClose function
+				batch.QueueCloseMeeting();
+				batch.FinishBatch();
 			}
 			GUILayout.EndHorizontal();
 
 			if(GUILayout.Button("Frame Shapeshift"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else
-				{
-					PlayerControl randomPl = Utilities.GetRandomPlayer(false, false, false, false);
-					Utilities.ShapeshiftPlayer(target, randomPl);
-				}
+				PlayerControl randomPl = Utilities.GetRandomPlayer(false, false, false, false);
+				Utilities.ShapeshiftPlayer(target, randomPl);
 			}
 
 			if(GUILayout.Button("Frame for Killing All"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else
-				{
-					target.StartCoroutine(AttemptFrameForKillingAll(target).WrapToIl2Cpp());
-				}
+				target.StartCoroutine(AttemptFrameForKillingAll(target).WrapToIl2Cpp());
 			}
 
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Flood Player with Tasks"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else
-				{
-					byte[] taskIds = new byte[255];
+				byte[] taskIds = new byte[255];
 
-					for(byte i = 0; i < 255; i++)
-					{
-						taskIds[i] = i;
-					}
-
-					target.Data.RpcSetTasks(taskIds);
+				for(byte i = 0; i < 255; i++)
+				{
+					taskIds[i] = i;
 				}
+
+				target.Data.RpcSetTasks(taskIds);
 			}
 
 			if(GUILayout.Button("Clear Tasks"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else
-				{
-					target.Data.RpcSetTasks(Array.Empty<byte>());
-				}
+				target.Data.RpcSetTasks(Array.Empty<byte>());
 			}
 			GUILayout.EndHorizontal();
 
@@ -484,82 +306,69 @@ namespace HydraMenu.ui.sections
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Blind"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
-				{
-					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-					gameOptions.SetFloat(FloatOptionNames.CrewLightMod, -1.0f);
-					gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, -1.0f);
+				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+				gameOptions.SetFloat(FloatOptionNames.CrewLightMod, -1.0f);
+				gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, -1.0f);
 
-					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-				}
+				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
 			}
 
 			if(GUILayout.Button("Fullbright"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
-				{
-					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-					gameOptions.SetFloat(FloatOptionNames.CrewLightMod, 1000f);
-					gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, 1000f);
+				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+				gameOptions.SetFloat(FloatOptionNames.CrewLightMod, 1000f);
+				gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, 1000f);
 
-					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-				}
+				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
 			}
 			GUILayout.EndHorizontal();
 
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Slow Speed"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
-				{
-					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-					gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, 0.1f);
+				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+				gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, 0.1f);
 
-					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-				}
+				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
 			}
 
 			if(GUILayout.Button("Super Speed"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
-				{
-					float maxSpeed = Utilities.IsAnticheatPresent() ? 3.0f : 5.0f;
+				// The vanilla anticheat prevents us from being able to exceed speeds greater than 3.0f
+				float maxSpeed = Utilities.IsAnticheatPresent() ? 3.0f : 5.0f;
 
-					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-					gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, maxSpeed);
+				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+				gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, maxSpeed);
 
-					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-				}
+				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
 			}
 			GUILayout.EndHorizontal();
 
+			/*
+			// The problem with changing the TaskBarMode is that if we remove the task bar, we are not able to bring it back
+			GUILayout.BeginHorizontal();
+			if(GUILayout.Button("Hide Task Bar"))
+			{
+				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+				gameOptions.SetInt(Int32OptionNames.TaskBarMode, (int)TaskBarMode.Invisible);
+
+				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+			}
+
+			if(GUILayout.Button("Show Task Bar"))
+			{
+				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+				gameOptions.SetInt(Int32OptionNames.TaskBarMode, (int)TaskBarMode.Normal);
+
+				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+			}
+			GUILayout.EndHorizontal();
+			*/
+
 			if(GUILayout.Button("Reset to Defaults"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
-				{
-					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-				}
+				IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+				GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
 			}
 
 			GUILayout.Space(5);
@@ -568,282 +377,12 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Set Color"))
 			{
-				if(IsDevTarget(target))
-				{
-					NotificationManager.AddNotification("Cannot target Developer");
-				}
-				else
-				{
-					target.RpcSetColor((byte)selectedColor);
-				}
-			}
-		}
-
-		private static bool IsDevTarget(PlayerControl target)
-		{
-			return target != null && target.Data != null && PresenceTracker.IsDevUser(target.Data) && target != PlayerControl.LocalPlayer;
-		}
-
-		private void RenderMultiPlayerControls(List<PlayerControl> targets)
-		{
-			if(targets == null || targets.Count == 0)
-			{
-				GUILayout.Label("Select a player on the left.\n<color=#888888>(Hold Ctrl to select multiple)</color>");
-				return;
-			}
-			if(targets.Count == 1)
-			{
-				selectedPlayer = targets[0];
-				RenderPlayerControls(targets[0]);
-				return;
-			}
-
-			bool hasAnticheat = Utilities.IsAnticheatPresent();
-			var validTargets = targets.Where(p => p != null && p.Data != null && !p.Data.Disconnected && (!PresenceTracker.IsDevUser(p.Data) || p == PlayerControl.LocalPlayer)).ToList();
-
-			GUILayout.BeginHorizontal();
-			GUILayout.Label($"<b>{targets.Count} Players Selected</b>");
-			if(GUILayout.Button("Deselect All", GUILayout.Width(90)))
-			{
-				selectedPlayerIds.Clear();
-				GUILayout.EndHorizontal();
-				return;
-			}
-			GUILayout.EndHorizontal();
-
-			string chips = string.Join(", ", targets.Where(p => p != null && p.Data != null).Select(p => $"<color=\"{GetRoleColor(p.Data.RoleType)}\">{p.Data.PlayerName}</color>"));
-			GUILayout.Label($"Targets: {chips}");
-
-			GUILayout.Space(5);
-			GUILayout.Label("General Multi-Target Actions:");
-
-			GUILayout.BeginHorizontal();
-			if(GUILayout.Button($"Murder Selected ({targets.Count})"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				foreach(var target in validTargets)
-				{
-					AttemptMurder(target);
-				}
-			}
-
-			if(GUILayout.Button("Teleport All to Me"))
-			{
-				if (AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null) { }
-				else if(AmongUsClient.Instance.AmHost || !hasAnticheat)
-				{
-					if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-					foreach(var target in validTargets)
-					{
-						Teleporter.TeleportPlayerTo(target, PlayerControl.LocalPlayer.transform.position);
-					}
-				}
-				else
-				{
-					Hydra.notifications.Send("Teleport", "Teleporting other players requires Host authority on official servers.");
-				}
-			}
-			GUILayout.EndHorizontal();
-
-			GUILayout.BeginHorizontal();
-			bool allJailed = validTargets.Count > 0 && validTargets.All(t => Hydra.routines.jailPlayer.targets.Contains(t.GetHashCode()));
-			if(GUILayout.Button(allJailed ? "Release All from Jail" : "Place All in Jail"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				if(allJailed)
-				{
-					foreach(var t in validTargets) Hydra.routines.jailPlayer.targets.Remove(t.GetHashCode());
-				}
-				else
-				{
-					foreach(var t in validTargets) Hydra.routines.jailPlayer.targets.Add(t.GetHashCode());
-				}
-				Hydra.routines.jailPlayer.Enabled = Hydra.routines.jailPlayer.targets.Count > 0;
-			}
-
-			if(GUILayout.Button("Kick Selected"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				foreach(var target in validTargets)
-				{
-					Utilities.KickPlayer(target);
-				}
-			}
-			GUILayout.EndHorizontal();
-
-			Dictionary<int, string> vents = MapAssets.GetVents();
-			int ventCount = vents != null && vents.Count > 0 ? vents.Count : (ShipStatus.Instance != null && ShipStatus.Instance.AllVents != null ? ShipStatus.Instance.AllVents.Count : 0);
-			string ventName = vents != null && vents.ContainsKey(selectedVent) ? vents[selectedVent] : selectedVent.ToString();
-			GUILayout.Label($"Teleport all selected to vent: {ventName}");
-			selectedVent = (int)GUILayout.HorizontalSlider(selectedVent, 0, Math.Max(0, ventCount - 1));
-			if(GUILayout.Button("Teleport to Vent") && ventCount > 0)
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				foreach(var target in validTargets)
-				{
-					Teleporter.TeleportToVent(target, selectedVent);
-				}
-			}
-
-			GUILayout.Space(8);
-			GUILayout.Label("Host Only Features:" + (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost ? "" : "\n(Using these will get you kicked!)"));
-
-			bool allDisco = validTargets.Count > 0 && validTargets.All(t => Hydra.routines.discoHost.targets.Contains(t.GetHashCode()));
-			if(GUILayout.Button(allDisco ? "Disable Disco Mode" : "Enable Disco Mode on Selected"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				if(allDisco)
-				{
-					foreach(var t in validTargets) Hydra.routines.discoHost.targets.Remove(t.GetHashCode());
-				}
-				else
-				{
-					foreach(var t in validTargets) Hydra.routines.discoHost.targets.Add(t.GetHashCode());
-				}
-				Hydra.routines.discoHost.Enabled = Hydra.routines.discoHost.targets.Count > 0;
-			}
-
-			if(GUILayout.Button("Eject Selected"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				BatchedMessage batch = new BatchedMessage();
-				if(MeetingHud.Instance == null)
-				{
-					MeetingHud.Instance = UnityEngine.Object.Instantiate<MeetingHud>(HudManager.Instance.MeetingPrefab);
-				}
-
-				foreach(var target in validTargets)
-				{
-					batch.QueueVotingComplete(Array.Empty<MeetingHud.VoterState>(), target.Data, false, false, 0);
-				}
-				batch.QueueCloseMeeting();
-				batch.FinishBatch();
-			}
-
-			GUILayout.BeginHorizontal();
-			if(GUILayout.Button("Flood Tasks"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				byte[] taskIds = new byte[255];
-				for(byte i = 0; i < 255; i++) taskIds[i] = i;
-
-				foreach(var target in validTargets)
-				{
-					target.Data.RpcSetTasks(taskIds);
-				}
-			}
-
-			if(GUILayout.Button("Clear Tasks"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				foreach(var target in validTargets)
-				{
-					target.Data.RpcSetTasks(Array.Empty<byte>());
-				}
-			}
-			GUILayout.EndHorizontal();
-
-			GUILayout.Space(4);
-			GUILayout.Label("Host Options Modifier (Selected):");
-
-			GUILayout.BeginHorizontal();
-			if(GUILayout.Button("Blind"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
-				{
-					foreach(var target in validTargets)
-					{
-						IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-						gameOptions.SetFloat(FloatOptionNames.CrewLightMod, -1.0f);
-						gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, -1.0f);
-						GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-					}
-				}
-			}
-
-			if(GUILayout.Button("Fullbright"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
-				{
-					foreach(var target in validTargets)
-					{
-						IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-						gameOptions.SetFloat(FloatOptionNames.CrewLightMod, 1000f);
-						gameOptions.SetFloat(FloatOptionNames.ImpostorLightMod, 1000f);
-						GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-					}
-				}
-			}
-			GUILayout.EndHorizontal();
-
-			GUILayout.BeginHorizontal();
-			if(GUILayout.Button("Slow Speed"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
-				{
-					foreach(var target in validTargets)
-					{
-						IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-						gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, 0.1f);
-						GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-					}
-				}
-			}
-
-			if(GUILayout.Button("Super Speed"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
-				{
-					float maxSpeed = Utilities.IsAnticheatPresent() ? 3.0f : 5.0f;
-					foreach(var target in validTargets)
-					{
-						IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-						gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, maxSpeed);
-						GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-					}
-				}
-			}
-			GUILayout.EndHorizontal();
-
-			if(GUILayout.Button("Reset Options to Defaults"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
-				{
-					foreach(var target in validTargets)
-					{
-						IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
-						GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
-					}
-				}
-			}
-
-			GUILayout.Space(4);
-			GUILayout.Label($"Change color of all selected to: {selectedColor}");
-			selectedColor = Controls.HorizontalColorSlider(selectedColor);
-
-			if(GUILayout.Button("Set Color"))
-			{
-				if (validTargets.Count < targets.Count) NotificationManager.AddNotification("Cannot target Developer");
-				foreach(var target in validTargets)
-				{
-					target.RpcSetColor((byte)selectedColor);
-				}
+				target.RpcSetColor((byte)selectedColor);
 			}
 		}
 
 		private static void AttemptMurder(PlayerControl target)
 		{
-			if (AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
-			if (IsDevTarget(target))
-			{
-				NotificationManager.AddNotification("Cannot target Developer");
-				return;
-			}
 			bool hasAnticheat = Utilities.IsAnticheatPresent();
 
 			if(hasAnticheat && AmongUsClient.Instance.GameState != InnerNetClient.GameStates.Started)
@@ -870,6 +409,8 @@ namespace HydraMenu.ui.sections
 
 			Hydra.Log.LogInfo($"Attempting to kill {target.Data.PlayerName}, we are not the host so we have to use the CheckMurder RPC");
 
+			// The CheckMurder RPC handler will not authorize kills if you are not the imposter, or you are inside a meeting
+			// There are more checks, but I do not think it is worth adding them all here
 			if(!RoleManager.IsImpostorRole(PlayerControl.LocalPlayer.Data.RoleType))
 			{
 				Hydra.notifications.Send("Murder Player", "You can only murder players when you are an Impostor, unless you are the host of the lobby.");
@@ -888,12 +429,6 @@ namespace HydraMenu.ui.sections
 
 		private static IEnumerator AttemptFrameForKillingAll(PlayerControl target)
 		{
-			if (AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null) yield break;
-			if (IsDevTarget(target))
-			{
-				NotificationManager.AddNotification("Cannot target Developer");
-				yield break;
-			}
 			Hydra.Log.LogInfo($"Attempting to frame {target.Data.PlayerName} for killing all players...");
 
 			bool hasAnticheat = Utilities.IsAnticheatPresent();
@@ -909,24 +444,26 @@ namespace HydraMenu.ui.sections
 				yield break;
 			}
 
-			Host.DisableGameEnd.Enabled = true;
+			ModuleManager.disableGameEnd.Enabled = true;
 
 			if(target != PlayerControl.LocalPlayer)
 			{
+				// On official servers, we are not able to send MurderPlayer RPCs with other player net IDs
+				// so we need to shapeshift into our desired player and kill everyone ourselves
 				Utilities.ShapeshiftPlayer(PlayerControl.LocalPlayer, target, false);
 			}
 
 			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
 				if(player == target) continue;
-				if(player != null && player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer) continue;
 
 				PlayerControl.LocalPlayer.RpcMurderPlayer(player, true);
 			}
 
+			// Wait three seconds so all players can see which player we are framing
 			yield return Effects.Wait(3.0f);
 
-			Host.DisableGameEnd.Enabled = false;
+			ModuleManager.disableGameEnd.Enabled = false;
 			Hydra.notifications.Send("Framer", $"Framed {target.Data.PlayerName} for killing all players!");
 		}
 	}

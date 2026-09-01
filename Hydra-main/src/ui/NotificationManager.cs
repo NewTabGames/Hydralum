@@ -1,5 +1,4 @@
-using Il2CppInterop.Runtime.Attributes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,12 +6,8 @@ namespace HydraMenu.ui
 {
 	internal class NotificationManager : MonoBehaviour
 	{
-		private static readonly object StaticLock = new object();
-		private static readonly List<Notification> PendingNotifications = new List<Notification>();
-
-		public readonly object lockObj = new object();
-		public List<Notification> notifications = new List<Notification>();
-		public bool DisableNotifications = false;
+		public readonly List<Notification> notifications = new List<Notification>();
+		public bool disableNotifications = false;
 
 		public static Vector2 BoxSize
 		{
@@ -41,149 +36,69 @@ namespace HydraMenu.ui
 
 		public void Update()
 		{
-			try
+			int notificationCount = Math.Min(GetMaxNotifications(), notifications.Count);
+
+			for(int i = 0; i < notificationCount; i++)
 			{
-				lock (StaticLock)
+				Notification notification = notifications[i];
+				notification.lifetime += Time.deltaTime;
+
+				if(notification.HasExpired)
 				{
-					if (PendingNotifications.Count > 0)
-					{
-						lock (lockObj)
-						{
-							notifications.AddRange(PendingNotifications);
-						}
-						PendingNotifications.Clear();
-					}
-				}
+					notifications.RemoveAt(i);
 
-				lock (lockObj)
-				{
-					int maxNotifs = GetMaxNotifications();
-					int notificationCount = Math.Min(maxNotifs, notifications.Count);
-
-					for(int i = 0; i < notificationCount; i++)
-					{
-						if (i >= notifications.Count) break;
-						Notification notification = notifications[i];
-						if (notification == null)
-						{
-							notifications.RemoveAt(i);
-							i--;
-							notificationCount--;
-							continue;
-						}
-
-						notification.lifetime += Time.deltaTime;
-
-						if(notification.HasExpired)
-						{
-							notifications.RemoveAt(i);
-							i--;
-							notificationCount--;
-							continue;
-						}
-					}
+					// Since we removed an element from the notifications list, we have to decrement both the current notification index
+					// and the max notifications to avoid errors from accessing outside the list length
+					i--;
+					notificationCount--;
+					continue;
 				}
 			}
-			catch { }
 		}
 
 		public void OnGUI()
 		{
-			try
+			if(disableNotifications) return;
+
+			int notificationCount = Math.Min(GetMaxNotifications(), notifications.Count);
+
+			for(byte i = 0; i < notificationCount; i++)
 			{
-				if(DisableNotifications) return;
-
-				Notification[] snapshot;
-				lock (lockObj)
-				{
-					snapshot = notifications.ToArray();
-				}
-
-				int maxNotifs = GetMaxNotifications();
-				int notificationCount = Math.Min(maxNotifs, snapshot.Length);
-
-				for(byte i = 0; i < notificationCount; i++)
-				{
-					if (i < snapshot.Length && snapshot[i] != null)
-					{
-						RenderNotification(i, snapshot[i]);
-					}
-				}
+				RenderNotification(i, notifications[i]);
 			}
-			catch { }
 		}
 
-		[HideFromIl2Cpp]
 		private void RenderNotification(byte position, Notification notification)
 		{
-			if (notification == null) return;
 			float boxX = Screen.width - BoxSize.x;
 			float boxY = Screen.height - (int)(BoxSize.y * (position + 1));
 
-			GUI.Box(new Rect(boxX, boxY, BoxSize.x, BoxSize.y), notification.title ?? "");
+			GUI.Box(new Rect(boxX, boxY, BoxSize.x, BoxSize.y), notification.title);
 
-			GUI.Label(new Rect(boxX + BoxContentPadding.x, boxY + BoxHeaderSize.y, BoxContentSize.x, BoxContentSize.y), notification.message ?? "");
+			GUI.Label(new Rect(boxX + BoxContentPadding.x, boxY + BoxHeaderSize.y, BoxContentSize.x, BoxContentSize.y), notification.message);
 
-			GUI.HorizontalSlider(new Rect(boxX, boxY + BoxHeaderSize.y + BoxContentSize.y, BoxSize.x, BoxSliderSize.y), Mathf.Clamp(notification.ttl - notification.lifetime, 0, notification.ttl), 0, notification.ttl);
+			GUI.HorizontalSlider(new Rect(boxX, boxY + BoxHeaderSize.y + BoxContentSize.y, BoxSize.x, BoxSize.y), notification.ttl - notification.lifetime, 0, notification.ttl);
 		}
 
 		public int GetMaxNotifications()
 		{
-			int boxH = Math.Max(1, (int)BoxSize.y);
-			return Math.Max(1, Screen.height / 2 / boxH);
+			return Screen.height / 2 / (int)BoxSize.y;
 		}
 
 		// The time to live value for a notification should be five seconds if it is a success message, and ten seconds if it is a failure message
 		public void Send(string title, string message, float ttl = 10)
 		{
-			try
-			{
-				Hydra.Log?.LogMessage($"[Notification] [{title}] {message}");
+			Hydra.Log.LogMessage($"[Notification] [{title}] {message}");
 
-				if(DisableNotifications) return;
+			if(disableNotifications) return;
 
-				Notification notification = new Notification(title, message, ttl);
-				lock (lockObj)
-				{
-					notifications.Add(notification);
-				}
-			}
-			catch { }
+			Notification notification = new Notification(title, message, ttl);
+			notifications.Add(notification);
 		}
 
 		public void ClearNotifications()
 		{
-			try
-			{
-				lock (StaticLock)
-				{
-					PendingNotifications.Clear();
-				}
-				lock (lockObj)
-				{
-					notifications.Clear();
-				}
-			}
-			catch { }
-		}
-
-		public static void AddNotification(string message, string title = "Developer Guard", float ttl = 5)
-		{
-			try
-			{
-				if (Hydra.notifications != null)
-				{
-					Hydra.notifications.Send(title, message, ttl);
-				}
-				else
-				{
-					lock (StaticLock)
-					{
-						PendingNotifications.Add(new Notification(title, message, ttl));
-					}
-				}
-			}
-			catch { }
+			notifications.Clear();
 		}
 	}
 }

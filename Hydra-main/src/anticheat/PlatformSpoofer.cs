@@ -1,4 +1,4 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using InnerNet;
 
 namespace HydraMenu.anticheat
@@ -10,16 +10,16 @@ namespace HydraMenu.anticheat
 		{
 			static void Postfix(PlayerControl __instance)
 			{
-				if(!Anticheat.Enabled || !Anticheat.CheckSpoofedPlatforms || AmongUsClient.Instance == null) return;
+				if(!Anticheat.Enabled || !Anticheat.CheckSpoofedPlatforms) return;
 
 				ClientData clientData = AmongUsClient.Instance.GetClientFromCharacter(__instance);
-				if(clientData == null || clientData.PlatformData == null) return;
+				if(clientData == null) return;
 
 				PlatformSpecificData platformData = clientData.PlatformData;
 
 				if(!IsValidPlatform(platformData))
 				{
-					Anticheat.Flag(__instance, $"{clientData?.PlayerName ?? "Unknown"} was detected with spoofed platform information. Platform: {platformData.Platform}, Platform name: {platformData.PlatformName}, XUID: {platformData.XboxPlatformId}, PSID: {platformData.PsnPlatformId}.");
+					Anticheat.Flag(__instance, $"{clientData.PlayerName} was detected with spoofed platform information. Platform: {platformData.Platform}, Platform name: {platformData.PlatformName}, XUID: {platformData.XboxPlatformId}, PSID: {platformData.PsnPlatformId}.");
 				}
 			}
 		}
@@ -38,6 +38,8 @@ namespace HydraMenu.anticheat
 				case Platforms.StandaloneItch:
 				case Platforms.IPhone:
 				case Platforms.Android:
+				// Platform ID 112 is used by the third-party Starlight program, which allows Android devices to use BepInEx mods
+				case (Platforms)112:
 					if(IsGenericPlatformName(platformName) && xuid == 0 && psid == 0) return true;
 					break;
 

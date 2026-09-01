@@ -35,9 +35,9 @@ public class MenuUI : MonoBehaviour
         _tabs.Add(new HostOnlyTab());
         _tabs.Add(new ConfigTab());
         _tabs.Add(new ThemesTab());
-        _tabs.Add(new InfoTab());
         _tabs.Add(new DebugTab());
         _tabs.Add(new PhysicsTab());
+        _tabs.Add(new InfoTab());
 
         // Instantiate 2D area of MenuUI
         _windowRect = new(
@@ -334,6 +334,7 @@ public class MenuUI : MonoBehaviour
     private static System.Reflection.FieldInfo _cachedHydraPosField = null;
     private static System.Reflection.PropertyInfo _cachedHydraSizeProp = null;
     private static bool _hydraReflectionCached = false;
+    private static System.Reflection.FieldInfo _cachedHydraMainUIInstanceField = null;
 
     public static System.Type GetHydraUIType()
     {
@@ -344,6 +345,15 @@ public class MenuUI : MonoBehaviour
             if (_cachedHydraUIType != null)
             {
                 _cachedHydraVisField = _cachedHydraUIType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (_cachedHydraVisField == null)
+                {
+                    _cachedHydraVisField = _cachedHydraUIType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    System.Type hydraType = asm.GetType("HydraMenu.Hydra");
+                    if (hydraType != null)
+                    {
+                        _cachedHydraMainUIInstanceField = hydraType.GetField("mainUI", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    }
+                }
                 _cachedHydraPosField = _cachedHydraUIType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 _cachedHydraSizeProp = _cachedHydraUIType.GetProperty("WindowSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 _hydraReflectionCached = true;
@@ -351,6 +361,25 @@ public class MenuUI : MonoBehaviour
             }
         }
         return _cachedHydraUIType;
+    }
+
+    private static void SetHydraVisible(bool value)
+    {
+        if (_cachedHydraVisField != null)
+        {
+            object instance = _cachedHydraVisField.IsStatic ? null : _cachedHydraMainUIInstanceField?.GetValue(null);
+            _cachedHydraVisField.SetValue(instance, value);
+        }
+    }
+
+    private static bool GetHydraVisible()
+    {
+        if (_cachedHydraVisField != null)
+        {
+            object instance = _cachedHydraVisField.IsStatic ? null : _cachedHydraMainUIInstanceField?.GetValue(null);
+            return (bool)_cachedHydraVisField.GetValue(instance);
+        }
+        return false;
     }
 
     public static void SwitchToHydra()
@@ -368,7 +397,7 @@ public class MenuUI : MonoBehaviour
 
                 if (_cachedHydraVisField != null)
                 {
-                    _cachedHydraVisField.SetValue(null, true);
+                    SetHydraVisible(true);
                     return;
                 }
             }
@@ -407,12 +436,13 @@ public class MenuUI : MonoBehaviour
 
                 if (_cachedHydraVisField != null)
                 {
-                    _cachedHydraVisField.SetValue(null, true);
-                    return;
+                    SetHydraVisible(true);
                 }
             }
-
-            Utils.ShowPopup("\nHydraMenu DLL is not loaded in game");
+            else
+            {
+                Utils.ShowPopup("\nHydraMenu DLL is not loaded in game");
+            }
         }
         catch (System.Exception ex)
         {
@@ -428,7 +458,7 @@ public class MenuUI : MonoBehaviour
             {
                 if (_cachedHydraVisField != null)
                 {
-                    _cachedHydraVisField.SetValue(null, false);
+                    SetHydraVisible(false);
                 }
             }
         }
@@ -443,7 +473,7 @@ public class MenuUI : MonoBehaviour
             {
                 if (_cachedHydraVisField != null)
                 {
-                    return (bool)_cachedHydraVisField.GetValue(null);
+                    return GetHydraVisible();
                 }
             }
         }
@@ -457,7 +487,7 @@ public class MenuUI : MonoBehaviour
         {
             if (GetHydraUIType() != null && _hydraReflectionCached)
             {
-                if (_cachedHydraVisField != null && (bool)_cachedHydraVisField.GetValue(null))
+                if (_cachedHydraVisField != null && GetHydraVisible())
                 {
                     Vector2 pos = _cachedHydraPosField != null ? (Vector2)_cachedHydraPosField.GetValue(null) : new Vector2(250, 100);
                     Vector2 size = _cachedHydraSizeProp != null ? (Vector2)_cachedHydraSizeProp.GetValue(null, null) : new Vector2(500, 470);

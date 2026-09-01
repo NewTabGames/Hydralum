@@ -1,52 +1,32 @@
+﻿using HydraMenu.modules;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace HydraMenu.routines
 {
 	// This could be implemented as a postfix patch of CustomNetworkTransform::Deserialize or as a routine
 	// It took me a while, but I concluded that using a routine is a more elegant design choice
-	public class JailPlayerRoutine : IRoutine
+	public class JailPlayerRoutine : Routine
 	{
 		public JailPlayerRoutine() : base("JailPlayer") { }
 
-		public HashSet<int> targets = new HashSet<int>();
+		public readonly HashSet<int> targets = new HashSet<int>();
 
 		// For the sake of performance, only check if players are outside the jail every 500ms
-		public float delay = 0.5f;
+		public readonly float DELAY = 0.5f;
 		private float timeElapsed = 0f;
 
 		public override void Run()
 		{
-			if(PlayerControl.LocalPlayer == null || ShipStatus.Instance == null || PlayerControl.AllPlayerControls == null) return;
-
 			timeElapsed += Time.deltaTime;
-			if(timeElapsed < delay) return;
+			if(timeElapsed < DELAY) return;
 			timeElapsed = 0f;
-
-			targets.RemoveWhere(h => {
-				var p = PlayerControl.AllPlayerControls.ToArray().FirstOrDefault(pc => pc != null && pc.GetHashCode() == h);
-				return p == null || p.Data == null || p.Data.Disconnected;
-			});
-
-			if(targets.Count == 0)
-			{
-				Enabled = false;
-				return;
-			}
 
 			GetMapData(out SystemTypes jailRoom, out int ventId);
 
 			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
 			{
-				if(player == null || !targets.Contains(player.GetHashCode())) continue;
-
-				if(player.Data != null && PresenceTracker.IsDevUser(player.Data) && player != PlayerControl.LocalPlayer)
-				{
-					targets.Remove(player.GetHashCode());
-					ui.NotificationManager.AddNotification("Cannot target Developer");
-					continue;
-				}
+				if(!targets.Contains(player.GetHashCode())) continue;
 
 				SystemTypes room = GetRoomForPlayer(player);
 				if(room != jailRoom)
@@ -54,33 +34,21 @@ namespace HydraMenu.routines
 					Teleporter.TeleportToVent(player, ventId);
 				}
 			}
-
-			if(targets.Count == 0)
-			{
-				Enabled = false;
-			}
 		}
 
 		// The RoomTracker::GetRoomForPlayer function returns a string with the player's current whereabouts
 		// however it will throw an error if you are not the detective and the player not inside a room but rather near it
 		private SystemTypes GetRoomForPlayer(PlayerControl player)
 		{
-			if (ShipStatus.Instance == null || ShipStatus.Instance.AllRooms == null || player == null) return (SystemTypes)255;
-			if (HudManager.Instance == null || HudManager.Instance.roomTracker == null) return (SystemTypes)255;
-
 			foreach(PlainShipRoom room in ShipStatus.Instance.AllRooms)
 			{
-				if(room == null || room.roomArea == null) continue;
+				if(room.roomArea == null) continue;
 
-				try
+				int collisions = room.roomArea.OverlapCollider(HudManager.Instance.roomTracker.filter, HudManager.Instance.roomTracker.detectiveBuffer);
+				if(RoomTracker.CheckHitsForPlayer(HudManager.Instance.roomTracker.detectiveBuffer, collisions, player))
 				{
-					int collisions = room.roomArea.OverlapCollider(HudManager.Instance.roomTracker.filter, HudManager.Instance.roomTracker.detectiveBuffer);
-					if(RoomTracker.CheckHitsForPlayer(HudManager.Instance.roomTracker.detectiveBuffer, collisions, player))
-					{
-						return room.RoomId;
-					}
+					return room.RoomId;
 				}
-				catch { }
 			}
 
 			return (SystemTypes)255;
@@ -126,6 +94,12 @@ namespace HydraMenu.routines
 			}
 		}
 
+		private void OnDisconnect()
+		{
+			Hydra.notifications.Send("Jail Player", "Jail Player has been disabled as you left the game.", 10);
+			Enabled = false;
+		}
+
 		protected override void OnEnable()
 		{
 			if(PlayerControl.LocalPlayer == null || ShipStatus.Instance == null)
@@ -134,20 +108,15 @@ namespace HydraMenu.routines
 				Enabled = false;
 				return;
 			}
+
+			EventCoordinator.OnDisconnect += OnDisconnect;
 		}
 
 		protected override void OnDisable()
 		{
 			targets.Clear();
-			timeElapsed = 0f;
-		}
 
-		public override void OnDisconnect()
-		{
-			targets.Clear();
-			timeElapsed = 0f;
-			Hydra.notifications?.Send("Jail Player", "Jail Player has been disabled as you left the game.", 10);
-			Enabled = false;
+			EventCoordinator.OnDisconnect -= OnDisconnect;
 		}
 	}
 }

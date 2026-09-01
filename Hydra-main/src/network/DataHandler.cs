@@ -2,7 +2,7 @@
 using HarmonyLib;
 using Hazel;
 using HydraMenu.anticheat;
-using HydraMenu.features;
+using HydraMenu.modules;
 using InnerNet;
 
 namespace HydraMenu.network
@@ -20,7 +20,7 @@ namespace HydraMenu.network
 		{
 			static bool Prefix(InnerNetClient __instance, MessageReader parentReader)
 			{
-				if(Protections.BlockLargeGameMessages && parentReader.Length > MAX_MESSAGE_LENGTH)
+				if(ModuleManager.antiOverload.Enabled && ModuleManager.antiOverload.BlockLargeGameMessages && parentReader.Length > MAX_MESSAGE_LENGTH)
 				{
 					parentReader.Recycle();
 					return false;
@@ -47,7 +47,7 @@ namespace HydraMenu.network
 		{
 			GameDataTypes type = (GameDataTypes)reader.Tag;
 
-			if(Protections.BlockInvalidGameDataMessages && (type == GameDataTypes.Invalid || type == (GameDataTypes)3 || type > GameDataTypes.ReadyFlag))
+			if(ModuleManager.antiOverload.Enabled && ModuleManager.antiOverload.BlockInvalidGameDataMessages && (type == GameDataTypes.Invalid || type == (GameDataTypes)3 || type > GameDataTypes.ReadyFlag))
 			{
 				reader.Recycle();
 				return;

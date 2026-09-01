@@ -1,4 +1,4 @@
-using AmongUs.InnerNet.GameDataMessages;
+﻿using AmongUs.InnerNet.GameDataMessages;
 using Hazel;
 using InnerNet;
 
@@ -8,8 +8,6 @@ namespace HydraMenu.anticheat.gamedata
 	{
 		public override bool Validate(MessageReader reader)
 		{
-			if (AmongUsClient.Instance == null || reader.BytesRemaining < 1) return false;
-
 			int clientId = reader.ReadPackedInt32();
 			string scene = reader.ReadString();
 
@@ -23,7 +21,7 @@ namespace HydraMenu.anticheat.gamedata
 			// If the host receives a scene change of Tutorial, it will spawn in an instance of The Skeld map
 			if(scene == "Tutorial")
 			{
-				Anticheat.Flag(client.Character, $"{client?.Character?.Data?.PlayerName ?? "Unknown"} sent a scene change of Tutorial.");
+				Anticheat.Flag(client.Character, $"{client.Character.Data.PlayerName} sent a scene change of Tutorial.");
 				return false;
 			}
 
