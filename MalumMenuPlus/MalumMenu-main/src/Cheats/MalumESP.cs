@@ -44,30 +44,17 @@ public static class MalumESP
             return true;
         }
 
-        try
+        bool keepOpen = MalumMenu.menuKeepSubwindowsOpen?.Value ?? false;
+        if (CheatToggles.showConsole && (MenuUI.isGUIActive || keepOpen) && ConsoleUI.windowRect.Contains(guiMousePos))
         {
-            var hydraType = MenuUI.GetHydraUIType();
-            if (hydraType != null)
-            {
-                var visibleField = hydraType.GetField("visible", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (visibleField != null && (bool)visibleField.GetValue(null))
-                {
-                    var posField = hydraType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                    var sizeProp = hydraType.GetProperty("WindowSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                    if (posField != null && sizeProp != null)
-                    {
-                        var pos = (Vector2)posField.GetValue(null);
-                        var size = (Vector2)sizeProp.GetValue(null, null);
-                        var hydraRect = new Rect(pos.x, pos.y, size.x, size.y);
-                        if (hydraRect.Contains(guiMousePos))
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
+            return true;
         }
-        catch { }
+
+        var hydraRect = MenuUI.GetHydraRect();
+        if (hydraRect.width > 0 && hydraRect.Contains(guiMousePos))
+        {
+            return true;
+        }
 
         return false;
     }
