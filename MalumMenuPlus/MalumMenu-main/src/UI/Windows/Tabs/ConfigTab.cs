@@ -70,7 +70,7 @@ public class ConfigTab : ITab
         }
 
         GUILayout.Space(4);
-        GUILayout.Label("Scale:");
+        GUILayout.Label($"Scale: {MenuUI.uiScale:F2}x");
         float prevScale = MenuUI.uiScale;
         MenuUI.uiScale = GUILayout.HorizontalSlider(MenuUI.uiScale, 0.5f, 2f);
         if (Math.Abs(MenuUI.uiScale - prevScale) > 0.001f && MalumMenu.menuScale != null)
@@ -78,7 +78,7 @@ public class ConfigTab : ITab
             MalumMenu.menuScale.Value = MenuUI.uiScale;
         }
 
-        GUILayout.Label("Opacity:");
+        GUILayout.Label($"Opacity: {MenuUI.uiOpacity * 100:F0}%");
         float prevOpacity = MenuUI.uiOpacity;
         MenuUI.uiOpacity = GUILayout.HorizontalSlider(MenuUI.uiOpacity, 0.1f, 1f);
         if (Math.Abs(MenuUI.uiOpacity - prevOpacity) > 0.001f && MalumMenu.menuOpacity != null)
