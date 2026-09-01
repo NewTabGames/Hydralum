@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using UnityEngine;
@@ -7,19 +7,19 @@ namespace HydraMenu.routines
 {
 	internal class RoutineManager : MonoBehaviour
 	{
-		public readonly AutoTriggerSporesRoutine autoTriggerSpores = new AutoTriggerSporesRoutine();
-		public readonly DiscoHostRoutine discoHost = new DiscoHostRoutine();
-		public readonly DoorTrollerRoutine doorTroller = new DoorTrollerRoutine();
-		public readonly GlitterBomb glitterBomb = new GlitterBomb();
-		public readonly JailPlayerRoutine jailPlayer = new JailPlayerRoutine();
-		public readonly PetPlayerRoutine petPlayer = new PetPlayerRoutine();
-		public readonly PlayerFollowerRoutine playerFollower = new PlayerFollowerRoutine();
-		public readonly ReportBodySpam reportBodySpam = new ReportBodySpam();
-		public readonly TeleportSpammer teleportSpammer = new TeleportSpammer();
-		public readonly VoteSpammer voteSpammer = new VoteSpammer();
-		public readonly ZiplineSpammer ziplineSpammer = new ZiplineSpammer();
+		public AutoTriggerSporesRoutine autoTriggerSpores = new AutoTriggerSporesRoutine();
+		public DiscoHostRoutine discoHost = new DiscoHostRoutine();
+		public DoorTrollerRoutine doorTroller = new DoorTrollerRoutine();
+		public GlitterBomb glitterBomb = new GlitterBomb();
+		public JailPlayerRoutine jailPlayer = new JailPlayerRoutine();
+		public PetPlayerRoutine petPlayer = new PetPlayerRoutine();
+		public PlayerFollowerRoutine playerFollower = new PlayerFollowerRoutine();
+		public ReportBodySpam reportBodySpam = new ReportBodySpam();
+		public TeleportSpammer teleportSpammer = new TeleportSpammer();
+		public VoteSpammer voteSpammer = new VoteSpammer();
+		public ZiplineSpammer ziplineSpammer = new ZiplineSpammer();
 
-		public readonly Routine[] routineList;
+		public Routine[] routineList;
 
 		public RoutineManager()
 		{

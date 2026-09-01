@@ -68,7 +68,7 @@ namespace HydraMenu.modules
 		public static SkipShhhAnimation skipShhhAnimation = new SkipShhhAnimation();
 		public static SpectatePlayer spectatePlayer = new SpectatePlayer();
 
-		public static readonly Module[] moduleList;
+		public static Module[] moduleList;
 
 		static ModuleManager()
 		{
