@@ -498,4 +498,49 @@ public class MenuUI : MonoBehaviour
         catch { }
         return Rect.zero;
     }
+
+    private static System.Type _cachedDevMenuUIType;
+    private static System.Reflection.FieldInfo _cachedDevMenuIsOpenField;
+    private static System.Reflection.FieldInfo _cachedDevMenuRectField;
+    private static bool _devMenuReflectionCached = false;
+
+    public static System.Type GetDevMenuUIType()
+    {
+        if (_cachedDevMenuUIType != null) return _cachedDevMenuUIType;
+        foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+        {
+            try
+            {
+                _cachedDevMenuUIType = asm.GetType("HydralumDevConsole.DevConsoleUI");
+                if (_cachedDevMenuUIType != null)
+                {
+                    _cachedDevMenuIsOpenField = _cachedDevMenuUIType.GetField("IsOpenStatic", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    _cachedDevMenuRectField = _cachedDevMenuUIType.GetField("WindowRectStatic", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    _devMenuReflectionCached = true;
+                    break;
+                }
+            }
+            catch { }
+        }
+        return _cachedDevMenuUIType;
+    }
+
+    public static Rect GetDevMenuRect()
+    {
+        try
+        {
+            if (GetDevMenuUIType() != null && _devMenuReflectionCached)
+            {
+                if (_cachedDevMenuIsOpenField != null && (bool)_cachedDevMenuIsOpenField.GetValue(null))
+                {
+                    if (_cachedDevMenuRectField != null)
+                    {
+                        return (Rect)_cachedDevMenuRectField.GetValue(null);
+                    }
+                }
+            }
+        }
+        catch { }
+        return Rect.zero;
+    }
 }

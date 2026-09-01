@@ -64,6 +64,12 @@ public static class MalumESP
             return true;
         }
 
+        var devMenuRect = MenuUI.GetDevMenuRect();
+        if (devMenuRect.width > 0 && devMenuRect.Contains(guiMousePos))
+        {
+            return true;
+        }
+
         return false;
     }
 
