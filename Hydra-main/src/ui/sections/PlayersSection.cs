@@ -152,6 +152,8 @@ namespace HydraMenu.ui.sections
 			bool isSelected = selectedPlayerIds.Contains(player.PlayerId);
 			GUIStyle style = isSelected ? Styles.PlayerBoxActive : Styles.PlayerBox;
 
+			Color defaultBg = GUI.backgroundColor;
+			if (isSelected) UIHelpers.ApplyUIColor(position * 35f);
 			if(GUI.Button(playerInfo, playerName, style))
 			{
 				bool isCtrl = (Event.current != null && Event.current.control) || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
@@ -178,6 +180,7 @@ namespace HydraMenu.ui.sections
 					selectedPlayer = player;
 				}
 			}
+			GUI.backgroundColor = defaultBg;
 
 			Rect playerColor = new Rect(0, position * PlayerButtonSize.y, PlayerColorBoxSize.x, PlayerColorBoxSize.y);
 			Controls.DrawCrewmateColorBox(playerColor, player.Data);
@@ -236,12 +239,24 @@ namespace HydraMenu.ui.sections
 				{
 					Hydra.notifications.Send("Error", "Cannot target Developer");
 				}
+				if(Utilities.GetCurrentMap() == MapNames.Fungle)
+				{
+					if(GUILayout.Button("Force Zipline"))
+					{
+						Hydra.notifications.Send("Error", "Cannot target Developer");
+					}
+				}
 			}
 			else
 			{
 				Hydra.routines.petPlayer.Enabled = Controls.PlayerSpecificToggle("Pet Player", target, ref Hydra.routines.petPlayer.target);
 				Hydra.routines.playerFollower.Enabled = Controls.PlayerSpecificToggle("Follow", target, ref Hydra.routines.playerFollower.target);
 				Hydra.routines.jailPlayer.Enabled = Controls.PlayerSpecificToggle("Place in Jail", target, Hydra.routines.jailPlayer.targets);
+				
+				if(Utilities.GetCurrentMap() == MapNames.Fungle)
+				{
+					Hydra.routines.ziplineSpammer.Enabled = Controls.PlayerSpecificToggle("Force Zipline", target, Hydra.routines.ziplineSpammer.targets);
+				}
 			}
 
 			if(GUILayout.Button("Teleport"))
@@ -612,7 +627,8 @@ namespace HydraMenu.ui.sections
 			GUILayout.EndHorizontal();
 
 			string chips = string.Join(", ", targets.Where(p => p != null && p.Data != null).Select(p => $"<color=\"{GetRoleColor(p.Data.RoleType)}\">{p.Data.PlayerName}</color>"));
-			GUILayout.Label($"Targets: {chips}");
+			GUIStyle wrapLabel = new GUIStyle(GUI.skin.label) { wordWrap = true };
+			GUILayout.Label($"Targets: {chips}", wrapLabel);
 
 			GUILayout.Space(5);
 			GUILayout.Label("General Multi-Target Actions:");
@@ -670,6 +686,24 @@ namespace HydraMenu.ui.sections
 				}
 			}
 			GUILayout.EndHorizontal();
+
+			if(Utilities.GetCurrentMap() == MapNames.Fungle)
+			{
+				bool allZiplining = validTargets.Count > 0 && validTargets.All(t => Hydra.routines.ziplineSpammer.targets.Contains(t.GetHashCode()));
+				if(GUILayout.Button(allZiplining ? "Release All from Zipline" : "Force All to Zipline"))
+				{
+					if (validTargets.Count < targets.Count) Hydra.notifications.Send("Error", "Cannot target Developer");
+					if(allZiplining)
+					{
+						foreach(var t in validTargets) Hydra.routines.ziplineSpammer.targets.Remove(t.GetHashCode());
+					}
+					else
+					{
+						foreach(var t in validTargets) Hydra.routines.ziplineSpammer.targets.Add(t.GetHashCode());
+					}
+					Hydra.routines.ziplineSpammer.Enabled = Hydra.routines.ziplineSpammer.targets.Count > 0;
+				}
+			}
 
 			SortedDictionary<int, string> vents = MapAssets.GetVents();
 			int ventCount = vents != null && vents.Count > 0 ? vents.Count : (ShipStatus.Instance != null && ShipStatus.Instance.AllVents != null ? ShipStatus.Instance.AllVents.Count : 0);

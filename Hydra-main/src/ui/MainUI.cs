@@ -11,8 +11,8 @@ namespace HydraMenu.ui
 		public bool visible = false;
 		public static float scale = 1.0f;
 
-		private bool isDragging = false;
-		private Vector2 mouseDelta = new Vector2();
+		
+		
 
 		public static Vector2 windowPosition = new Vector2(250, 100);
 		public static Vector2 WindowSize
@@ -116,9 +116,11 @@ namespace HydraMenu.ui
 				sections[activeTab].HandleSubsectionMove(offset);
 			}
 
-			HandleBoxMovement();
+			
 		}
 
+		public static Rect windowRect = new Rect(250, 100, 500, 470);
+		
 		public void OnGUI()
 		{
 			// https://docs.unity3d.com/6000.3/Documentation/Manual/GUIScriptingGuide.html
@@ -127,6 +129,23 @@ namespace HydraMenu.ui
 			AnnouncementManager.RenderToastGUI();
 
 			if(!visible) return;
+
+			windowRect.position = windowPosition;
+			windowRect.size = WindowSize;
+
+			// Wrap the entire Hydra layout in a native GUI.Window to get flawless IMGUI dragging!
+			windowRect = GUI.Window(8888, windowRect, (GUI.WindowFunction)DrawHydraWindow, "", GUIStyle.none);
+
+			windowPosition = windowRect.position;
+		}
+
+		private void DrawHydraWindow(int id)
+		{
+			// The genius trick: since GUI.Window creates a local coordinate space (where top-left is 0,0),
+			// and Hydra's layout logic relies entirely on absolute screen coordinates (windowPosition.x, etc),
+			// we temporarily set windowPosition to Vector2.zero while inside the WindowFunction!
+			Vector2 realPosition = windowPosition;
+			windowPosition = Vector2.zero;
 
 			GUI.skin.label.fontSize = (int)(13 * scale);
 
@@ -160,45 +179,11 @@ namespace HydraMenu.ui
 					GUILayout.EndArea();
 				}
 			}
-		}
 
-		private void HandleBoxMovement()
-		{
-			// https://docs.unity3d.com/6000.3/Documentation/ScriptReference/Event.html
-			Event currentEvent = Event.current;
-			Vector2 mousePos = currentEvent.mousePosition;
+			// Natively drag the window by grabbing literally anywhere in the background! (Like Malum Menu)
+			GUI.DragWindow();
 
-			switch(currentEvent.type)
-			{
-				// I tried using currentEvent.delta to get the delta between the last mouse position and the current one,
-				// however I noticed it would 'skip' quite frequently resulting in the window box not properly lining up where it should actually be dragged
-				case EventType.MouseDown:
-					if(!IsInBox(mousePos)) break;
-
-					isDragging = true;
-					mouseDelta = currentEvent.mousePosition - windowPosition;
-					break;
-
-				case EventType.MouseDrag:
-					if(!isDragging) break;
-
-					windowPosition.x = mousePos.x - mouseDelta.x;
-					windowPosition.y = mousePos.y - mouseDelta.y;
-					break;
-
-				case EventType.MouseUp:
-					isDragging = false;
-					break;
-			}
-		}
-
-		private bool IsInBox(Vector2 mousePos)
-		{
-			return
-				mousePos.x >= windowPosition.x &&
-				mousePos.x <= (windowPosition.x + WindowSize.x) &&
-				mousePos.y >= windowPosition.y &&
-				mousePos.y <= (windowPosition.y + WindowSize.y);
+			windowPosition = realPosition;
 		}
 
 		private void RenderTab(byte position, Section section)
@@ -304,8 +289,8 @@ namespace HydraMenu.ui
 					if (_cachedMalumRectField != null)
 					{
 						Rect r = (Rect)_cachedMalumRectField.GetValue(null);
-						r.x = windowPosition.x;
-						r.y = windowPosition.y;
+						r.x = windowRect.x;
+						r.y = windowRect.y;
 						_cachedMalumRectField.SetValue(null, r);
 					}
 
