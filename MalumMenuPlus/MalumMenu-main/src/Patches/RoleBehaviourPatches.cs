@@ -81,29 +81,9 @@ public static class ImpostorRole_IsValidTarget
     // Allows killing ghosts (with seeGhosts), impostors, players in vents, etc...
     public static void Postfix(NetworkedPlayerInfo target, ref bool __result)
     {
-        // No Kill Checks forces every non-self target valid and, unlike Kill Anyone, works without
-        // being host. Adapted from Hydra (https://github.com/MrDiamond64/Hydra), GPL-3.0.
-        if (CheatToggles.noKillChecks && PlayerControl.LocalPlayer != null && target != PlayerControl.LocalPlayer.Data)
-        {
-            __result = true;
-        }
-        else if (CheatToggles.killAnyone)
+        if (CheatToggles.killAnyone)
         {
            __result = Utils.IsValidTarget(target);
-        }
-    }
-}
-
-[HarmonyPatch(typeof(RoleBehaviour), nameof(RoleBehaviour.IsValidTarget))]
-public static class RoleBehaviour_IsValidTarget
-{
-    // Postfix patch of the base RoleBehaviour.IsValidTarget for No Kill Checks, covering killing
-    // roles other than the plain impostor. Adapted from Hydra (https://github.com/MrDiamond64/Hydra), GPL-3.0.
-    public static void Postfix(NetworkedPlayerInfo target, ref bool __result)
-    {
-        if (CheatToggles.noKillChecks && PlayerControl.LocalPlayer != null && target != PlayerControl.LocalPlayer.Data)
-        {
-            __result = true;
         }
     }
 }

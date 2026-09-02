@@ -67,7 +67,6 @@ public class RolesTab : ITab
 
         CheatToggles.killReach = GUILayout.Toggle(CheatToggles.killReach, " Kill Reach");
 
-        CheatToggles.noKillChecks = GUILayout.Toggle(CheatToggles.noKillChecks, " No Kill Checks");
 
         CheatToggles.sabotageInVents = GUILayout.Toggle(CheatToggles.sabotageInVents, " Allow Sabotaging In Vents");
 

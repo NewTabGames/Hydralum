@@ -31,7 +31,6 @@ public struct CheatToggles
     public static bool impostorTasks;
     public static bool killReach;
     public static bool killAnyone;
-    public static bool noKillChecks;
     public static bool endlessSsDuration;
     public static bool endlessBattery;
     public static bool endlessTracking;
