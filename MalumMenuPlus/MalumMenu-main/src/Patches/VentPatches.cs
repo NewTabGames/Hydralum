@@ -10,17 +10,7 @@ public static class Vent_CanUse
     // If Exclude Yourself is on, allow LocalPlayer to proceed to normal/unlockVents checks.
     public static bool Prefix(Vent __instance, NetworkedPlayerInfo pc, ref bool canUse, ref bool couldUse, ref float __result)
     {
-        if (!CheatToggles.disableVents) return true;
-
-        if (CheatToggles.ventsExcludeSelf && pc != null && pc.Object == PlayerControl.LocalPlayer)
-        {
-            return true;
-        }
-
-        canUse = false;
-        couldUse = false;
-        __result = 999f;
-        return false;
+        return true;
     }
 
     // Postfix: Allow usage of vents when Unlock Vents cheat is enabled for crewmates/non-venting roles.
@@ -29,7 +19,6 @@ public static class Vent_CanUse
         try
         {
             if (!PlayerControl.LocalPlayer || !PlayerControl.LocalPlayer.Data) return;
-            if (CheatToggles.disableVents && (!CheatToggles.ventsExcludeSelf || (pc != null && pc.Object != PlayerControl.LocalPlayer))) return;
 
             if (PlayerControl.LocalPlayer.Data.Role == null || PlayerControl.LocalPlayer.Data.Role.CanVent || PlayerControl.LocalPlayer.Data.IsDead) return;
             if (!CheatToggles.unlockVents) return;
@@ -52,10 +41,14 @@ public static class Vent_CanUse
 [HarmonyPatch(typeof(Vent), nameof(Vent.EnterVent))]
 public static class Vent_EnterVent
 {
-    // Postfix patch of Vent.EnterVent to log on ConsoleUI when a player enters a vent
-    // along with the room they entered it in
+    // Postfix patch of Vent.EnterVent to:
+    // 1) Fire DisableVents boot when an RPC indicates a player entered a vent
+    // 2) Log on ConsoleUI when a player enters a vent along with the room
     public static void Postfix(Vent __instance, PlayerControl pc)
     {
+        // Fire the disable-vents boot immediately on this RPC event
+        MalumCheats.OnPlayerEnteredVent(pc);
+
         if (!CheatToggles.logVents || !Utils.isShip) return;
 
         var (realPlayerName, displayPlayerName, isDisguised) = Utils.GetPlayerIdentity(pc);
@@ -74,6 +67,19 @@ public static class Vent_EnterVent
 [HarmonyPatch(typeof(Vent), nameof(Vent.ExitVent))]
 public static class Vent_ExitVent
 {
+    // Prefix to suppress vent exit when local player is protected by Exclude Yourself during a cheat boot
+    public static bool Prefix(Vent __instance, PlayerControl pc)
+    {
+        if (CheatToggles.isCheatBootingVents && CheatToggles.ventsExcludeSelf)
+        {
+            if (pc != null && pc.AmOwner)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // Postfix patch of Vent.ExitVent to log on ConsoleUI when a player exits a vent
     // along with the room they exited it in
     public static void Postfix(Vent __instance, PlayerControl pc)

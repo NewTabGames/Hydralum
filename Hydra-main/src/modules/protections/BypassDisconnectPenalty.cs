@@ -24,7 +24,8 @@ namespace HydraMenu.modules.protections
 			static void Prefix(PlayerBanData __instance)
 			{
 				if(!Instance.Enabled) return;
-				__instance.banPoints = 0.0f;
+				if (__instance == null) return;
+			__instance.banPoints = 0.0f;
 			}
 		}
 	}

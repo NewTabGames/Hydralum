@@ -108,6 +108,44 @@ public class MovementTab : ITab
         CheatToggles.handAnimEnabled = GUILayout.Toggle(CheatToggles.handAnimEnabled, " Enable Hand Animation");
 
         GUILayout.Space(4);
+        GUILayout.Label("Target:", GUIStylePreset.Hint);
+        
+        var prevBgGrid = GUI.backgroundColor;
+        GUILayout.BeginHorizontal();
+        int pIndex = 0;
+        
+        bool isSelf = CheatToggles.handAnimTargetId == 255;
+        GUI.backgroundColor = isSelf ? new Color(0.2f, 0.85f, 0.5f) : prevBgGrid;
+        if (GUILayout.Button("Self", GUIStylePreset.NormalButton, GUILayout.Height(22)))
+        {
+            CheatToggles.handAnimTargetId = 255;
+        }
+        pIndex++;
+
+        foreach (var p in PlayerControl.AllPlayerControls)
+        {
+            if (p == null || p.Data == null || p.Data.Disconnected || p.AmOwner) continue;
+
+            if (pIndex % 4 == 0)
+            {
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+            }
+
+            bool isTarget = CheatToggles.handAnimTargetId == p.PlayerId;
+            GUI.backgroundColor = isTarget ? new Color(0.2f, 0.85f, 0.5f) : prevBgGrid;
+            
+            string pName = $"<color=#{UnityEngine.ColorUtility.ToHtmlStringRGB(p.Data.Color)}>{p.Data.PlayerName}</color>";
+            if (GUILayout.Button(pName, GUIStylePreset.NormalButton, GUILayout.Height(22)))
+            {
+                CheatToggles.handAnimTargetId = p.PlayerId;
+            }
+            pIndex++;
+        }
+        GUILayout.EndHorizontal();
+        GUI.backgroundColor = prevBgGrid;
+
+        GUILayout.Space(4);
         int currentPattern = Mathf.Clamp(CheatToggles.handAnimPattern, 0, HandPatterns.Length - 1);
         GUILayout.Label($"Pattern: {HandPatterns[currentPattern]}", GUIStylePreset.Hint);
 

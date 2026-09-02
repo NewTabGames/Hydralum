@@ -9,6 +9,7 @@
 
 		private void OnLadderUse(Ladder ladder)
 		{
+			if (ladder == null || ladder.Destination == null) return;
 			ladder.CoolDown = 0.0f;
 			ladder.Destination.CoolDown = 0.0f;
 		}

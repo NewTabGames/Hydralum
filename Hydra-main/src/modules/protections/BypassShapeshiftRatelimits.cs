@@ -18,7 +18,7 @@ namespace HydraMenu.modules.protections
 			PlayerControl player = Utilities.GetRandomPlayer();
 			if(player == null) return;
 
-			IGameOptions options = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+			IGameOptions options = GameOptions.CreateCloneOptions((GameManager.Instance == null || GameManager.Instance.LogicOptions == null ? null : GameManager.Instance.LogicOptions.currentGameOptions));
 			options.SetFloat(FloatOptionNames.ShapeshifterCooldown, 0.0f);
 
 			// Send the settings update to a random player, we don't want to mess up our saved lobby settings

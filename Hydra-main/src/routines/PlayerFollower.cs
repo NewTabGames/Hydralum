@@ -1,4 +1,4 @@
-﻿using HydraMenu.modules;
+using HydraMenu.modules;
 using InnerNet;
 using UnityEngine;
 
@@ -12,7 +12,7 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
-			if(PlayerControl.LocalPlayer == null) return;
+			if(PlayerControl.LocalPlayer == null || target == null) return;
 
 			/*
 			float distance = Vector3.Distance(target.transform.position, PlayerControl.LocalPlayer.transform.position);

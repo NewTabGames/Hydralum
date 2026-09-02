@@ -12,6 +12,7 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
+			if (PlayerControl.LocalPlayer == null) return;
 			if(ShipStatus.Instance == null) return;
 
 			timeElapsed += Time.deltaTime;

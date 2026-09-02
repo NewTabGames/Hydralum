@@ -9,6 +9,7 @@
 
 		private void OnUseZipline(ZiplineConsole zipline)
 		{
+			if (zipline == null || zipline.destination == null) return;
 			zipline.CoolDown = 0.0f;
 			zipline.destination.CoolDown = 0.0f;
 		}

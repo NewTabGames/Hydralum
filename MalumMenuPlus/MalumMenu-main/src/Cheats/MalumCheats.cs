@@ -243,41 +243,90 @@ public static class MalumCheats
     {
         if (!CheatToggles.kickVents) return;
 
+        // Boot the local player first (before setting the flag that would block it)
+        if (!CheatToggles.ventsExcludeSelf
+            && PlayerControl.LocalPlayer != null
+            && PlayerControl.LocalPlayer.inVent)
+        {
+            int vId = Vent.currentVent != null ? Vent.currentVent.Id : 0;
+            PlayerControl.LocalPlayer.MyPhysics.RpcExitVent(vId);
+        }
+
+        // Boot everyone else
+        CheatToggles.isCheatBootingVents = true;
         foreach(var vent in ShipStatus.Instance.AllVents)
         {
             VentilationSystem.Update(VentilationSystem.Operation.BootImpostors, vent.Id);
         }
+        CheatToggles.isCheatBootingVents = false;
 
         CheatToggles.kickVents = false;
     }
 
-    private static float _lastVentBoot;
+    private static float _localVentEntryTime;
+    private static float _pendingRemoteBootTime;
+    private static bool _pendingRemoteBoot;
+
+    /// <summary>
+    /// Called from the Vent.EnterVent RPC patch. Schedules a delayed boot
+    /// so the VentilationSystem has time to register the player first.
+    /// </summary>
+    public static void OnPlayerEnteredVent(PlayerControl pc)
+    {
+        if (!CheatToggles.disableVents) return;
+        if (pc == null) return;
+        if (pc.AmOwner) return; // Local player handled separately with delay
+        if (CheatToggles.ventsExcludeSelf && pc.AmOwner) return;
+
+        // Schedule a boot 1 second from now so the VentilationSystem update
+        // has time to register this player in the vent
+        _pendingRemoteBoot = true;
+        _pendingRemoteBootTime = Time.time;
+    }
 
     public static void DisableVentsCheat()
     {
-        if (!CheatToggles.disableVents) return;
-
-        // Continuously does what "Kick All From Vents" does whenever anybody is inside a vent.
-        // With "Exclude Yourself" on, your own venting won't trigger it (so you can still vent);
-        // otherwise it boots everyone including you.
-        var anyoneInVent = false;
-        foreach (var player in PlayerControl.AllPlayerControls)
+        if (!CheatToggles.disableVents)
         {
-            if (player == null || !player.inVent) continue;
-            if (CheatToggles.ventsExcludeSelf && player.AmOwner) continue;
-            anyoneInVent = true;
-            break;
+            _pendingRemoteBoot = false;
+            _localVentEntryTime = 0f;
+            return;
         }
 
-        if (!anyoneInVent) return;
-
-        // Small throttle so network latency (before the boot registers) can't burst-fire the RPC
-        if (Time.time - _lastVentBoot < 0.1f) return;
-        _lastVentBoot = Time.time;
-
-        foreach (var vent in ShipStatus.Instance.AllVents)
+        // === Handle local player exit with delay for animation ===
+        if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.inVent)
         {
-            VentilationSystem.Update(VentilationSystem.Operation.BootImpostors, vent.Id);
+            if (_localVentEntryTime == 0f) _localVentEntryTime = Time.time;
+
+            if (!CheatToggles.ventsExcludeSelf && Time.time - _localVentEntryTime > 1.2f)
+            {
+                // Boot ourselves out with RpcExitVent - the exact self-exit mechanism Kick All uses, which
+                // works reliably. BootImpostors on our own vent does NOT actually eject the local player,
+                // which is why Disable Vents previously appeared to skip us.
+                int vId = Vent.currentVent != null ? Vent.currentVent.Id : 0;
+                if (PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.MyPhysics != null)
+                {
+                    PlayerControl.LocalPlayer.MyPhysics.RpcExitVent(vId);
+                }
+                _localVentEntryTime = Time.time + 999f;
+            }
+        }
+        else
+        {
+            _localVentEntryTime = 0f;
+        }
+
+        // === Handle remote player boot (delayed from EnterVent RPC) ===
+        if (_pendingRemoteBoot && Time.time - _pendingRemoteBootTime > 0.3f)
+        {
+            _pendingRemoteBoot = false;
+
+            CheatToggles.isCheatBootingVents = true;
+            foreach (var vent in ShipStatus.Instance.AllVents)
+            {
+                VentilationSystem.Update(VentilationSystem.Operation.BootImpostors, vent.Id);
+            }
+            CheatToggles.isCheatBootingVents = false;
         }
     }
 
@@ -619,8 +668,21 @@ public static class MalumCheats
         bool isDead = PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.IsDead;
         if (CheatToggles.handAnimEnabled && Utils.isPlayer && PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.MyPhysics != null && !isDead)
         {
-            Vector2 playerPos = PlayerControl.LocalPlayer.GetTruePosition();
-            bool isFlipped = PlayerControl.LocalPlayer.MyPhysics.FlipX;
+            PlayerControl target = PlayerControl.LocalPlayer;
+            if (CheatToggles.handAnimTargetId != 255)
+            {
+                foreach (var p in PlayerControl.AllPlayerControls)
+                {
+                    if (p.PlayerId == CheatToggles.handAnimTargetId)
+                    {
+                        target = p;
+                        break;
+                    }
+                }
+            }
+
+            Vector2 playerPos = target.GetTruePosition();
+            bool isFlipped = target.MyPhysics.FlipX;
             float facing = isFlipped ? -1f : 1f;
 
             float speed = Mathf.Max(0.1f, CheatToggles.handAnimSpeed);
@@ -782,7 +844,8 @@ public static class MalumCheats
                 {
                     if (AmongUsClient.Instance != null && PlayerControl.LocalPlayer.MyPhysics != null)
                     {
-                        PlayerControl.LocalPlayer.MyPhysics.RpcPet(playerPos, handPos);
+                        Vector2 myPos = PlayerControl.LocalPlayer.GetTruePosition();
+                        PlayerControl.LocalPlayer.MyPhysics.RpcPet(myPos, handPos);
                     }
                 }
                 catch { }

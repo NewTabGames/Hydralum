@@ -1,4 +1,4 @@
-﻿using HydraMenu.modules;
+using HydraMenu.modules;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -18,6 +18,8 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
+			if(ShipStatus.Instance == null) return;
+
 			timeElapsed += Time.deltaTime;
 			if(timeElapsed < DELAY) return;
 			timeElapsed = 0f;
@@ -40,6 +42,7 @@ namespace HydraMenu.routines
 		// however it will throw an error if you are not the detective and the player not inside a room but rather near it
 		private SystemTypes GetRoomForPlayer(PlayerControl player)
 		{
+			if (ShipStatus.Instance.AllRooms == null) return (SystemTypes)255;
 			foreach(PlainShipRoom room in ShipStatus.Instance.AllRooms)
 			{
 				if(room.roomArea == null) continue;

@@ -18,6 +18,7 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
+			if (AmongUsClient.Instance == null || PlayerControl.AllPlayerControls == null) return;
 			timeElapsed += Time.deltaTime;
 			if(timeElapsed < ZIPLINE_DELAY) return;
 			timeElapsed = 0.0f;

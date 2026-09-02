@@ -19,7 +19,8 @@ namespace HydraMenu.modules.self
 			{
 				if(!Instance.Enabled) return;
 
-				__instance.isTrackingStats = true;
+				if (__instance == null) return;
+			__instance.isTrackingStats = true;
 			}
 		}
 	}

@@ -46,7 +46,7 @@ namespace HydraMenu.routines
 				return;
 			}
 
-			if(ShipStatus.Instance.AllDoors.Count == 0)
+			if(ShipStatus.Instance.AllDoors == null || ShipStatus.Instance.AllDoors.Count == 0)
 			{
 				Hydra.notifications.Send("Door Troller", "Door Troller can not be used as this map does not have any doors.", 10);
 				Enabled = false;

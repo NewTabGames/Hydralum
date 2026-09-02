@@ -34,7 +34,7 @@ public class PlayersTab : ITab
         List<PlayerControl> selectedList = new();
         PlayerControl firstAvailable = null;
 
-        foreach (var player in players)
+        foreach (PlayerControl player in players)
         {
             if (player == null || player.Data == null) continue;
             firstAvailable ??= player;

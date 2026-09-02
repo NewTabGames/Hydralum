@@ -21,7 +21,8 @@ public static class MalumRoles
         // role, but calling SetRole directly skips that, so we fix the report button up ourselves.
         HudManager.Instance.ReportButton.gameObject.SetActive(!isGhost);
 
-        RoleManager.Instance.SetRole(PlayerControl.LocalPlayer, role);
+        if (RoleManager.Instance == null || PlayerControl.LocalPlayer == null) return;
+			RoleManager.Instance.SetRole(PlayerControl.LocalPlayer, role);
 
         if (Utils.isHost)
         {

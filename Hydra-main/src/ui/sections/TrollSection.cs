@@ -89,6 +89,7 @@ namespace HydraMenu.ui.sections
 			GUILayout.Space(5);
 			GUILayout.Label($"Vent Teleport:");
 			Hydra.routines.teleportSpammer.Enabled = Controls.GlobalPlayerSpecificToggle("Teleport Flooder", Hydra.routines.teleportSpammer.targets);
+			Hydra.routines.teleportSpammer.excludeSelf = GUILayout.Toggle(Hydra.routines.teleportSpammer.excludeSelf, "Exclude Yourself");
 
 			GUILayout.Label($"Teleport everyone to vent: {vents.GetValueOrDefault(selectedVent, "N/A")}");
 			selectedVent = Controls.HorizontalVentSlider(vents, selectedVent);
@@ -103,13 +104,16 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Teleport to Random Vent"))
 			{
-				foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+				if (ShipStatus.Instance != null && ShipStatus.Instance.AllVents != null && ShipStatus.Instance.AllVents.Count > 0)
 				{
-					if(player == PlayerControl.LocalPlayer) continue;
+					foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+					{
+						if(Hydra.routines.teleportSpammer.excludeSelf && player == PlayerControl.LocalPlayer) continue;
 
-					int ventId = rnd.Next(0, ShipStatus.Instance.AllVents.Count);
+						int ventId = rnd.Next(0, ShipStatus.Instance.AllVents.Count);
 
-					Teleporter.TeleportToVent(player, ventId);
+						Teleporter.TeleportToVent(player, ventId);
+					}
 				}
 			}
 

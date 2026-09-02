@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Hazel;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using InnerNet;
@@ -34,7 +34,7 @@ namespace HydraMenu.modules.protections
 				bool shouldBlock = false;
 				if(system == SystemTypes.Ventilation && !AmongUsClient.Instance.AmHost)
 				{
-					Hydra.notifications.Send("Protections Alert", $"{player.Data.PlayerName} attempted to use the VentilationSystem kick exploit on you!");
+					Hydra.notifications.Send("Protections Alert", $"{(player != null && player.Data != null ? player.Data.PlayerName : "Unknown Player")} attempted to use the VentilationSystem kick exploit on you!");
 					shouldBlock = true;
 				}
 

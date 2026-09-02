@@ -1,4 +1,4 @@
-﻿using HydraMenu.modules;
+using HydraMenu.modules;
 using HydraMenu.network;
 using UnityEngine;
 
@@ -16,6 +16,7 @@ namespace HydraMenu.routines
 			timeElapsed += Time.deltaTime;
 			if(timeElapsed < PHANTOM_DELAY) return;
 			timeElapsed = 0.0f;
+			if(PlayerControl.LocalPlayer == null) return;
 
 			PlayerControl.LocalPlayer.CmdCheckColor((byte)Utilities.GetRandomUnusedColor());
 

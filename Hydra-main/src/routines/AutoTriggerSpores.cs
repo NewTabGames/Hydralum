@@ -13,6 +13,7 @@ namespace HydraMenu.routines
 
 		public override void Run()
 		{
+			if (PlayerControl.LocalPlayer == null) return;
 			if(ShipStatus.Instance == null) return;
 
 			timeElapsed += Time.deltaTime;
@@ -20,6 +21,7 @@ namespace HydraMenu.routines
 			timeElapsed = 0f;
 
 			FungleShipStatus shipStatus = ShipStatus.Instance.Cast<FungleShipStatus>();
+			if (shipStatus == null || shipStatus.sporeMushrooms == null) return;
 
 			BatchedMessage batch = new BatchedMessage();
 

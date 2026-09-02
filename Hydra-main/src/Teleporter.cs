@@ -1,4 +1,4 @@
-﻿using Hazel;
+using Hazel;
 using HydraMenu.network;
 using System.Collections.Generic;
 using UnityEngine;
@@ -184,6 +184,19 @@ namespace HydraMenu
 			if(ShipStatus.Instance == null)
 			{
 				Hydra.notifications.Send("Vent TP", "The game must have started in order for this feature to work.");
+				return;
+			}
+
+			if (player == PlayerControl.LocalPlayer)
+			{
+				foreach (var vent in ShipStatus.Instance.AllVents)
+				{
+					if (vent.Id == ventId)
+					{
+						TeleportTo(vent.transform.position);
+						break;
+					}
+				}
 				return;
 			}
 

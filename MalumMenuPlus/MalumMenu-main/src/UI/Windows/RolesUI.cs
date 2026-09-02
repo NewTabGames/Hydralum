@@ -42,7 +42,7 @@ public class RolesUI : MonoBehaviour
             var allControls = PlayerControl.AllPlayerControls;
             if (allControls != null)
             {
-                foreach (var player in allControls)
+                foreach(PlayerControl player in allControls)
                 {
                     if (!player || player.Data == null || player.Data.Role == null || string.IsNullOrEmpty(player.Data.PlayerName) || player != PlayerControl.LocalPlayer) continue;
 

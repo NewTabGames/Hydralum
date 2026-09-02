@@ -27,7 +27,7 @@ namespace HydraMenu.modules.self
 
 			if(PlayerControl.LocalPlayer != null)
 			{
-				PlayerControl.LocalPlayer.RemainingEmergencies = GameManager.Instance.LogicOptions.GetNumEmergencyMeetings();
+				PlayerControl.LocalPlayer.RemainingEmergencies = (GameManager.Instance != null && GameManager.Instance.LogicOptions != null ? GameManager.Instance.LogicOptions.GetNumEmergencyMeetings() : 1);
 			}
 		}
 	}

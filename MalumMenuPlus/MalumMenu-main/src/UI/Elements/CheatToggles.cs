@@ -20,6 +20,7 @@ public struct CheatToggles
     public static int handAnimPattern = 0;
     public static float handAnimSpeed = 1.0f;
     public static float handAnimRadius = 1.0f;
+    public static byte handAnimTargetId = 255;
 
     // Roles
     public static bool setFakeRole;
@@ -120,6 +121,7 @@ public struct CheatToggles
     public static bool disableVents;
     public static bool ventsExcludeSelf;
     public static bool ventNetwork;
+    public static bool isCheatBootingVents;
 
     // Animations
     public static bool animShields;
