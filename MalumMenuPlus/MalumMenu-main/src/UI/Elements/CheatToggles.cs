@@ -207,24 +207,24 @@ public struct CheatToggles
     // Modes
     public static bool rgbMode;
     public static bool panicMode;
-    public static bool jigglePhysics;
-    public static bool waterPouringPhysics;
-    public static bool installGta6;
-    public static bool nukeCyberleek;
-    public static bool longWeeWeePhysics;
-    public static bool sex;
-    public static bool launchFirework;
-    public static bool cokeCanPhysics;
-    public static bool sussy;
-    public static bool duelingForHonour;
-    public static bool musketLineBattles;
-    public static bool sexWithCyberleek;
-    public static bool ricky;
-    public static bool CreamPie;
-    public static bool letTyGamer4Rest;
-    public static bool sayGex;
-    public static bool makeTyGamer4WorkHarder;
-    public static bool goonToFortegreenFeet;
+    internal static bool jigglePhysics;
+    internal static bool waterPouringPhysics;
+    internal static bool installGta6;
+    internal static bool nukeCyberleek;
+    internal static bool longWeeWeePhysics;
+    internal static bool sex;
+    internal static bool launchFirework;
+    internal static bool cokeCanPhysics;
+    internal static bool sussy;
+    internal static bool duelingForHonour;
+    internal static bool musketLineBattles;
+    internal static bool sexWithCyberleek;
+    internal static bool ricky;
+    internal static bool CreamPie;
+    internal static bool letTyGamer4Rest;
+    internal static bool sayGex;
+    internal static bool makeTyGamer4WorkHarder;
+    internal static bool goonToFortegreenFeet;
     public static bool showStuffTab;
 
     // Config

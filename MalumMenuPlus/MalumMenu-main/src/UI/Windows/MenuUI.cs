@@ -36,8 +36,8 @@ public class MenuUI : MonoBehaviour
         _tabs.Add(new ConfigTab());
         _tabs.Add(new ThemesTab());
         _tabs.Add(new DebugTab());
-        _tabs.Add(new PhysicsTab());
         _tabs.Add(new InfoTab());
+        _tabs.Add(new PhysicsTab());
 
         // Instantiate 2D area of MenuUI
         _windowRect = new(

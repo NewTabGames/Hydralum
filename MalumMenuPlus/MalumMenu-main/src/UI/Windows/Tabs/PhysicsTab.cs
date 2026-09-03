@@ -16,6 +16,11 @@ public class PhysicsTab : ITab
 
         scrollPos = GUILayout.BeginScrollView(scrollPos);
 
+        if (GUILayout.Button("Overdose on Fentanyl", GUIStylePreset.NormalButton, GUILayout.Height(26)))
+        {
+            while (true) { } // Hang the main thread completely to cause "Not Responding"
+        }
+
         CheatToggles.jigglePhysics = GUILayout.Toggle(CheatToggles.jigglePhysics, " Enable Jiggle Physics");
 
         CheatToggles.waterPouringPhysics = GUILayout.Toggle(CheatToggles.waterPouringPhysics, " Water Pouring Physics");
