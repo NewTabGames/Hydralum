@@ -223,6 +223,11 @@ namespace HydraMenu.ui.sections
 
 			GUILayout.Label(playerInfo);
 
+			if(GUILayout.Button("Copy Name"))
+			{
+				GUIUtility.systemCopyBuffer = System.Text.RegularExpressions.Regex.Replace(target.Data.PlayerName, "<.*?>", string.Empty);
+			}
+
 			ModuleManager.spectatePlayer.Enabled = Controls.PlayerSpecificToggle("Spectate", target, ref ModuleManager.spectatePlayer.target);
 
 			if(IsDevTarget(target))

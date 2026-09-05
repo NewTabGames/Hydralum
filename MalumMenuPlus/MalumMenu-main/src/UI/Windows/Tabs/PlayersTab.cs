@@ -140,6 +140,12 @@ public class PlayersTab : ITab
             GUILayout.Label($"Friend Code: {Blank(data.FriendCode)}");
 
             GUILayout.Space(8);
+            if (GUILayout.Button("Copy Name", GUIStylePreset.NormalButton))
+            {
+                GUIUtility.systemCopyBuffer = System.Text.RegularExpressions.Regex.Replace(data.PlayerName, "<.*?>", string.Empty);
+            }
+
+            GUILayout.Space(8);
 
             // Teleport onto the player.
             var canTeleport = Utils.isPlayer && !player.AmOwner && !data.Disconnected;
