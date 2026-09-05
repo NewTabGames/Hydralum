@@ -44,7 +44,7 @@ jobs:
     - name: Package Standalone Game Folder
       run: |
         mkdir -p standalone_build
-        curl -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785%2B6abdba4.zip" -o bepinex.zip
+        curl --http1.1 --retry 5 --retry-delay 3 -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785%2B6abdba4.zip" -o bepinex.zip
         unzip -q bepinex.zip -d standalone_build
         rm -f bepinex.zip
         mkdir -p standalone_build/BepInEx/plugins
