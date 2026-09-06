@@ -22,6 +22,14 @@ jobs:
       with:
         dotnet-version: '6.0.x'
 
+    - name: Cache NuGet Packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/nuget.config') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
     - name: Build MalumMenu
       run: dotnet build MalumMenuPlus/MalumMenu-main/src/MalumMenu.csproj -c Release
 
@@ -41,12 +49,23 @@ jobs:
         path: DLLs/*.dll
         if-no-files-found: error
 
+    - name: Cache BepInEx Download
+      id: cache-bepinex
+      uses: actions/cache@v4
+      with:
+        path: .bepinex_cache
+        key: bepinex-785-win-x86
+
+    - name: Download BepInEx (If Not Cached)
+      if: steps.cache-bepinex.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p .bepinex_cache
+        curl --http1.1 --retry 5 --retry-delay 3 -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785%2B6abdba4.zip" -o .bepinex_cache/bepinex.zip
+
     - name: Package Standalone Game Folder
       run: |
         mkdir -p standalone_build
-        curl --http1.1 --retry 5 --retry-delay 3 -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/785/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.785%2B6abdba4.zip" -o bepinex.zip
-        unzip -q bepinex.zip -d standalone_build
-        rm -f bepinex.zip
+        unzip -q .bepinex_cache/bepinex.zip -d standalone_build
         mkdir -p standalone_build/BepInEx/plugins
         mkdir -p standalone_build/BepInEx/config
         cp DLLs/HydraMenu.dll standalone_build/BepInEx/plugins/

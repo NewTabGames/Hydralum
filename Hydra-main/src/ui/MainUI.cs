@@ -147,43 +147,52 @@ namespace HydraMenu.ui
 			Vector2 realPosition = windowPosition;
 			windowPosition = Vector2.zero;
 
-			GUI.skin.label.fontSize = (int)(13 * scale);
-
-			// Render UI box
-			GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum v{PresenceTracker.CurrentHydralumVersion} - Hydra v{MyPluginInfo.PLUGIN_VERSION}  |  Online: {PresenceTracker.GetOnlineCount()}", Styles.MainBox);
-
-			Rect switchBtnRect = new Rect(windowPosition.x + WindowSize.x - 95 * scale, windowPosition.y + 2 * scale, 90 * scale, 20 * scale);
-			Color previousColor = GUI.backgroundColor;
-			GUI.backgroundColor = UIHelpers.GetGradientColor();
-			if(GUI.Button(switchBtnRect, "Switch"))
+			try
 			{
-				SwitchToMalum();
-			}
-			GUI.backgroundColor = previousColor;
+				GUI.skin.label.fontSize = (int)(13 * scale);
 
-			for(byte i = 0; i < sections.Length; i++)
-			{
-				Section section = sections[i];
+				// Render UI box
+				GUI.Box(new Rect(windowPosition.x, windowPosition.y, WindowSize.x, WindowSize.y), $"Hydralum v{PresenceTracker.CurrentHydralumVersion} - Hydra v{MyPluginInfo.PLUGIN_VERSION}  |  Online: {PresenceTracker.GetOnlineCount()}", Styles.MainBox);
 
-				// Add the tab to the left-pane
-				RenderTab(i, section);
-
-				if(i == activeTab)
+				Rect switchBtnRect = new Rect(windowPosition.x + WindowSize.x - 95 * scale, windowPosition.y + 2 * scale, 90 * scale, 20 * scale);
+				Color previousColor = GUI.backgroundColor;
+				GUI.backgroundColor = UIHelpers.GetGradientColor();
+				if(GUI.Button(switchBtnRect, "Switch"))
 				{
-					GUILayout.BeginArea(new Rect(FeaturePanePosition.x, FeaturePanePosition.y, FeaturePaneSize.x, FeaturePaneSize.y));
-					section.scrollVector = GUILayout.BeginScrollView(section.scrollVector);
-
-					section.Render();
-
-					GUILayout.EndScrollView();
-					GUILayout.EndArea();
+					SwitchToMalum();
 				}
+				GUI.backgroundColor = previousColor;
+
+				for(byte i = 0; i < sections.Length; i++)
+				{
+					Section section = sections[i];
+
+					// Add the tab to the left-pane
+					RenderTab(i, section);
+
+					if(i == activeTab)
+					{
+						GUILayout.BeginArea(new Rect(FeaturePanePosition.x, FeaturePanePosition.y, FeaturePaneSize.x, FeaturePaneSize.y));
+						section.scrollVector = GUILayout.BeginScrollView(section.scrollVector);
+
+						section.Render();
+
+						GUILayout.EndScrollView();
+						GUILayout.EndArea();
+					}
+				}
+
+				// Natively drag the window by grabbing literally anywhere in the background! (Like Malum Menu)
+				GUI.DragWindow();
 			}
-
-			// Natively drag the window by grabbing literally anywhere in the background! (Like Malum Menu)
-			GUI.DragWindow();
-
-			windowPosition = realPosition;
+			catch (Exception ex)
+			{
+				Hydra.Log.LogError($"Exception during DrawHydraWindow: {ex.Message}");
+			}
+			finally
+			{
+				windowPosition = realPosition;
+			}
 		}
 
 		private void RenderTab(byte position, Section section)

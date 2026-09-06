@@ -8,6 +8,7 @@ public class ConfigTab : ITab
     public string name => "Config";
 
     private static bool _isListeningForKey = false;
+    private static float _pendingUiScale = 0f;
 
     public void Draw()
     {
@@ -70,13 +71,24 @@ public class ConfigTab : ITab
         }
 
         GUILayout.Space(4);
-        GUILayout.Label($"Scale: {MenuUI.uiScale:F2}x");
-        float prevScale = MenuUI.uiScale;
-        MenuUI.uiScale = GUILayout.HorizontalSlider(MenuUI.uiScale, 0.5f, 2f);
-        if (Math.Abs(MenuUI.uiScale - prevScale) > 0.001f && MalumMenu.menuScale != null)
+        if (GUIUtility.hotControl == 0)
         {
-            MalumMenu.menuScale.Value = MenuUI.uiScale;
+            if (Math.Abs(MenuUI.uiScale - _pendingUiScale) > 0.001f && _pendingUiScale != 0f)
+            {
+                MenuUI.uiScale = _pendingUiScale;
+                if (MalumMenu.menuScale != null)
+                {
+                    MalumMenu.menuScale.Value = MenuUI.uiScale;
+                }
+            }
+            else
+            {
+                _pendingUiScale = MenuUI.uiScale;
+            }
         }
+
+        GUILayout.Label($"Scale: {_pendingUiScale:F2}x");
+        _pendingUiScale = GUILayout.HorizontalSlider(_pendingUiScale, 0.5f, 2f);
 
         GUILayout.Label($"Opacity: {MenuUI.uiOpacity * 100:F0}%");
         float prevOpacity = MenuUI.uiOpacity;

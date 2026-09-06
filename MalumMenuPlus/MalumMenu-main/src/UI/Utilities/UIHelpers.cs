@@ -21,7 +21,7 @@ public static class UIHelpers
         var configHtmlColor = MalumMenu.menuHtmlColor?.Value;
         if (string.IsNullOrEmpty(configHtmlColor))
         {
-            return new Color(0.54f, 0.17f, 0.89f); // Default Malum purple
+            return Color.white; // Default untinted IMGUI color
         }
 
         // Gradient theme: "grad:#AAAAAA,#BBBBBB" — smooth continuous traveling wave
@@ -48,6 +48,6 @@ public static class UIHelpers
             return uiColor;
         }
 
-        return new Color(0.54f, 0.17f, 0.89f); // Default Malum purple
+        return Color.white; // Default untinted IMGUI color
     }
 }

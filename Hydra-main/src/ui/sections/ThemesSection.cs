@@ -6,6 +6,7 @@ namespace HydraMenu.ui.sections
 	internal class ThemesSection : Section
 	{
 		public ThemesSection() : base("Themes") { }
+		private static float _pendingUiScale = 0f;
 
 		private const float ButtonGap = 8f;
 
@@ -59,8 +60,23 @@ namespace HydraMenu.ui.sections
 				Styles.ClearCache();
 			}
 
-			GUILayout.Label($"UI Scale: {MainUI.scale:F2}x");
-			MainUI.scale = (float)Math.Round(GUILayout.HorizontalSlider(MainUI.scale, 0.5f, 2.0f), 2);
+			if (GUIUtility.hotControl == 0)
+			{
+				if (Math.Abs(MainUI.scale - _pendingUiScale) > 0.001f && _pendingUiScale != 0f)
+				{
+					MainUI.scale = (float)Math.Round(_pendingUiScale, 2);
+					var config = Hydra.mainUI.GetConfigData();
+					config.UiScale = MainUI.scale;
+					Hydra.mainUI.LoadConfigData(config);
+				}
+				else
+				{
+					_pendingUiScale = MainUI.scale;
+				}
+			}
+
+			GUILayout.Label($"UI Scale: {_pendingUiScale:F2}x");
+			_pendingUiScale = GUILayout.HorizontalSlider(_pendingUiScale, 0.5f, 2.0f);
 
 			GUILayout.Space(12);
 
@@ -143,6 +159,8 @@ namespace HydraMenu.ui.sections
 			var previous = GUI.backgroundColor;
 			if (!string.IsNullOrEmpty(theme.hex) && ColorUtility.TryParseHtmlString(theme.hex, out var swatch))
 				GUI.backgroundColor = swatch;
+			else if (string.IsNullOrEmpty(theme.hex))
+				GUI.backgroundColor = Styles.ColorValues.ContainsKey(Styles.primaryColor) ? Styles.ColorValues[Styles.primaryColor] : new Color(0.0f, 0.50f, 1f);
 
 			if (GUILayout.Button(theme.name, GUILayout.ExpandWidth(true), GUILayout.Height(30 * MainUI.scale)))
 				ApplyTheme(theme.hex);

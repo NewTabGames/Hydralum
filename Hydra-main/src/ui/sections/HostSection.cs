@@ -1,4 +1,4 @@
-﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 using HydraMenu.modules;
 using HydraMenu.network;
 using InnerNet;
@@ -255,6 +255,7 @@ namespace HydraMenu.ui.sections
 			BatchedMessage batch = new BatchedMessage();
 			batch.QueueSpawn(lobby, -2, SpawnFlags.None);
 			batch.FinishBatch();
+			lobbyList.Enqueue(lobby);
 
 			Hydra.notifications.Send("Lobby Spawner", "A new instance of the lobby has been spawned", 5);
 		}
@@ -272,14 +273,36 @@ namespace HydraMenu.ui.sections
 				yield break;
 			}
 
+			if(AmongUsClient.Instance.ShipPrefabs == null || mapId >= AmongUsClient.Instance.ShipPrefabs.Count)
+			{
+				Hydra.notifications.Send("Map Spawner", "That map is not available or prefabs not loaded.");
+				yield break;
+			}
+
 			AsyncOperationHandle<GameObject> asyncHandle = AmongUsClient.Instance.ShipPrefabs[mapId].InstantiateAsync(null, false);
-			yield return asyncHandle;
+			while (!asyncHandle.IsDone)
+			{
+				yield return null;
+			}
+
+			if (asyncHandle.Result == null)
+			{
+				Hydra.Log.LogError($"Failed to instantiate map prefab for map id {mapId}");
+				yield break;
+			}
 
 			ShipStatus ship = asyncHandle.Result.GetComponent<ShipStatus>();
+			if (ship == null)
+			{
+				Hydra.Log.LogError($"Instantiated map does not contain a ShipStatus component");
+				yield break;
+			}
 
 			BatchedMessage batch = new BatchedMessage();
 			batch.QueueSpawn(ship, -2, SpawnFlags.None);
 			batch.FinishBatch();
+
+			shipList.Enqueue(ship);
 
 			Hydra.notifications.Send("Map Spawner", $"{(MapNames)mapId} has been spawned.", 5);
 		}

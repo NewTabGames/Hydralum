@@ -128,6 +128,8 @@ public class ThemesTab : ITab
         var previous = GUI.backgroundColor;
         if (!string.IsNullOrEmpty(theme.hex) && ColorUtility.TryParseHtmlString(theme.hex, out var swatch))
             GUI.backgroundColor = swatch;
+        else if (string.IsNullOrEmpty(theme.hex))
+            GUI.backgroundColor = Color.white;
 
         if (GUILayout.Button(theme.name, GUIStylePreset.NormalButton, GUILayout.ExpandWidth(true), GUILayout.Height(30)))
             ApplyTheme(theme.hex);

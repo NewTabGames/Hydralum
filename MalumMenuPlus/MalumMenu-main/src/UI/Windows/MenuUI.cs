@@ -50,9 +50,8 @@ public class MenuUI : MonoBehaviour
 
     public void InitStyles()
     {
-        var size = Mathf.RoundToInt(GUIStylePreset.BaseSkinFont * uiScale);
-        GUI.skin.toggle.fontSize = GUI.skin.button.fontSize = GUI.skin.label.fontSize = size;
-        GUIStylePreset.ApplyFontScale(uiScale);
+        GUI.skin.toggle.fontSize = GUI.skin.button.fontSize = GUI.skin.label.fontSize = GUIStylePreset.BaseSkinFont;
+        GUIStylePreset.ApplyFontScale(1f);
     }
 
     private void Update()
@@ -236,8 +235,12 @@ public class MenuUI : MonoBehaviour
         var previousColor = GUI.color;
         GUI.color = new Color(1f, 1f, 1f, uiOpacity);
 
+        var prevMatrix = GUI.matrix;
+        GUIUtility.ScaleAroundPivot(new Vector2(uiScale, uiScale), _windowRect.position);
+
         _windowRect = GUI.Window((int)WindowId.MenuUI, _windowRect, (GUI.WindowFunction)WindowFunction, $"Hydralum v{PresenceTracker.CurrentHydralumVersion} - Malum Menu v{MalumMenu.malumVersion}  |  Online: {PresenceTracker.GetOnlineCount()}");
 
+        GUI.matrix = prevMatrix;
         GUI.color = previousColor;
     }
 

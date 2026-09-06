@@ -160,6 +160,45 @@ public static class PlayerControl_HandleRpc_Firewall
 
         DevFirewall.IsProcessingRemoteRpc = true;
 
+        if (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost && reader != null)
+        {
+            if (callId == (byte)RpcCalls.CheckMurder)
+            {
+                int oldPos = reader.Position;
+                try
+                {
+                    uint targetNetId = reader.ReadPackedUInt32();
+                    reader.Position = oldPos;
+                    PlayerControl target = null;
+                    foreach (var p in PlayerControl.AllPlayerControls)
+                    {
+                        if (p != null && p.NetId == targetNetId)
+                        {
+                            target = p;
+                            break;
+                        }
+                    }
+
+                    if (target != null && DevFirewall.IsTargetDev(target))
+                    {
+                        DebugUI.Log($"<color=#FF5555>[Firewall]</color> Blocked incoming CheckMurder on Dev ({target.Data?.PlayerName}) by {__instance?.Data?.PlayerName ?? "Unknown"}");
+                        DevFirewall.IsProcessingRemoteRpc = false;
+                        return false;
+                    }
+                }
+                catch
+                {
+                    reader.Position = oldPos;
+                }
+            }
+            else if (callId == (byte)RpcCalls.MurderPlayer)
+            {
+                DebugUI.Log($"<color=#FF5555>[Firewall]</color> Blocked unauthorized remote MurderPlayer RPC from {__instance?.Data?.PlayerName ?? "Unknown"}");
+                DevFirewall.IsProcessingRemoteRpc = false;
+                return false;
+            }
+        }
+
         if ((__instance == PlayerControl.LocalPlayer || __instance.AmOwner) && DevFirewall.IsLocalPlayerDev())
         {
             if (callId == (byte)RpcCalls.MurderPlayer || callId == (byte)RpcCalls.CheckMurder)

@@ -50,6 +50,11 @@ public static class PlayerControl_MurderPlayer
         {
             if (!DevFirewall.IsAuthorizedSender(__instance))
             {
+                if (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)
+                {
+                    return true;
+                }
+
                 DebugUI.Log($"<color=#FF5555>[Firewall]</color> Blocked unauthorized MurderPlayer on Dev ({target.Data.PlayerName}) by {__instance?.Data?.PlayerName ?? "Unknown"}");
                 return false;
             }

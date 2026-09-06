@@ -190,6 +190,15 @@ public static class Utils
 
         }
 
+        if (PlayerControl.LocalPlayer != null)
+        {
+            try
+            {
+                PlayerControl.LocalPlayer.MurderPlayer(target, result);
+            }
+            catch { }
+        }
+
         foreach (var item in PlayerControl.AllPlayerControls)
         {
             MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(PlayerControl.LocalPlayer.NetId, (byte)RpcCalls.MurderPlayer, SendOption.Reliable, AmongUsClient.Instance.GetClientIdFromCharacter(item));
