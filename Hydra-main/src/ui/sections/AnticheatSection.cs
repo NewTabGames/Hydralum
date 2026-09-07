@@ -1,4 +1,4 @@
-﻿using HydraMenu.anticheat;
+using HydraMenu.anticheat;
 using UnityEngine;
 
 namespace HydraMenu.ui.sections
@@ -9,6 +9,9 @@ namespace HydraMenu.ui.sections
 
 		public override void Render()
 		{
+			GUILayout.Label("<color=#FFD700>Note:</color> The anticheat is very strong and can sometimes counteract the things you do, so its recommended to turn it off unless you want to play legit and protect yourself.");
+			GUILayout.Space(5);
+
 			Anticheat.Enabled = GUILayout.Toggle(Anticheat.Enabled, "Enable Hydra Anticheat");
 
 			Anticheat.CheckSpoofedPlatforms = GUILayout.Toggle(Anticheat.CheckSpoofedPlatforms, "Flag Spoofed Platform Data");

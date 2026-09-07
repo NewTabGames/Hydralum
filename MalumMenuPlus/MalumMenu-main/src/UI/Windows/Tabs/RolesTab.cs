@@ -92,6 +92,15 @@ public class RolesTab : ITab
         {
             CheatToggles.completeMyTasks = true;
         }
+
+        CheatToggles.autoCompleteTasks = GUILayout.Toggle(CheatToggles.autoCompleteTasks, " Auto Complete Tasks");
+        CheatToggles.autoCompleteNoAlwaysUpdates = GUILayout.Toggle(CheatToggles.autoCompleteNoAlwaysUpdates, " Disable if Taskbar Updates = Always");
+        
+        GUILayout.Label($"Auto Complete Start Delay: {CheatToggles.autoCompleteDelay}s");
+        CheatToggles.autoCompleteDelay = (float)System.Math.Round(GUILayout.HorizontalSlider(CheatToggles.autoCompleteDelay, 0f, 60f), 1);
+        
+        GUILayout.Label($"Time Between Tasks: {CheatToggles.autoCompleteInterval}s");
+        CheatToggles.autoCompleteInterval = (float)System.Math.Round(GUILayout.HorizontalSlider(CheatToggles.autoCompleteInterval, 0f, 20f), 1);
     }
 
     private void DrawTracker()

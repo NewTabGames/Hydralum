@@ -17,6 +17,10 @@ public class ESPTab : ITab
         GUILayout.Space(15);
 
         DrawCamera();
+        
+        GUILayout.Space(15);
+
+        DrawHydralumUsers();
 
         GUILayout.EndVertical();
 
@@ -28,13 +32,20 @@ public class ESPTab : ITab
 
         DrawMinimap();
 
+        GUILayout.Space(15);
+
+        DrawRadar();
+        
+        GUILayout.Space(15);
+        DrawReplay();
+        
+        GUILayout.Space(15); // Padding for bottom of scroll view
+
         GUILayout.EndVertical();
 
         GUILayout.EndHorizontal();
-
-        GUILayout.Space(14);
-
-        DrawHydralumUsers();
+        
+        GUILayout.Space(15); // Extra padding for the whole tab
     }
 
     private void DrawHydralumUsers()
@@ -58,6 +69,8 @@ public class ESPTab : ITab
 
     private void DrawGeneral()
     {
+        GUILayout.Label("ESP", GUIStylePreset.TabSubtitle);
+        
         CheatToggles.seePlayerInfo = GUILayout.Toggle(CheatToggles.seePlayerInfo, " See Player Info");
 
         CheatToggles.seeRoles = GUILayout.Toggle(CheatToggles.seeRoles, " See Roles");
@@ -116,5 +129,35 @@ public class ESPTab : ITab
         CheatToggles.mapGhosts = GUILayout.Toggle(CheatToggles.mapGhosts, " Ghosts");
 
         CheatToggles.colorBasedMap = GUILayout.Toggle(CheatToggles.colorBasedMap, " Color-based");
+    }
+
+    private void DrawRadar()
+    {
+        GUILayout.Label("Radar", GUIStylePreset.TabSubtitle);
+
+        CheatToggles.radar = GUILayout.Toggle(CheatToggles.radar, " Show Radar");
+        CheatToggles.radarBodies = GUILayout.Toggle(CheatToggles.radarBodies, " Bodies on Radar");
+        CheatToggles.radarGhosts = GUILayout.Toggle(CheatToggles.radarGhosts, " Ghosts on Radar");
+
+        GUILayout.Label($"Size: {CheatToggles.radarSize}%");
+        CheatToggles.radarSize = Mathf.RoundToInt(GUILayout.HorizontalSlider(CheatToggles.radarSize, 60f, 180f));
+
+        GUILayout.Label($"Opacity: {CheatToggles.radarOpacity}%");
+        CheatToggles.radarOpacity = Mathf.RoundToInt(GUILayout.HorizontalSlider(CheatToggles.radarOpacity, 30f, 100f));
+    }
+
+    private void DrawReplay()
+    {
+        GUILayout.Label("Replay Console", GUIStylePreset.TabSubtitle);
+
+        CheatToggles.replay = GUILayout.Toggle(CheatToggles.replay, " Show Replay");
+        CheatToggles.replayRecording = GUILayout.Toggle(CheatToggles.replayRecording, " Record");
+        CheatToggles.replayClearAfterMeeting = GUILayout.Toggle(CheatToggles.replayClearAfterMeeting, " Clear After Meeting");
+
+        GUILayout.Label($"Size: {CheatToggles.replaySize}%");
+        CheatToggles.replaySize = Mathf.RoundToInt(GUILayout.HorizontalSlider(CheatToggles.replaySize, 60f, 180f));
+
+        GUILayout.Label($"Opacity: {CheatToggles.replayOpacity}%");
+        CheatToggles.replayOpacity = Mathf.RoundToInt(GUILayout.HorizontalSlider(CheatToggles.replayOpacity, 30f, 100f));
     }
 }

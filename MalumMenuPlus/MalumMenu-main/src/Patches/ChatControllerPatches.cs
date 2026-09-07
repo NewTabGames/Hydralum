@@ -10,8 +10,14 @@ public static class ChatController_AddChat
 {
 	// Prefix patch of ChatController.AddChat to receive ghost messages if CheatSettings.seeGhosts is enabled even if LocalPlayer is alive
 	// Basically does what the original method did with the required modifications
-	public static bool Prefix(PlayerControl sourcePlayer, string chatText, bool censor, ChatController __instance)
+	public static bool Prefix(PlayerControl sourcePlayer, ref string chatText, bool censor, ChatController __instance)
     {
+        if (CheatToggles.chatTimestamps && !string.IsNullOrEmpty(chatText))
+        {
+            string timeStr = DateTime.Now.ToString("HH:mm:ss");
+            chatText = $"{chatText}\n<color=#aaaaaa><size=60%>[{timeStr}]</size></color>";
+        }
+
         if (!sourcePlayer || !PlayerControl.LocalPlayer || PlayerControl.LocalPlayer.Data == null) return true;
 
 		// Simply run original method if seeGhosts is disabled or LocalPlayer already dead
@@ -85,6 +91,32 @@ public static class ChatController_Update
                 __instance.freeChatField.textArea.characterLimit = 100;
             }
         }
+
+        // Dark Mode Chat: recolor the input bar(s) to match the darkened bubbles. Applied both
+        // ways because the input field persists (not pooled), so we must restore it when off.
+        try
+        {
+            bool dark = CheatToggles.chatDarkMode;
+            Color inputBg = dark ? new Color(0.13f, 0.13f, 0.16f, 1f) : Color.white;
+            Color inputText = dark ? new Color(0.93f, 0.93f, 0.96f, 1f) : Color.black;
+
+            if (__instance?.freeChatField != null)
+            {
+                AbstractChatInputField field = __instance.freeChatField;
+                if (field.background != null)
+                    field.background.color = inputBg;
+                if (__instance.freeChatField.textArea != null && __instance.freeChatField.textArea.outputText != null)
+                    __instance.freeChatField.textArea.outputText.color = inputText;
+            }
+
+            if (__instance?.quickChatField != null)
+            {
+                AbstractChatInputField qfield = __instance.quickChatField;
+                if (qfield.background != null)
+                    qfield.background.color = inputBg;
+            }
+        }
+        catch { }
 
         if (__instance?.scroller?.Inner != null)
         {

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -25,4 +25,8 @@
     <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.735" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
   </ItemGroup>
+
+  <Target Name="Copy" AfterTargets="Build">
+      <Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\Program Files (x86)\Steam\steamapps\common\Among Us\BepInEx\plugins\" UseSymboliclinksIfPossible="true" ContinueOnError="true" />
+  </Target>
 </Project>

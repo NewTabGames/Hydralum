@@ -1,4 +1,4 @@
-﻿using HydraMenu.modules;
+using HydraMenu.modules;
 using UnityEngine;
 
 namespace HydraMenu.ui.sections
@@ -9,6 +9,9 @@ namespace HydraMenu.ui.sections
 
 		public override void Render()
 		{
+			GUILayout.Label("<color=#FFD700>Note:</color> Some options here can sometimes counteract the things you do (for example, 'Block position updates from server' could potentially block venting in some cases). It is recommended to turn them off unless you want to play legit and protect yourself.");
+			GUILayout.Space(5);
+
 			// Network
 			ModuleManager.forceDtls.Enabled = GUILayout.Toggle(ModuleManager.forceDtls.Enabled, "Force enable DTLS to encrypt network data");
 

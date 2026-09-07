@@ -12,6 +12,7 @@ public static class MalumCheats
     private static bool _isCamsAnimActive;
     private static float _handAnimTimer = 0f;
     private static bool _wasHandAnimActive = false;
+    private static float _lastAutoCompleteTime = 0f;
 
     public static void CloseMeetingCheat()
     {
@@ -120,6 +121,37 @@ public static class MalumCheats
             }
 
             CheatToggles.completeMyTasks = false;
+        }
+        
+        if (CheatToggles.autoCompleteTasks && Utils.isInGame && PlayerControl.LocalPlayer != null)
+        {
+            if (MeetingHud.Instance != null) return; // Do not auto-complete during meetings
+            
+            if (CheatToggles.autoCompleteNoAlwaysUpdates && GameOptionsManager.Instance != null && GameOptionsManager.Instance.CurrentGameOptions != null)
+            {
+                if (GameOptionsManager.Instance.CurrentGameOptions.GetInt(Int32OptionNames.TaskBarMode) == 0) // Normal/Always
+                {
+                    return;
+                }
+            }
+            
+            // Get time elapsed since game started
+            float gameTimeElapsed = Time.time - GameData.TimeGameStarted;
+            if (gameTimeElapsed >= CheatToggles.autoCompleteDelay)
+            {
+                if (Time.time - _lastAutoCompleteTime >= CheatToggles.autoCompleteInterval) // Smart interval
+                {
+                    foreach (var task in PlayerControl.LocalPlayer.myTasks)
+                    {
+                        if (!task.IsComplete)
+                        {
+                            Utils.CompleteTask(task);
+                            _lastAutoCompleteTime = Time.time;
+                            break; // Only complete one task at a time
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -339,36 +371,39 @@ public static class MalumCheats
     // sweeps the map in short hops instead of jumping around at random. The hop reuses the game's own
     // connected-vent move by briefly pointing the current vent's arrow at the target, so it travels
     // exactly like a normal vent-to-vent move. Poll this from a per-frame Update (GetKeyDown).
+    public static string VentNetworkLabel = "";
+    public static string VentNetworkLabelShadow = "";
+    private static List<Vent> _cachedTour = new List<Vent>();
+    private static int _cachedTourHash = -1;
+
     public static void VentNetworkInput()
     {
-        if (!CheatToggles.ventNetwork) return;
-
-        var forward = Input.GetKeyDown(KeyCode.RightArrow);
-        var backward = Input.GetKeyDown(KeyCode.LeftArrow);
-        if (!forward && !backward) return;
-
-        if (PlayerControl.LocalPlayer == null || ShipStatus.Instance == null) return;
-
-        var current = Vent.currentVent;
-        if (current == null)
+        var local = PlayerControl.LocalPlayer;
+        if (!CheatToggles.ventNetwork || local == null || ShipStatus.Instance == null)
         {
-            float minDst = float.MaxValue;
-            foreach (var v in ShipStatus.Instance.AllVents)
-            {
-                if (v == null) continue;
-                float dst = Vector2.Distance(PlayerControl.LocalPlayer.transform.position, v.transform.position);
-                if (dst < minDst)
-                {
-                    minDst = dst;
-                    current = v;
-                }
-            }
+            VentNetworkLabel = "";
+            VentNetworkLabelShadow = "";
+            ClearVentTracers();
+            return;
         }
 
-        if (current == null) return;
+        var current = Vent.currentVent;
+        if (current == null || !local.inVent)
+        {
+            VentNetworkLabel = "";
+            VentNetworkLabelShadow = "";
+            ClearVentTracers();
+            return;
+        }
 
         var tour = BuildNearestVentTour();
-        if (tour.Count < 2) return;
+        if (tour.Count < 2)
+        {
+            VentNetworkLabel = "";
+            VentNetworkLabelShadow = "";
+            ClearVentTracers();
+            return;
+        }
 
         var index = -1;
         for (var i = 0; i < tour.Count; i++)
@@ -376,28 +411,78 @@ public static class MalumCheats
             if (tour[i].Id == current.Id) { index = i; break; }
         }
 
-        if (index < 0) return;
+        if (index < 0)
+        {
+            VentNetworkLabel = "";
+            VentNetworkLabelShadow = "";
+            ClearVentTracers();
+            return;
+        }
 
-        var step = forward ? 1 : -1;
-        var target = tour[(index + step + tour.Count) % tour.Count];
+        var prevTarget = tour[(index - 1 + tour.Count) % tour.Count];
+        var nextTarget = tour[(index + 1) % tour.Count];
+
+        string prevRoom = Utils.GetRoomFromPosition(prevTarget.transform.position)?.RoomId.ToString() ?? prevTarget.gameObject.name.Replace("Vent_", "").Replace("Vent", "Unknown");
+        string nextRoom = Utils.GetRoomFromPosition(nextTarget.transform.position)?.RoomId.ToString() ?? nextTarget.gameObject.name.Replace("Vent_", "").Replace("Vent", "Unknown");
+
+        VentNetworkLabelShadow = $"< {prevRoom} - {nextRoom} >";
+        VentNetworkLabel = $"< <color=#3388FF>{prevRoom}</color> - <color=#00FF00>{nextRoom}</color> >";
+
+        foreach (var v in ShipStatus.Instance.AllVents)
+        {
+            if (v == null) continue;
+            if (v.Id == prevTarget.Id) Utils.DrawTracer(v.gameObject, local.gameObject, new Color(0.1f, 0.3f, 0.9f));
+            else if (v.Id == nextTarget.Id) Utils.DrawTracer(v.gameObject, local.gameObject, Color.green);
+            else Utils.DrawTracer(v.gameObject, local.gameObject, Color.clear);
+        }
+
+        var forward = Input.GetKeyDown(KeyCode.RightArrow);
+        var backward = Input.GetKeyDown(KeyCode.LeftArrow);
+        
+        Vent target = null;
+
+        if (forward || backward)
+        {
+            var step = forward ? 1 : -1;
+            target = tour[(index + step + tour.Count) % tour.Count];
+        }
+        else if (Input.GetMouseButtonDown(0) && Camera.main != null && !MalumESP.IsMouseOverActiveMenuGUI())
+        {
+            Vector2 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            float closestDist = 0.8f;
+
+            foreach (var v in ShipStatus.Instance.AllVents)
+            {
+                if (v == null || v.Id == current.Id) continue;
+                float dist = Vector2.Distance(mouseWorld, v.transform.position);
+                if (dist < closestDist)
+                {
+                    closestDist = dist;
+                    target = v;
+                }
+            }
+        }
+
+        if (target == null) return;
 
         try
         {
-            var local = PlayerControl.LocalPlayer;
-            if (local.inVent)
-            {
-                var original = current.Right;
-                current.Right = target;
-                current.ClickRight();
-                current.Right = original;
-            }
-            else
-            {
-                local.MyPhysics.RpcEnterVent(target.Id);
-                Vent.currentVent = target;
-            }
+            var original = current.Right;
+            current.Right = target;
+            current.ClickRight();
+            current.Right = original;
         }
         catch { }
+    }
+
+    private static void ClearVentTracers()
+    {
+        var local = PlayerControl.LocalPlayer;
+        if (local == null || ShipStatus.Instance == null) return;
+        foreach (var v in ShipStatus.Instance.AllVents)
+        {
+            if (v != null) Utils.DrawTracer(v.gameObject, local.gameObject, Color.clear);
+        }
     }
 
     // Orders every vent into a nearest-neighbour tour: start from the first vent, then repeatedly
@@ -406,6 +491,11 @@ public static class MalumCheats
     // on demand (deterministic from vent positions, so the order stays stable between presses).
     private static List<Vent> BuildNearestVentTour()
     {
+        if (ShipStatus.Instance == null || ShipStatus.Instance.AllVents == null) return new List<Vent>();
+        int hash = ShipStatus.Instance.AllVents.Length;
+        if (_cachedTour != null && _cachedTour.Count > 0 && _cachedTourHash == hash && _cachedTour[0] != null) return _cachedTour;
+
+        _cachedTourHash = hash;
         var remaining = new List<Vent>();
         foreach (var vent in ShipStatus.Instance.AllVents)
         {
@@ -440,6 +530,7 @@ public static class MalumCheats
             tour.Add(currentVent);
         }
 
+        _cachedTour = tour;
         return tour;
     }
 

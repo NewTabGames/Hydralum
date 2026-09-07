@@ -118,7 +118,12 @@ namespace HydraMenu.anticheat
 			// Put the read position back to its previous spot to not mess up the HandleRpc function or other patches
 			reader.Position = oldReadPosition;
 
-			return isValid || !discardRpc;
+			// A non-host client is not authoritative. Discarding an RPC the host has already accepted
+			// (e.g. an Oxygen/Reactor sabotage) does not stop it - it only desyncs us and hides the
+			// sabotage so we can't see or fix it. Let non-host apply it and stay in sync; only the
+			// host, who can actually punish, blocks invalid RPCs.
+			if(isValid || !discardRpc) return true;
+			return AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost;
 		}
 
 		public static bool HandleGameData(GameDataTypes type, MessageReader reader)
@@ -133,7 +138,9 @@ namespace HydraMenu.anticheat
 			// Put the read position back to its previous spot
 			reader.Position = oldReadPosition;
 
-			return isValid || !discardRpc;
+			// Same as HandleRpc: only the authoritative host discards; non-host stays in sync.
+			if(isValid || !discardRpc) return true;
+			return AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost;
 		}
 
 		public static void Flag(PlayerControl player, string reason, bool shouldPunish = true)

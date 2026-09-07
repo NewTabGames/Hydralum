@@ -3,7 +3,6 @@
 **/[Bb]in/
 [Oo]bj/
 **/[Oo]bj/
-DLLs/
 **/DLLs/
 
 # Visual Studio, Rider & IDE files
@@ -19,23 +18,9 @@ DLLs/
 *.sln.docstates
 *.DotSettings.user
 
-/MalumMenu-*
-*Steam-Itch*
-Antigravity.md
-DevMenu/
-**/DevMenu/
-scratch/
-**/scratch/
-
 # OS generated files
 .DS_Store
 Thumbs.db
 
-HydralumLogo.png
-**/HydralumLogo.png
-HydraScrapCode/
-**/HydraScrapCode/
-
-
-# Local untracked folder
+# Local untracked folder (holds DevMenu, DLLs output, HydralumLogo.png, scratch, notes, etc.)
 Others/

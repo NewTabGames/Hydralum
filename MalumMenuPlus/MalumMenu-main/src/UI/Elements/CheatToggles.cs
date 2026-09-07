@@ -28,6 +28,10 @@ public struct CheatToggles
     public static bool noKillCd;
     public static bool showTasksMenu;
     public static bool completeMyTasks;
+    public static bool autoCompleteTasks;
+    public static bool autoCompleteNoAlwaysUpdates;
+    public static float autoCompleteDelay = 10f;
+    public static float autoCompleteInterval = 10f;
     public static bool impostorTasks;
     public static bool killReach;
     public static bool killAnyone;
@@ -72,6 +76,17 @@ public struct CheatToggles
     public static bool mapGhosts;
     public static bool colorBasedMap;
 
+    // Radar (On-Screen Minimap)
+    public static bool radar;
+    public static bool radarBodies = true;
+    public static bool radarGhosts = true;
+
+    public static bool radarLocked;
+    public static float radarX = 12f;
+    public static float radarY = 60f;
+    public static int radarSize = 100;
+    public static int radarOpacity = 93;
+
     // Tracers
     public static bool tracersImps;
     public static bool tracersCrew;
@@ -82,6 +97,14 @@ public struct CheatToggles
 
     // Chat
     public static bool enableChat;
+    public static bool chatTimestamps;
+    
+    public static bool chatDarkMode;
+
+    // Advanced Chat Tags (Role / Level / Platform / HOST are shown via the ESP tab instead)
+    public static bool chatShowTasks = true;
+    public static bool chatShowVK = true;
+    public static bool chatShowFriendCode = true;
     public static bool unlockCharacters;
     public static bool bypassUrlBlock;
     public static bool longerMessages;
@@ -117,6 +140,14 @@ public struct CheatToggles
     // Vents
     public static bool unlockVents;
     public static bool kickVents;
+    
+    // Replay
+    public static bool replay;
+    public static int replayMask = 255;
+    public static bool replayClearAfterMeeting;
+    public static bool replayRecording = true;
+    public static int replaySize = 100;
+    public static int replayOpacity = 95;
     public static bool disableVents;
     public static bool ventsExcludeSelf;
     public static bool ventNetwork;
@@ -310,6 +341,23 @@ public struct CheatToggles
         writer.WriteLine($"ColorSniperTargetColor = {CheatToggles.colorSniperTargetColor}");
 
         writer.WriteLine();
+        writer.WriteLine("# Radar config");
+        writer.WriteLine($"RadarX = {CheatToggles.radarX.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+        writer.WriteLine($"RadarY = {CheatToggles.radarY.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+        writer.WriteLine($"RadarSize = {CheatToggles.radarSize}");
+        writer.WriteLine($"RadarOpacity = {CheatToggles.radarOpacity}");
+
+        writer.WriteLine();
+        writer.WriteLine("# Replay config");
+        writer.WriteLine($"ReplaySize = {CheatToggles.replaySize}");
+        writer.WriteLine($"ReplayOpacity = {CheatToggles.replayOpacity}");
+
+        writer.WriteLine();
+        writer.WriteLine("# Auto Complete Tasks config (seconds)");
+        writer.WriteLine($"AutoCompleteDelay = {CheatToggles.autoCompleteDelay.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+        writer.WriteLine($"AutoCompleteInterval = {CheatToggles.autoCompleteInterval.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+
+        writer.WriteLine();
         writer.WriteLine("# Menu appearance (scale 0.50 - 2.00, opacity 0.10 - 1.00)");
         writer.WriteLine($"MenuScale = {MenuUI.uiScale.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
         writer.WriteLine($"MenuOpacity = {MenuUI.uiOpacity.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
@@ -364,6 +412,17 @@ public struct CheatToggles
                 }
                 continue;
             }
+
+            if (name == "RadarX" && float.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var rx)) { CheatToggles.radarX = rx; continue; }
+            if (name == "RadarY" && float.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var ry)) { CheatToggles.radarY = ry; continue; }
+            if (name == "RadarSize" && int.TryParse(parts[1].Trim(), out var rsize)) { CheatToggles.radarSize = rsize; continue; }
+            if (name == "RadarOpacity" && int.TryParse(parts[1].Trim(), out var ropac)) { CheatToggles.radarOpacity = ropac; continue; }
+
+            if (name == "ReplaySize" && int.TryParse(parts[1].Trim(), out var rpsize)) { CheatToggles.replaySize = rpsize; continue; }
+            if (name == "ReplayOpacity" && int.TryParse(parts[1].Trim(), out var rpopac)) { CheatToggles.replayOpacity = rpopac; continue; }
+
+            if (name == "AutoCompleteDelay" && float.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var acDelay)) { CheatToggles.autoCompleteDelay = Mathf.Clamp(acDelay, 0f, 60f); continue; }
+            if (name == "AutoCompleteInterval" && float.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var acInterval)) { CheatToggles.autoCompleteInterval = Mathf.Clamp(acInterval, 0f, 20f); continue; }
 
             // Menu appearance settings (scale / opacity)
             if (name == "MenuScale")

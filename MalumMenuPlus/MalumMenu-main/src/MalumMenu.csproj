@@ -11,9 +11,10 @@
         <AmongUs>C:\Program Files (x86)\Steam\steamapps\common\Among Us</AmongUs>
     </PropertyGroup>
 
-    <!--<ItemGroup>
-        <EmbeddedResource Include=".\Assets\**" />
-    </ItemGroup>-->
+    <ItemGroup>
+        <EmbeddedResource Include="grid\*.json" />
+        <EmbeddedResource Include="resources\*.png" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.735" Private="false" ExcludeAssets="runtime;native" />
@@ -28,6 +29,6 @@
     </Target>
 
     <Target Name="CopyToDLLsFolder" AfterTargets="Build">
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildThisFileDirectory)..\..\..\DLLs\" />
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildThisFileDirectory)..\..\..\Others\DLLs\" />
     </Target>
 </Project>

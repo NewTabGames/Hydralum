@@ -651,6 +651,53 @@ public static class Utils
         return nameTag;
     }
 
+    // Extra chat-only tags (Tasks / Votekick count / Friend Code), appended after the chat name.
+    // Role / Level / Platform / HOST are already shown via the ESP tab's "See Roles" / "See Player
+    // Info" toggles inside GetNameTag, so they are intentionally not duplicated here.
+    public static string GetChatExtras(NetworkedPlayerInfo playerInfo)
+    {
+        if (playerInfo == null) return "";
+
+        string extras = "";
+        try
+        {
+            if (CheatToggles.chatShowTasks)
+            {
+                int totalTasks = 0;
+                int compTasks = 0;
+                var tasks = playerInfo.Tasks;
+                if (tasks != null)
+                {
+                    for (int i = 0; i < tasks.Count; i++)
+                    {
+                        totalTasks++;
+                        if (tasks[i] != null && tasks[i].Complete) compTasks++;
+                    }
+                }
+                extras += $" <size=65%><color=#00FF00>Tasks:{compTasks}/{totalTasks}</color></size>";
+            }
+
+            if (CheatToggles.chatShowVK)
+            {
+                int vkCount = 0;
+                if (VoteBanSystem.Instance != null && VoteBanSystem.Instance.Votes != null
+                    && VoteBanSystem.Instance.Votes.ContainsKey(playerInfo.ClientId))
+                {
+                    vkCount = VoteBanSystem.Instance.Votes[playerInfo.ClientId].Count;
+                }
+                extras += $" <size=65%><color=#FFA500>VK:{vkCount}/3</color></size>";
+            }
+
+            if (CheatToggles.chatShowFriendCode && !string.IsNullOrEmpty(playerInfo.FriendCode))
+            {
+                extras += $" <size=65%><color=#4169E1>{playerInfo.FriendCode}</color></size>";
+            }
+        }
+        catch { }
+
+        return extras;
+    }
+
     // Returns a player's NetworkedPlayerInfo from their client ID
     public static NetworkedPlayerInfo GetPlayerDataFromClientId(int clientId)
     {

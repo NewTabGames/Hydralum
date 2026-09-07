@@ -282,24 +282,46 @@ public static class MalumESP
             // Update colorblind text under avatar in chat bubble
             UpdateChatBubbleColorTag(chatBubble);
 
-            // Ensure name does not wrap onto a second line and collide with message text
-            chatBubble.NameText.enableWordWrapping = false;
+            // Let the name + tags wrap onto multiple lines instead of being clipped when long.
+            // The bubble is sized below to grow tall enough to fit the wrapped name plus the
+            // message, so the two don't overlap.
+            chatBubble.NameText.enableWordWrapping = true;
 
             // Update the player's nametag appropriately
             if (chatBubble.playerInfo != null)
             {
-                chatBubble.NameText.text = Utils.GetNameTag(chatBubble.playerInfo, chatBubble.NameText.text, true);
+                chatBubble.NameText.text = Utils.GetNameTag(chatBubble.playerInfo, chatBubble.NameText.text, true) + Utils.GetChatExtras(chatBubble.playerInfo);
             }
 
-            // Adjust the chatBubble's size to the new nametag to prevent issues
+            // Dark mode: recolor the bubble and flip the text so it stays readable. Applied both
+            // ways (bubbles are pooled/reused, so we can't leave a stale dark bubble behind).
+            bool dark = CheatToggles.chatDarkMode;
+            if (chatBubble.Background != null)
+                chatBubble.Background.color = dark ? new Color(0.13f, 0.13f, 0.16f, 1f) : Color.white;
+            if (chatBubble.TextArea != null)
+                chatBubble.TextArea.color = dark ? new Color(0.93f, 0.93f, 0.96f, 1f) : Color.black;
+            chatBubble.NameText.color = dark ? Color.white : Color.black;
+
+            // Adjust the chatBubble's size to fit the (possibly wrapped) nametag and message.
             if (chatBubble.Background != null && chatBubble.TextArea != null)
             {
                 chatBubble.NameText.ForceMeshUpdate(true, true);
-                chatBubble.Background.size = new Vector2(5.52f, 0.2f + chatBubble.NameText.GetNotDumbRenderedHeight() + chatBubble.TextArea.GetNotDumbRenderedHeight());
+                float nameH = chatBubble.NameText.GetNotDumbRenderedHeight();
+                float textH = chatBubble.TextArea.GetNotDumbRenderedHeight();
+
+                chatBubble.Background.size = new Vector2(5.52f, 0.2f + nameH + textH);
                 if (chatBubble.MaskArea != null)
                 {
                     chatBubble.MaskArea.size = chatBubble.Background.size - new Vector2(0f, 0.03f);
                 }
+
+                // Push the message below the (possibly multi-line) name so they don't overlap.
+                // Computed from the name's position each time (absolute, so it can't drift on
+                // pooled/reused bubbles). The name is top-anchored, so it grows downward.
+                Vector3 namePos = chatBubble.NameText.transform.localPosition;
+                Vector3 textPos = chatBubble.TextArea.transform.localPosition;
+                textPos.y = namePos.y - nameH - 0.06f;
+                chatBubble.TextArea.transform.localPosition = textPos;
             }
         }
         catch { }

@@ -7,6 +7,8 @@
 
 Hydralum is an Among Us mod for BepInEx 6 (IL2CPP) that combines MalumMenu and HydraMenu into a single package. You can switch between both menus in-game without crashes or conflicting keybinds.
 
+Hydralum by TyGamer4 (GPL-3.0)
+
 ## Features
 
 For a complete catalog of all cheats, toggles, protections, and utilities across both menus, see the [Features Documentation](Features.md).
@@ -48,7 +50,7 @@ Among Us uses Unity IL2CPP, so standard BepInEx 5 will not work. You need BepInE
 | `Delete` | Toggle Menu | Opens or closes the active menu (changeable in MalumMenu's Config tab). |
 | `Switch` (Button) | Switch Menus | Located in the top header of both menus to switch between MalumMenu and HydraMenu in-place. |
 | `Escape` **(Important)** | Close Menus & Fix Softlocks | Dismisses Match Info Guide, outfit laptop menus, dialogs, and resolves menu softlocks. |
-| `Left / Right Arrow` | Vent Hop | Cycles between vents when vent walk is active. |
+| `Left / Right Arrow` or `Left Click` | Vent Hop | Cycles between vents when vent walk is active, or click any vent to tp to it. |
 
 ## Requirements
 
@@ -77,6 +79,7 @@ Compiled DLLs are output to their respective `bin/Release/net6.0/` folders and c
 
 - [MalumMenu](https://github.com/scp222thj/MalumMenu) by scp222thj & astra1dev (GPL-3.0)
 - [Hydra](https://github.com/MrDiamond64/Hydra) by MrDiamond64 (GPL-3.0)
-- [Hydralum](https://github.com/NewTabGames/Hydralum) by NewTabGames (GPL-3.0)
+- [SickoMenu](https://github.com/g0aty/SickoMenu) by g0aty (GPL-3.0) - (Replay from Sicko)
+- [OnyxMenu](https://github.com/Veltrix-s/OnyxMenu) by Veltrix-s (GPL-3.0) - (Mini-map from Onyx)
 
 This project is licensed under the GNU General Public License v3.0 (GPL-3.0).

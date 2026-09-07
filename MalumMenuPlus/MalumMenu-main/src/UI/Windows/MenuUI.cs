@@ -160,6 +160,9 @@ public class MenuUI : MonoBehaviour
             CheatToggles.unfixableLights = false;
             CheatToggles.unfixableComms = false;
             CheatToggles.completeMyTasks = false;
+            // autoCompleteTasks is intentionally NOT reset here: it's a persistent toggle that
+            // should be enable-able in the lobby so its "start delay" can count from the real game
+            // start. Its own logic already no-ops until Utils.isInGame, so leaving it on is safe.
             CheatToggles.kickVents = false;
             CheatToggles.disableVents = false;
             CheatToggles.reportBody = false;
@@ -225,6 +228,34 @@ public class MenuUI : MonoBehaviour
         }
 
         AnnouncementManager.RenderToastGUI();
+
+        if (CheatToggles.radar && !MalumMenu.isPanicked)
+        {
+            RadarUI.DrawGui();
+        }
+        
+        if (MalumMenu.replayUI != null) 
+        {
+            MalumMenu.replayUI.DrawGui();
+        }
+
+        if (!string.IsNullOrEmpty(MalumCheats.VentNetworkLabel) && !MalumMenu.isPanicked)
+        {
+            GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 26,
+                fontStyle = FontStyle.Bold
+            };
+            
+            // Draw drop shadow
+            GUI.color = new Color(0, 0, 0, 0.8f);
+            GUI.Label(new Rect(0, Screen.height - 250 + 2, Screen.width, 50), MalumCheats.VentNetworkLabelShadow, labelStyle);
+            
+            // Draw text
+            GUI.color = Color.white;
+            GUI.Label(new Rect(0, Screen.height - 250, Screen.width, 50), MalumCheats.VentNetworkLabel, labelStyle);
+        }
 
         if (!isGUIActive || MalumMenu.isPanicked) return;
 

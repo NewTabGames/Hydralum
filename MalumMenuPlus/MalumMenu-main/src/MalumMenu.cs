@@ -30,6 +30,7 @@ public partial class MalumMenu : BasePlugin
     public static ProtectUI protectUI;
     public static InventoryOutfitsUI inventoryOutfitsUI;
     public static KeybindListener keybindListener;
+    public static ReplayUI replayUI;
 
     public static string malumVersion = "3.3.0";
     public static List<string> supportedAU = new List<string> { "2026.8.18", "2026.8.18s", "2026.6.5", "2026.3.31" };
@@ -205,6 +206,7 @@ public partial class MalumMenu : BasePlugin
         tasksUI = AddComponent<TasksUI>();
         protectUI = AddComponent<ProtectUI>();
         inventoryOutfitsUI = AddComponent<InventoryOutfitsUI>();
+        replayUI = AddComponent<ReplayUI>();
         // rolesUI = AddComponent<RolesUI>();
 
         // Components

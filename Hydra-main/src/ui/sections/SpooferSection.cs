@@ -1,4 +1,4 @@
-﻿using HydraMenu.modules;
+using HydraMenu.modules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -78,6 +78,7 @@ namespace HydraMenu.ui.sections
 			GUILayout.Space(5);
 			GUILayout.Label("Platform Spoofer:");
 
+			ModuleManager.spoofDevice.Enabled = GUILayout.Toggle(ModuleManager.spoofDevice.Enabled, "Enable Platform Spoofing");
 			GUILayout.Label($"Spoofed Platform: {ModuleManager.spoofDevice.SpoofedPlatform}");
 			ModuleManager.spoofDevice.SpoofedPlatform = (Platforms)GUILayout.HorizontalSlider((float)ModuleManager.spoofDevice.SpoofedPlatform, 0, 10);
 		}
