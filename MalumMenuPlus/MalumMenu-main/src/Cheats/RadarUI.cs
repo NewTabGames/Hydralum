@@ -984,9 +984,6 @@ internal static class NocturneStyle
     internal static int ThemeCount => Themes.Length;
     internal static NocturnePalette ThemeAt(int i) => Themes[Mathf.Clamp(i, 0, Themes.Length - 1)];
 
-    private static NocturnePalette _custom;
-    private static float _customH = -1f, _customS = -1f, _customV = -1f;
-
     private static NocturnePalette _resolved;
     private static int _resolvedFrame = -1;
 
@@ -1102,15 +1099,8 @@ internal static class NocturneStyle
         GUI.Box(r, GUIContent.none, _fill);
     }
 
-    internal static bool Lite;
-
     internal static void FillRounded(Rect r, Color c, int radius)
     {
-        if (Lite)
-        {
-            Fill(r, c);
-            return;
-        }
         GUIStyle st = RoundedStyle(radius);
         Color prev = GUI.color;
         GUI.color = new Color(c.r, c.g, c.b, c.a * prev.a);
@@ -1167,14 +1157,6 @@ internal static class NocturneStyle
 
     internal static void StrokeRounded(Rect r, Color c, int radius, int thickness)
     {
-        if (Lite)
-        {
-            Fill(new Rect(r.x, r.y, r.width, 1f), c);
-            Fill(new Rect(r.x, r.yMax - 1f, r.width, 1f), c);
-            Fill(new Rect(r.x, r.y, 1f, r.height), c);
-            Fill(new Rect(r.xMax - 1f, r.y, 1f, r.height), c);
-            return;
-        }
         radius = Mathf.Clamp(radius, 3, 40);
         thickness = Mathf.Clamp(thickness, 1, 6);
         int key = radius * 16 + thickness;
@@ -1230,8 +1212,6 @@ internal static class NocturneStyle
 
     internal static void Glow(Rect r, Color c)
     {
-        if (Lite)
-            return;
         if (_glowTex == null)
             _glowTex = BuildGlow(96);
         if (_glowStyle == null)
@@ -1372,7 +1352,6 @@ internal static class NocturneDoors
     private static readonly HashSet<int> _seen = new HashSet<int>();
     private static float _next;
 
-    public static bool KeepOpen;
     public static bool HasPins => _pinned.Count > 0;
 
     public static void CloseAll() => ForEachRoom(Close);
@@ -1415,11 +1394,6 @@ internal static class NocturneDoors
             return;
         _next = Time.unscaledTime + 0.7f;
 
-        if (KeepOpen)
-        {
-            OpenClosed(ss);
-            return;
-        }
         if (_pinned.Count == 0)
             return;
         foreach (int r in _pinned)
@@ -1441,25 +1415,6 @@ internal static class NocturneDoors
                 int r = (int)d.Room;
                 if (_seen.Add(r))
                     act(r);
-            }
-        }
-        catch { }
-    }
-
-    private static void OpenClosed(ShipStatus ss)
-    {
-        if (ss.AllDoors == null)
-            return;
-        try
-        {
-            foreach (OpenableDoor d in ss.AllDoors)
-            {
-                if (d == null || IsDecon((int)d.Room))
-                    continue;
-                PlainDoor pd = d.TryCast<PlainDoor>();
-                if (pd != null && pd.Open)
-                    continue;
-                OpenDoor(ss, d);
             }
         }
         catch { }
