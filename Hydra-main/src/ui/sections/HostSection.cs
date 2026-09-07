@@ -105,6 +105,18 @@ namespace HydraMenu.ui.sections
 			GUILayout.EndHorizontal();
 
 			GUILayout.BeginHorizontal();
+			if(GUILayout.Button("Spawn Map (x100)"))
+			{
+				AmongUsClient.Instance.StartCoroutine(SpawnMapMultiple(selectedMap, 100).WrapToIl2Cpp());
+			}
+
+			if(GUILayout.Button("Clear All"))
+			{
+				AmongUsClient.Instance.StartCoroutine(ClearAllSpawned().WrapToIl2Cpp());
+			}
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Despawn Lobby"))
 			{
 				if(lobbyList.Count > 0)
@@ -305,6 +317,89 @@ namespace HydraMenu.ui.sections
 			shipList.Enqueue(ship);
 
 			Hydra.notifications.Send("Map Spawner", $"{(MapNames)mapId} has been spawned.", 5);
+		}
+
+		// Spawns the selected map `count` times, spacing each spawn out to avoid hitting message
+		// rate limits (which would disconnect us). Every spawn is tracked so "Clear All" can undo it.
+		private static IEnumerator SpawnMapMultiple(byte mapId, int count)
+		{
+			Hydra.Log.LogInfo($"Attempting to spawn map id {mapId} x{count}");
+
+			if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
+			{
+				Hydra.notifications.Send("Map Spawner", "This feature can only be used if you are the host of the lobby.");
+				yield break;
+			}
+
+			if(AmongUsClient.Instance.ShipPrefabs == null || mapId >= AmongUsClient.Instance.ShipPrefabs.Count)
+			{
+				Hydra.notifications.Send("Map Spawner", "That map is not available or prefabs not loaded.");
+				yield break;
+			}
+
+			int spawned = 0;
+			for(int i = 0; i < count; i++)
+			{
+				AsyncOperationHandle<GameObject> asyncHandle = AmongUsClient.Instance.ShipPrefabs[mapId].InstantiateAsync(null, false);
+				while(!asyncHandle.IsDone)
+				{
+					yield return null;
+				}
+
+				if(asyncHandle.Result == null)
+				{
+					continue;
+				}
+
+				ShipStatus ship = asyncHandle.Result.GetComponent<ShipStatus>();
+				if(ship == null)
+				{
+					continue;
+				}
+
+				BatchedMessage batch = new BatchedMessage();
+				batch.QueueSpawn(ship, -2, SpawnFlags.None);
+				batch.FinishBatch();
+
+				shipList.Enqueue(ship);
+				spawned++;
+
+				yield return Effects.Wait(0.05f);
+			}
+
+			Hydra.notifications.Send("Map Spawner", $"Spawned {spawned} instance(s) of {(MapNames)mapId}.", 5);
+		}
+
+		// Despawns every map and lobby we have spawned, clearing both tracking queues.
+		private static IEnumerator ClearAllSpawned()
+		{
+			int count = 0;
+
+			while(shipList.Count > 0)
+			{
+				InnerNetObject ship = shipList.Dequeue();
+				if(ship == null)
+				{
+					continue;
+				}
+
+				try { ship.Despawn(); count++; } catch { }
+				yield return Effects.Wait(0.05f);
+			}
+
+			while(lobbyList.Count > 0)
+			{
+				InnerNetObject lobby = lobbyList.Dequeue();
+				if(lobby == null)
+				{
+					continue;
+				}
+
+				try { lobby.Despawn(); count++; } catch { }
+				yield return Effects.Wait(0.05f);
+			}
+
+			Hydra.notifications.Send("Map Spawner", $"Despawned {count} spawned object(s).", 5);
 		}
 
 		private static IEnumerator ShapeshiftAll(PlayerControl target)
