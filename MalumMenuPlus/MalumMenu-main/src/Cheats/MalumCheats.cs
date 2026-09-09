@@ -936,7 +936,11 @@ public static class MalumCheats
                     if (AmongUsClient.Instance != null && PlayerControl.LocalPlayer.MyPhysics != null)
                     {
                         Vector2 myPos = PlayerControl.LocalPlayer.GetTruePosition();
-                        PlayerControl.LocalPlayer.MyPhysics.RpcPet(myPos, handPos);
+                        // Send-only pet message: peers still see the animated hand, but the petting is NOT
+                        // executed on our own client, so the local player never drops into the petting pose
+                        // (which was freezing movement every ~0.08s and making walking stutter).
+                        RpcPetMessage petMsg = new(PlayerControl.LocalPlayer.MyPhysics.NetId, myPos, handPos);
+                        AmongUsClient.Instance.LateBroadcastReliableMessage(Unsafe.As<IGameDataMessage>(petMsg));
                     }
                 }
                 catch { }
