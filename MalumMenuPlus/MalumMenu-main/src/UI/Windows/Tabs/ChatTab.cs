@@ -28,6 +28,8 @@ public class ChatTab : ITab
         CheatToggles.lowerRateLimits = GUILayout.Toggle(CheatToggles.lowerRateLimits, " Lower Rate Limits");
 
         CheatToggles.chatDarkMode = GUILayout.Toggle(CheatToggles.chatDarkMode, " Dark Mode Chat");
+
+        CheatToggles.showChatLog = GUILayout.Toggle(CheatToggles.showChatLog, " Show Chat Log");
     }
 
     private void DrawTextbox()
@@ -36,11 +38,25 @@ public class ChatTab : ITab
 
         CheatToggles.unlockCharacters = GUILayout.Toggle(CheatToggles.unlockCharacters, " Unlock Extra Characters");
 
-        CheatToggles.longerMessages = GUILayout.Toggle(CheatToggles.longerMessages, " Allow Longer Messages");
-
         CheatToggles.unlockClipboard = GUILayout.Toggle(CheatToggles.unlockClipboard, " Unlock Clipboard");
 
         CheatToggles.chatTimestamps = GUILayout.Toggle(CheatToggles.chatTimestamps, " Add Timestamps to Messages");
+
+        if (CheatToggles.chatTimestamps)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Space(20);
+
+            var prevTsBg = GUI.backgroundColor;
+            GUI.backgroundColor = CheatToggles.chatTimestamp24hr ? new Color(0.2f, 0.85f, 0.5f) : prevTsBg;
+            if (GUILayout.Button("24hr", GUIStylePreset.NormalButton)) CheatToggles.chatTimestamp24hr = true;
+
+            GUI.backgroundColor = !CheatToggles.chatTimestamp24hr ? new Color(0.2f, 0.85f, 0.5f) : prevTsBg;
+            if (GUILayout.Button("12hr", GUIStylePreset.NormalButton)) CheatToggles.chatTimestamp24hr = false;
+
+            GUI.backgroundColor = prevTsBg;
+            GUILayout.EndHorizontal();
+        }
 
         GUILayout.Space(15);
         GUILayout.Label("Advanced Chat Tags", GUIStylePreset.TabSubtitle);

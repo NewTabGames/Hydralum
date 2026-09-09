@@ -144,3 +144,32 @@ public static class TrackerRole_FindClosestTarget
         return false;
     }
 }
+
+[HarmonyPatch(typeof(GuardianAngelRole), nameof(GuardianAngelRole.FindClosestTarget))]
+public static class GuardianAngelRole_FindClosestTarget
+{
+    // Prefix patch of GuardianAngelRole.FindClosestTarget for two Guardian Angel settings:
+    //   Infinite Protection Range: choose the closest living player with no distance limit (like the
+    //     other role "reach" patches; GuardianAngelRole exposes no range value of its own).
+    //   Ignore Impostors: skip impostor-role players when picking who to protect.
+    // (GuardianAngelRole has no IsValidTarget of its own, so we validate targets ourselves: living,
+    // not the local player, with an active collider.)
+    public static bool Prefix(ref PlayerControl __result)
+    {
+        if (!CheatToggles.gaInfiniteRange && !CheatToggles.gaIgnoreImpostors) return true;
+
+        var sorted = Utils.GetPlayersSortedByDistance();
+        if (sorted == null) { __result = null; return false; }
+
+        var local = PlayerControl.LocalPlayer;
+        var playerList = sorted.Where(player =>
+            !player.IsNull() && player.Data != null && !player.Data.IsDead &&
+            (local == null || player != local) &&
+            player.Collider != null && player.Collider.enabled &&
+            (!CheatToggles.gaIgnoreImpostors || player.Data.Role == null || !player.Data.Role.IsImpostor)).ToList();
+
+        __result = playerList.Count > 0 ? playerList[0] : null;
+
+        return false;
+    }
+}

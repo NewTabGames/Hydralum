@@ -241,20 +241,79 @@ public class MenuUI : MonoBehaviour
 
         if (!string.IsNullOrEmpty(MalumCheats.VentNetworkLabel) && !MalumMenu.isPanicked)
         {
+            // Scale the font and vertical offset with the resolution (relative to 1080p) so the label
+            // isn't tiny on WQXGA / 4K displays.
+            float dpi = Mathf.Max(1f, Screen.height / 1080f);
+
             GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleCenter,
-                fontSize = 26,
+                fontSize = Mathf.RoundToInt(26f * dpi),
                 fontStyle = FontStyle.Bold
             };
-            
+
+            float y = Screen.height - 250f * dpi;
+            float h = 50f * dpi;
+
             // Draw drop shadow
             GUI.color = new Color(0, 0, 0, 0.8f);
-            GUI.Label(new Rect(0, Screen.height - 250 + 2, Screen.width, 50), MalumCheats.VentNetworkLabelShadow, labelStyle);
-            
+            GUI.Label(new Rect(0, y + 2f * dpi, Screen.width, h), MalumCheats.VentNetworkLabelShadow, labelStyle);
+
             // Draw text
             GUI.color = Color.white;
-            GUI.Label(new Rect(0, Screen.height - 250, Screen.width, 50), MalumCheats.VentNetworkLabel, labelStyle);
+            GUI.Label(new Rect(0, y, Screen.width, h), MalumCheats.VentNetworkLabel, labelStyle);
+        }
+
+        // Centred Ping / FPS overlay - replaces the game's off-centre ping so the line stays dead-centre
+        // (drawn in a full-width, centre-aligned rect, so it sits at true screen centre regardless of length).
+        // Only while actually inside a lobby or a live game - not the main menu and not while searching for
+        // a lobby (matchmaking is still NetworkModes.OnlineGame, but LobbyBehaviour/ShipStatus don't exist yet).
+        if ((CheatToggles.showPing || CheatToggles.showFps) && !MalumMenu.isPanicked
+            && AmongUsClient.Instance != null && AmongUsClient.Instance.NetworkMode == NetworkModes.OnlineGame
+            && (LobbyBehaviour.Instance != null || ShipStatus.Instance != null))
+        {
+            float pfDpi = Mathf.Max(1f, Screen.height / 1080f);
+
+            string rich = "";
+            string plain = "";
+
+            if (CheatToggles.showPing)
+            {
+                int ping = AmongUsClient.Instance.Ping;
+                rich += Utils.GetColoredPingText($"PING: {ping} ms", ping);
+                plain += $"PING: {ping} ms";
+            }
+
+            if (CheatToggles.showFps)
+            {
+                if (rich.Length > 0) { rich += "   "; plain += "   "; }
+                int fps = Utils.GetFps();
+                string fpsColor = fps >= 60 ? "#00ff00ff" : (fps >= 30 ? "#ffff00ff" : "#ff0000ff");
+                rich += $"<color={fpsColor}>FPS: {fps}</color>";
+                plain += $"FPS: {fps}";
+            }
+
+            if (rich.Length > 0)
+            {
+                GUIStyle pingStyle = new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    fontSize = Mathf.RoundToInt(22f * pfDpi),
+                    fontStyle = FontStyle.Bold,
+                    richText = true
+                };
+
+                float pfH = 30f * pfDpi;
+                float pfY = Screen.height - 48f * pfDpi;
+
+                // Drop shadow (plain text so the dark colour isn't overridden by the rich-text tags)
+                GUI.color = new Color(0, 0, 0, 0.8f);
+                GUI.Label(new Rect(0, pfY + 2f * pfDpi, Screen.width, pfH), plain, pingStyle);
+
+                // Main text
+                GUI.color = Color.white;
+                GUI.Label(new Rect(0, pfY, Screen.width, pfH), rich, pingStyle);
+            }
         }
 
         if (!isGUIActive || MalumMenu.isPanicked) return;

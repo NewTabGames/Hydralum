@@ -12,10 +12,17 @@ public static class ChatController_AddChat
 	// Basically does what the original method did with the required modifications
 	public static bool Prefix(PlayerControl sourcePlayer, ref string chatText, bool censor, ChatController __instance)
     {
+        // Chat Log: snapshot the raw message before any timestamp/formatting is applied below.
+        ChatLogRecorder.Capture(sourcePlayer, chatText);
+
         if (CheatToggles.chatTimestamps && !string.IsNullOrEmpty(chatText))
         {
-            string timeStr = DateTime.Now.ToString("HH:mm:ss");
-            chatText = $"{chatText}\n<color=#aaaaaa><size=60%>[{timeStr}]</size></color>";
+            // DateTime.Now is already the PC's local time; the toggle just picks 24-hour vs 12-hour display.
+            string timeStr = DateTime.Now.ToString(CheatToggles.chatTimestamp24hr ? "HH:mm:ss" : "h:mm:ss tt");
+            // Tuck the timestamp into the bottom corner opposite the avatar: your own messages sit on the
+            // right (avatar right), so their timestamp goes bottom-left; everyone else's goes bottom-right.
+            string tsAlign = (sourcePlayer != null && sourcePlayer.AmOwner) ? "left" : "right";
+            chatText = $"{chatText}\n<align=\"{tsAlign}\"><color=#aaaaaa><size=60%>[{timeStr}]</size></color></align>";
         }
 
         if (!sourcePlayer || !PlayerControl.LocalPlayer || PlayerControl.LocalPlayer.Data == null) return true;
@@ -81,15 +88,9 @@ public static class ChatController_Update
     {
         if (__instance?.freeChatField?.textArea != null)
         {
-            if (CheatToggles.longerMessages)
-            {
-                // Increasing the maximum length by 20 characters still avoids anticheat kicks
-                __instance.freeChatField.textArea.characterLimit = 120;
-            }
-            else
-            {
-                __instance.freeChatField.textArea.characterLimit = 100;
-            }
+            // Chat input is capped at 120 — the highest length that reliably avoids anticheat kicks.
+            // (Anything above 120 gets you kicked no matter what, so it isn't offered.)
+            __instance.freeChatField.textArea.characterLimit = 120;
         }
 
         // Dark Mode Chat: recolor the input bar(s) to match the darkened bubbles. Applied both

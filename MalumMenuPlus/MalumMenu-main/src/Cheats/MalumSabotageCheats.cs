@@ -351,6 +351,13 @@ public static class MalumSabotageCheats
                 DisableAllSabotages(shipStatus, currentMapID);
             }
 
+            // Auto-Fix Critical Sabotages: lets a game-ending sabotage (Reactor / Oxygen) run, then
+            // repairs it in the final few seconds so it never actually ends the game.
+            if (CheatToggles.autoFixCriticalSab)
+            {
+                AutoFixCriticalSabotages(shipStatus, currentMapID);
+            }
+
             if (CheatToggles.sabotageAll)
             {
                 EnableAllSabotages();
@@ -363,6 +370,76 @@ public static class MalumSabotageCheats
             HandleComms(shipStatus, currentMapID);
             HandleElectrical(shipStatus, currentMapID);
             HandleDoors(shipStatus);
+        }
+        catch { }
+    }
+
+    // Auto-Fix Critical Sabotages: the only sabotages that end the game are Reactor (meltdown) and
+    // Oxygen (O2 depletion) — on Airship the "reactor" is HeliSabotageSystem. Each exposes a Countdown
+    // (seconds until the game is lost). We leave the sabotage active until the countdown reaches the
+    // last few seconds, then repair it, so crew still scramble but the game is never actually lost.
+    private const float CriticalFixThreshold = 3f;
+    private static float _lastCriticalFix;
+
+    private static void AutoFixCriticalSabotages(ShipStatus shipStatus, byte mapId)
+    {
+        try
+        {
+            // Throttle repairs so we don't spam RPCs across the ~1s window before the host relays the fix
+            if (UnityEngine.Time.time - _lastCriticalFix < 0.5f) return;
+
+            var systems = shipStatus.Systems;
+            if (systems == null) return;
+
+            // Reactor: Polus uses Laboratory, Airship uses HeliSabotage, everything else uses Reactor
+            switch (mapId)
+            {
+                case 2:
+                    if (systems.ContainsKey(SystemTypes.Laboratory))
+                    {
+                        var lab = systems[SystemTypes.Laboratory].Cast<ReactorSystemType>();
+                        if (lab.IsActive && lab.Countdown <= CriticalFixThreshold)
+                        {
+                            shipStatus.RpcUpdateSystem(SystemTypes.Laboratory, 16);
+                            _lastCriticalFix = UnityEngine.Time.time;
+                        }
+                    }
+                    break;
+                case 4:
+                    if (systems.ContainsKey(SystemTypes.HeliSabotage))
+                    {
+                        var heli = systems[SystemTypes.HeliSabotage].Cast<HeliSabotageSystem>();
+                        if (heli.IsActive && heli.Countdown <= CriticalFixThreshold)
+                        {
+                            shipStatus.RpcUpdateSystem(SystemTypes.HeliSabotage, 16 | 0);
+                            shipStatus.RpcUpdateSystem(SystemTypes.HeliSabotage, 16 | 1);
+                            _lastCriticalFix = UnityEngine.Time.time;
+                        }
+                    }
+                    break;
+                default:
+                    if (systems.ContainsKey(SystemTypes.Reactor))
+                    {
+                        var reactor = systems[SystemTypes.Reactor].Cast<ReactorSystemType>();
+                        if (reactor.IsActive && reactor.Countdown <= CriticalFixThreshold)
+                        {
+                            shipStatus.RpcUpdateSystem(SystemTypes.Reactor, 16);
+                            _lastCriticalFix = UnityEngine.Time.time;
+                        }
+                    }
+                    break;
+            }
+
+            // Oxygen (LifeSupp) — present on the maps that have an O2 system
+            if (systems.ContainsKey(SystemTypes.LifeSupp))
+            {
+                var o2 = systems[SystemTypes.LifeSupp].Cast<LifeSuppSystemType>();
+                if (o2.IsActive && o2.Countdown <= CriticalFixThreshold)
+                {
+                    shipStatus.RpcUpdateSystem(SystemTypes.LifeSupp, 16);
+                    _lastCriticalFix = UnityEngine.Time.time;
+                }
+            }
         }
         catch { }
     }

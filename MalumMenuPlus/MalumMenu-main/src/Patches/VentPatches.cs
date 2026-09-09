@@ -49,6 +49,14 @@ public static class Vent_EnterVent
         // Fire the disable-vents boot immediately on this RPC event
         MalumCheats.OnPlayerEnteredVent(pc);
 
+        // Bug fix attempt: force the directional arrows to build the moment the local player enters a vent
+        // while Vent Network is on. Without this the game's default connected-vent arrows sometimes don't
+        // paint until you hop to another vent (which triggers SetButtons via ClickRight).
+        if (pc != null && pc.AmOwner && CheatToggles.ventNetwork && __instance != null)
+        {
+            try { __instance.SetButtons(true); } catch { }
+        }
+
         if (!CheatToggles.logVents || !Utils.isShip) return;
 
         var (realPlayerName, displayPlayerName, isDisguised) = Utils.GetPlayerIdentity(pc);

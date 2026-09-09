@@ -13,6 +13,31 @@ public static class MinimapHandler
         return CheatToggles.mapCrew || CheatToggles.mapGhosts || CheatToggles.mapImps;
     }
 
+    // --- Freeze last positions (map during meetings) ------------------------------------------------
+    // While no meeting is up we record every player's world position each frame. When a meeting/exile is
+    // active the map draws these frozen positions instead of live ones, so opening the map mid-meeting
+    // shows where everyone was just BEFORE the meeting, not everyone bunched at the cafeteria table.
+    public static readonly Dictionary<byte, Vector3> lastPositions = new Dictionary<byte, Vector3>();
+
+    public static bool IsMeetingActive => MeetingHud.Instance != null || ExileController.Instance != null;
+
+    // Called every frame from HudManager.Update.
+    public static void TrackPositions()
+    {
+        if (ShipStatus.Instance == null || PlayerControl.AllPlayerControls == null)
+        {
+            lastPositions.Clear();
+            return;
+        }
+        if (IsMeetingActive) return; // freeze: keep the pre-meeting snapshot
+
+        foreach (var p in PlayerControl.AllPlayerControls)
+        {
+            if (p == null || p.Data == null) continue;
+            lastPositions[p.PlayerId] = p.transform.position;
+        }
+    }
+
     public static void HandleHerePoint(HerePoint herePoint)
     {
         Color herePointColor = new Color();
@@ -74,8 +99,13 @@ public static class MinimapHandler
                 herePoint.sprite.material.SetColor(PlayerMaterial.BodyColor, herePointColor);
                 herePoint.sprite.material.SetColor(PlayerMaterial.VisorColor, Palette.VisorColor);
 
-                // Sync the position of active herePoint icons with their players
-                var vector = herePoint.player.transform.position;
+                // Sync the position of active herePoint icons with their players. During a meeting/exile,
+                // use the frozen pre-meeting position instead of the live (cafeteria) one.
+                Vector3 vector;
+                if (IsMeetingActive && lastPositions.TryGetValue(herePoint.player.PlayerId, out var frozen))
+                    vector = frozen;
+                else
+                    vector = herePoint.player.transform.position;
                 float mapScale = (ShipStatus.Instance != null && ShipStatus.Instance.MapScale != 0f) ? ShipStatus.Instance.MapScale : 1f;
                 vector /= mapScale;
                 float localScaleX = ShipStatus.Instance != null ? ShipStatus.Instance.transform.localScale.x : 1f;

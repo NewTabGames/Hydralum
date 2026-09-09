@@ -32,6 +32,7 @@ namespace HydraMenu.modules
 
 				configList.Add(currentConfig);
 				SaveConfig(currentConfig);
+				SaveLastActive();
 				return;
 			}
 
@@ -43,16 +44,43 @@ namespace HydraMenu.modules
 				configList.Add(Path.GetFileNameWithoutExtension(file));
 			}
 
-			// There should always be a config named "Hydra" present
-			if(!configList.Contains(currentConfig))
+			// Folder exists but holds no configs (e.g. they were all deleted) — seed the default one
+			if(configList.Count == 0)
 			{
 				configList.Add(currentConfig);
 				SaveConfig(currentConfig);
+				SaveLastActive();
 				return;
 			}
 
-			// Load the default config
+			// Decide which config to load on startup: the one that was active last launch if it still
+			// exists, otherwise "Hydra" if present, otherwise the first available. This is what stops a
+			// renamed config from being ignored (and a blank Hydra.json from being recreated) next launch.
+			string lastActive = ReadLastActive();
+			if(lastActive != null && configList.Contains(lastActive)) currentConfig = lastActive;
+			else if(configList.Contains("Hydra")) currentConfig = "Hydra";
+			else currentConfig = configList[0];
+
 			LoadConfig(currentConfig);
+			SaveLastActive();
+		}
+
+		// Path of the "which config was active" marker. A plain .txt so the *.json discovery above skips it.
+		private string LastActivePath => Path.Combine(CONFIG_PATH, "last_config.txt");
+
+		// Remembers/reads the active config name so the next launch reloads it instead of always
+		// defaulting to "Hydra".
+		private void SaveLastActive()
+		{
+			try { File.WriteAllText(LastActivePath, currentConfig); }
+			catch { Hydra.Log.LogWarning("Failed to write last active config marker"); }
+		}
+
+		private string ReadLastActive()
+		{
+			try { if(File.Exists(LastActivePath)) return File.ReadAllText(LastActivePath).Trim(); }
+			catch { }
+			return null;
 		}
 
 		public string GetConfigPath(string configName)
@@ -89,6 +117,7 @@ namespace HydraMenu.modules
 			Anticheat.LoadConfigData(configData.Anticheat);
 
 			currentConfig = configName;
+			SaveLastActive();
 			Hydra.Log.LogInfo($"Loaded config {configName}");
 		}
 
@@ -141,6 +170,90 @@ namespace HydraMenu.modules
 			configList.Add(configName);
 			SaveConfig(configName);
 			currentConfig = configName;
+			SaveLastActive();
+		}
+
+		// Cleans a user-entered name into something safe to use as a filename. Returns null if unusable.
+		public string SanitizeConfigName(string name)
+		{
+			if(string.IsNullOrWhiteSpace(name)) return null;
+			name = name.Trim();
+			foreach(char c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '_');
+			if(name.Length > 32) name = name.Substring(0, 32);
+			return string.IsNullOrWhiteSpace(name) ? null : name;
+		}
+
+		// Creates a config with a user-provided name (the "add" half of the manager). Returns false if
+		// the name is invalid or already taken.
+		public bool CreateNamedConfig(string configName)
+		{
+			configName = SanitizeConfigName(configName);
+			if(configName == null || configList.Contains(configName)) return false;
+
+			// Save the config we're leaving, then create and switch to the new one
+			SaveConfig(currentConfig);
+			configList.Add(configName);
+			SaveConfig(configName);
+			currentConfig = configName;
+			SaveLastActive();
+			return true;
+		}
+
+		// Deletes a config file. Refuses to delete the very last one so there's always a config to use.
+		// If the deleted config was current, switches to (and loads) another.
+		public bool DeleteConfig(string configName)
+		{
+			if(!configList.Contains(configName) || configList.Count <= 1) return false;
+
+			try
+			{
+				string path = GetConfigPath(configName);
+				if(File.Exists(path)) File.Delete(path);
+			}
+			catch
+			{
+				Hydra.Log.LogError($"Failed to delete config {configName}");
+				return false;
+			}
+
+			configList.Remove(configName);
+
+			if(currentConfig == configName)
+			{
+				currentConfig = configList[0];
+				LoadConfig(currentConfig);
+			}
+
+			return true;
+		}
+
+		// Renames a config file. Returns false if the new name is invalid/taken or the old one is missing.
+		public bool RenameConfig(string oldName, string newName)
+		{
+			newName = SanitizeConfigName(newName);
+			if(newName == null || !configList.Contains(oldName) || configList.Contains(newName)) return false;
+
+			// Persist the latest state into the old file first if it's the active config
+			if(currentConfig == oldName) SaveConfig(oldName);
+
+			try
+			{
+				File.Move(GetConfigPath(oldName), GetConfigPath(newName));
+			}
+			catch
+			{
+				Hydra.Log.LogError($"Failed to rename config {oldName} to {newName}");
+				return false;
+			}
+
+			configList.Remove(oldName);
+			configList.Add(newName);
+			if(currentConfig == oldName)
+			{
+				currentConfig = newName;
+				SaveLastActive();
+			}
+			return true;
 		}
 	}
 }

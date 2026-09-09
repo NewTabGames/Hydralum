@@ -73,6 +73,8 @@ public class ESPTab : ITab
         
         CheatToggles.seePlayerInfo = GUILayout.Toggle(CheatToggles.seePlayerInfo, " See Player Info");
 
+        CheatToggles.showFriendCode = GUILayout.Toggle(CheatToggles.showFriendCode, " See Friend Code");
+
         CheatToggles.seeRoles = GUILayout.Toggle(CheatToggles.seeRoles, " See Roles");
 
         CheatToggles.seeGhosts = GUILayout.Toggle(CheatToggles.seeGhosts, " See Ghosts");
@@ -87,7 +89,13 @@ public class ESPTab : ITab
 
         CheatToggles.ventEsp = GUILayout.Toggle(CheatToggles.ventEsp, " Vent ESP");
 
+        CheatToggles.killCooldownEsp = GUILayout.Toggle(CheatToggles.killCooldownEsp, " Impostor Kill Cooldown");
+
         CheatToggles.seeLobbyInfo = GUILayout.Toggle(CheatToggles.seeLobbyInfo, " See Lobby Info");
+
+        CheatToggles.showPing = GUILayout.Toggle(CheatToggles.showPing, " Show Ping");
+
+        CheatToggles.showFps = GUILayout.Toggle(CheatToggles.showFps, " Show FPS");
     }
 
     private void DrawCamera()
@@ -138,6 +146,9 @@ public class ESPTab : ITab
         CheatToggles.radar = GUILayout.Toggle(CheatToggles.radar, " Show Radar");
         CheatToggles.radarBodies = GUILayout.Toggle(CheatToggles.radarBodies, " Bodies on Radar");
         CheatToggles.radarGhosts = GUILayout.Toggle(CheatToggles.radarGhosts, " Ghosts on Radar");
+        CheatToggles.radarDoors = GUILayout.Toggle(CheatToggles.radarDoors, " Doors on Radar");
+
+        GUILayout.Label("<size=11><color=#888888>Right-click radar = teleport. Door: click=shut, double-click=pin, click=unpin.</color></size>");
 
         GUILayout.Label($"Size: {CheatToggles.radarSize}%");
         CheatToggles.radarSize = Mathf.RoundToInt(GUILayout.HorizontalSlider(CheatToggles.radarSize, 60f, 180f));

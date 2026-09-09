@@ -72,10 +72,9 @@ public static class FreeChatInputField_UpdateCharCount
     // Postfix patch of FreeChatInputField.UpdateCharCount to change how charCountText displays
     public static void Postfix(FreeChatInputField __instance)
     {
-        // Only works if CheatToggles.longerMsgs is enabled
-        if (!CheatToggles.longerMessages || __instance == null || __instance.textArea == null || __instance.textArea.text == null || __instance.charCountText == null) return;
+        if (__instance == null || __instance.textArea == null || __instance.textArea.text == null || __instance.charCountText == null) return;
 
-        // Update charCountText to account for longer characterLimit
+        // Update charCountText to account for the raised (120) characterLimit
         int length = __instance.textArea.text.Length;
         __instance.charCountText.SetText($"{length}/{__instance.textArea.characterLimit}");
 
@@ -798,6 +797,9 @@ public static class PassiveUiElement_Patches
                 return false;
 
             if (CheatToggles.showTasksMenu && Utils.isPlayer && TasksUI.windowRect.Contains(mousePosition))
+                return false;
+
+            if (CheatToggles.showChatLog && ChatLogUI.windowRect.Contains(mousePosition))
                 return false;
         }
 

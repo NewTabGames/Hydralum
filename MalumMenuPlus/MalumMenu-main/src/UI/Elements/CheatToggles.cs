@@ -51,6 +51,10 @@ public struct CheatToggles
     public static bool noShapeshiftAnim;
     public static bool sabotageInVents;
 
+    // Guardian Angel
+    public static bool gaInfiniteRange;
+    public static bool gaIgnoreImpostors;
+
     // ESP
     public static bool noShadows;
     public static bool seeGhosts;
@@ -62,8 +66,12 @@ public struct CheatToggles
     public static bool seeLobbyInfo;
     public static bool chatColorTags;
     public static bool ventEsp;
+    public static bool killCooldownEsp;
+    public static bool showFriendCode;
     public static bool hideMyGem;
     public static bool hideAllGems;
+    public static bool showPing = true;
+    public static bool showFps;
 
     // Camera
     public static bool spectate;
@@ -80,6 +88,7 @@ public struct CheatToggles
     public static bool radar;
     public static bool radarBodies = true;
     public static bool radarGhosts = true;
+    public static bool radarDoors = true;
 
     public static bool radarLocked;
     public static float radarX = 12f;
@@ -98,6 +107,7 @@ public struct CheatToggles
     // Chat
     public static bool enableChat;
     public static bool chatTimestamps;
+    public static bool chatTimestamp24hr = true;
     
     public static bool chatDarkMode;
 
@@ -107,9 +117,21 @@ public struct CheatToggles
     public static bool chatShowFriendCode = true;
     public static bool unlockCharacters;
     public static bool bypassUrlBlock;
-    public static bool longerMessages;
     public static bool unlockClipboard;
     public static bool lowerRateLimits;
+
+    // Chat Log (subwindow: records chat and exports it to a text file)
+    public static bool showChatLog;
+    public static bool recordChat;
+    public static bool logIncludeTimestamp = true;
+    public static bool logIncludeColor = true;
+    public static bool logIncludeRole;
+    public static bool logIncludeLevel;
+    public static bool logIncludePlatform;
+    public static bool logIncludeFriendCode;
+    public static bool logIncludeTasks;
+    public static bool logIncludeVotekick;
+    public static bool logIncludeDeadTag = true;
 
     // Ship
     public static bool closeMeeting;
@@ -134,6 +156,9 @@ public struct CheatToggles
     public static bool spamCloseAllDoors;
     public static bool sabotageMap;
     public static bool disableSabotage;
+    // Auto-Fix Critical Sabotages: while on, repairs Reactor/Oxygen only once their countdown drops
+    // to the last few seconds (see MalumSabotageCheats), so the sabotage still plays out but never ends the game.
+    public static bool autoFixCriticalSab;
     public static bool sabotageAll;
     public static bool sabotageAllDoors;
 
@@ -312,11 +337,14 @@ public struct CheatToggles
         }
     }
 
-    // Saves cheat toggles and their keybinds to MalumProfile.txt
+    // Saves cheat toggles and their keybinds to a profile file (defaults to the current profile).
     // Format per line: ToggleName = True/False = KeyCode.KEY
-    public static void SaveTogglesToProfile()
+    public static void SaveTogglesToProfile(string path = null)
     {
-        using var writer = new StreamWriter(MalumMenu.ProfilePath);
+        path ??= ProfileManager.CurrentProfilePath;
+        try { Directory.CreateDirectory(Path.GetDirectoryName(path)); } catch { }
+
+        using var writer = new StreamWriter(path);
 
         writer.WriteLine("# MalumProfile");
         writer.WriteLine("# Format: ToggleName = True/False = KeyCode.KEY");
@@ -339,6 +367,7 @@ public struct CheatToggles
         writer.WriteLine();
         writer.WriteLine("# Outfits / Color Sniper");
         writer.WriteLine($"ColorSniperTargetColor = {CheatToggles.colorSniperTargetColor}");
+
 
         writer.WriteLine();
         writer.WriteLine("# Radar config");
@@ -368,13 +397,14 @@ public struct CheatToggles
         writer.WriteLine($"MenuColor = {MalumMenu.menuHtmlColor.Value}");
     }
 
-    // Loads cheat toggles and their keybinds from MalumProfile.txt if the file is present
+    // Loads cheat toggles and their keybinds from a profile file (defaults to the current profile).
     // Format per line: ToggleName = True/False = KeyCode.KEY
-    public static void LoadTogglesFromProfile()
+    public static void LoadTogglesFromProfile(string path = null)
     {
-        if (!File.Exists(MalumMenu.ProfilePath)) return;
+        path ??= ProfileManager.CurrentProfilePath;
+        if (!File.Exists(path)) return;
 
-        using var reader = new StreamReader(MalumMenu.ProfilePath);
+        using var reader = new StreamReader(path);
 
         while (reader.ReadLine() is { } line)
         {

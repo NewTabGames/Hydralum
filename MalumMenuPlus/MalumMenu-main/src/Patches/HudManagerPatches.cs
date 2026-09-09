@@ -49,7 +49,10 @@ public static class MatchInfoHudButton_Update
 		return AccessTools.Method("MatchInfoHudButton:Update");
 	}
 
-	// Keep MatchInfoHudButton placed neatly to the left of the Chat + Settings dual box (3.65f)
+	// Keep the Match Info button pinned just left of the Chat + Settings box. Letting the game place it
+	// (vanilla) drops it far to the left with a big gap, so we always override the offset here.
+	// x is the distance from the RIGHT edge: smaller x = further right (closer to the Chat box).
+	// Tune this one value if the spacing needs nudging: lower it to close the gap, raise it to open it.
 	public static bool Prefix(Component __instance)
 	{
 		try
@@ -60,7 +63,7 @@ public static class MatchInfoHudButton_Update
 				if (aspect != null)
 				{
 					Vector3 dist = aspect.DistanceFromEdge;
-					dist.x = 3.65f;
+					dist.x = 2.85f;
 					dist.y = 0.505f;
 					dist.z = -400f;
 					aspect.DistanceFromEdge = dist;
@@ -99,6 +102,9 @@ public static class HudManager_Update
 			MalumCheats.UseVentCheat(__instance);
 			MalumESP.ZoomOut(__instance);
 			MalumESP.FreecamCheat();
+			MinimapHandler.TrackPositions(); // record positions so the map can freeze them during meetings
+			KillCooldownEsp.Update(); // reset impostor cooldowns when gameplay resumes after a meeting/exile
+			NocturneDoors.Tick(); // keep pinned doors (from the radar) shut
 
 			// Close PlayerPickMenu if there is no PPM cheat enabled
 			if (PlayerPickMenu.playerpickMenu != null && CheatToggles.ShouldPPMClose())

@@ -395,12 +395,32 @@ public static class Utils
         };
     }
 
-    // Returns the current approximate FPS
+    // Smoothed FPS: instead of 1/deltaTime every frame (which jitters, e.g. 99/100/101 at a 100 cap), we
+    // count real frames over a short window and only refresh the displayed value ~twice a second, showing
+    // the average. That keeps the number steady and readable instead of rapidly flickering.
+    private static int _fpsDisplay = 60;
+    private static int _fpsFrames;
+    private static float _fpsElapsed;
+    private static int _fpsLastFrame = -1;
+
     public static int GetFps()
     {
-        float dt = Time.unscaledDeltaTime;
-        if (dt <= 0.0001f) return 60;
-        return (int)(1f / dt);
+        int frame = Time.frameCount;
+        if (frame != _fpsLastFrame) // count each render frame at most once, even if called multiple times
+        {
+            _fpsLastFrame = frame;
+            _fpsFrames++;
+            _fpsElapsed += Time.unscaledDeltaTime;
+
+            if (_fpsElapsed >= 0.5f)
+            {
+                _fpsDisplay = Mathf.Max(1, Mathf.RoundToInt(_fpsFrames / _fpsElapsed));
+                _fpsFrames = 0;
+                _fpsElapsed = 0f;
+            }
+        }
+
+        return _fpsDisplay;
     }
 
     // Gets a UnityEngine.KeyCode from a string
@@ -649,6 +669,14 @@ public static class Utils
         catch { }
 
         return nameTag;
+    }
+
+    // Friend Code ESP line, stacked above a player's world/meeting nametag when "See Friend Code"
+    // is enabled. Returns "" when the toggle is off or the player has no friend code (e.g. guests).
+    public static string GetFriendCodeTag(NetworkedPlayerInfo playerInfo)
+    {
+        if (!CheatToggles.showFriendCode || playerInfo == null || string.IsNullOrEmpty(playerInfo.FriendCode)) return "";
+        return $"<size=55%><color=#4169E1>{playerInfo.FriendCode}</color></size>";
     }
 
     // Extra chat-only tags (Tasks / Votekick count / Friend Code), appended after the chat name.

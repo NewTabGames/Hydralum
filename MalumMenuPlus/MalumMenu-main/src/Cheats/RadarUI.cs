@@ -33,6 +33,12 @@ public sealed class RadarUI : MonoBehaviour
     private static Vector2 _dragOff;
     private static float _rx, _ry;
 
+    // Exposed so the cursor-teleport can tell when the mouse is over the radar (and skip world-TP there).
+    public static Rect WindowRect;
+    // Door-button click state (for single vs double-click detection).
+    private static float _lastDoorClickTime = -1f;
+    private static int _lastDoorRoom = -1;
+
     public static void DrawGui()
     {
         if (!CheatToggles.radar)
@@ -62,6 +68,7 @@ public sealed class RadarUI : MonoBehaviour
         var inner = new Rect(box.x + pad, box.y + head + 2f * _sc, box.width - 2f * pad, box.height - head - 2f * _sc - pad);
         var lockRect = new Rect(box.xMax - head + 1f * _sc, box.y + 3f * _sc, head - 6f * _sc, head - 6f * _sc);
         bool locked = CheatToggles.radarLocked;
+        WindowRect = box;
 
         Event e = Event.current;
         if (e != null)
@@ -70,6 +77,17 @@ public sealed class RadarUI : MonoBehaviour
             {
                 CheatToggles.radarLocked = !locked;
                 _drag = false;
+                e.Use();
+            }
+            else if (e.type == EventType.MouseDown && e.button == 1 && inner.Contains(e.mousePosition))
+            {
+                // Right-click the map -> teleport to the nearest premade room location.
+                TeleportFromRadar(e.mousePosition, inner);
+                e.Use();
+            }
+            else if (e.type == EventType.MouseDown && e.button == 0 && CheatToggles.radarDoors && HandleDoorClick(e.mousePosition, inner))
+            {
+                // Consumed a door button (close / pin / unpin) so it doesn't start a window drag.
                 e.Use();
             }
             else if (e.type == EventType.MouseDown && e.button == 0 && !locked && box.Contains(e.mousePosition))
@@ -125,6 +143,8 @@ public sealed class RadarUI : MonoBehaviour
         Players(inner);
         if (CheatToggles.radarBodies)
             Bodies(inner);
+        if (CheatToggles.radarDoors)
+            Doors(inner);
     }
 
     private static void DrawLock(Rect r, Color col)
@@ -662,6 +682,86 @@ public sealed class RadarUI : MonoBehaviour
             }
         }
         catch { }
+    }
+
+    // Draws a square marker at each door; red when that room is pinned (kept shut).
+    private static void Doors(Rect r)
+    {
+        ShipStatus s = ShipStatus.Instance;
+        if (s == null || s.AllDoors == null) return;
+
+        foreach (OpenableDoor d in s.AllDoors)
+        {
+            if (d == null) continue;
+            Vector2 sp = Map(d.transform.position, r);
+            bool pinned = NocturneDoors.IsPinned((int)d.Room);
+            Color col = pinned ? new Color(0.96f, 0.28f, 0.28f) : new Color(0.87f, 0.80f, 0.50f);
+            float half = (pinned ? 4.5f : 4f) * _sc;
+            NocturneStyle.Fill(new Rect(sp.x - half - 1f, sp.y - half - 1f, half * 2f + 2f, half * 2f + 2f), A(Color.black, 0.75f));
+            NocturneStyle.Fill(new Rect(sp.x - half, sp.y - half, half * 2f, half * 2f), A(col, 1f));
+        }
+    }
+
+    // Single click = shut once, double click = pin (loops shut via Tick), click while pinned = unpin.
+    private static bool HandleDoorClick(Vector2 mouse, Rect r)
+    {
+        ShipStatus s = ShipStatus.Instance;
+        if (s == null || s.AllDoors == null) return false;
+
+        float hitR = 9f * _sc;
+        OpenableDoor hit = null;
+        float best = hitR * hitR;
+
+        foreach (OpenableDoor d in s.AllDoors)
+        {
+            if (d == null) continue;
+            Vector2 sp = Map(d.transform.position, r);
+            float dist = (sp - mouse).sqrMagnitude;
+            if (dist < best) { best = dist; hit = d; }
+        }
+
+        if (hit == null) return false;
+
+        int room = (int)hit.Room;
+        float now = Time.unscaledTime;
+
+        if (NocturneDoors.IsPinned(room))
+            NocturneDoors.TogglePin(room); // click while pinned -> unpin
+        else if (now - _lastDoorClickTime < 0.35f && _lastDoorRoom == room)
+            NocturneDoors.TogglePin(room); // double click -> pin
+        else
+            NocturneDoors.CloseOne(room);  // single click -> shut once
+
+        _lastDoorClickTime = now;
+        _lastDoorRoom = room;
+        return true;
+    }
+
+    // Right-click the radar: invert the projection to an approximate world position, then teleport to the
+    // nearest premade room location so the radar/world misalignment doesn't matter.
+    private static void TeleportFromRadar(Vector2 mouse, Rect r)
+    {
+        if (PlayerControl.LocalPlayer == null) return;
+
+        float tx = Mathf.Clamp01((mouse.x - r.x) / Mathf.Max(1f, r.width));
+        float ty = Mathf.Clamp01((mouse.y - r.y) / Mathf.Max(1f, r.height));
+        Vector2 world = new Vector2(_min.x + tx * (_max.x - _min.x), _min.y + (1f - ty) * (_max.y - _min.y));
+
+        var locs = MalumTeleport.GetTeleportLocations();
+        if (locs == null || locs.Count == 0)
+        {
+            MalumTeleport.TeleportTo(world);
+            return;
+        }
+
+        Vector2 best = world;
+        float bestDist = float.MaxValue;
+        foreach (var kv in locs)
+        {
+            float dist = (kv.Value - world).sqrMagnitude;
+            if (dist < bestDist) { bestDist = dist; best = kv.Value; }
+        }
+        MalumTeleport.TeleportTo(best);
     }
 
     private static Color PlayerColor(PlayerControl pc)

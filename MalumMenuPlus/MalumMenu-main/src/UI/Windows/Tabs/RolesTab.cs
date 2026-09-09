@@ -47,6 +47,10 @@ public class RolesTab : ITab
 
         GUILayout.Space(15);
 
+        DrawGuardianAngel();
+
+        GUILayout.Space(15);
+
         DrawChangeRole();
 
         GUILayout.EndVertical();
@@ -139,6 +143,15 @@ public class RolesTab : ITab
         GUILayout.Label("Detective", GUIStylePreset.TabSubtitle);
 
         CheatToggles.interrogateReach = GUILayout.Toggle(CheatToggles.interrogateReach, " Interrogate Reach");
+    }
+
+    private void DrawGuardianAngel()
+    {
+        GUILayout.Label("Guardian Angel", GUIStylePreset.TabSubtitle);
+
+        CheatToggles.gaInfiniteRange = GUILayout.Toggle(CheatToggles.gaInfiniteRange, " Infinite Protection Range");
+
+        CheatToggles.gaIgnoreImpostors = GUILayout.Toggle(CheatToggles.gaIgnoreImpostors, " Ignore Impostors");
     }
 
     private RoleTypes selectedRole = RoleTypes.Crewmate;

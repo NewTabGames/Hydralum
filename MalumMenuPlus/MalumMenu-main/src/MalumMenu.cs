@@ -31,6 +31,7 @@ public partial class MalumMenu : BasePlugin
     public static InventoryOutfitsUI inventoryOutfitsUI;
     public static KeybindListener keybindListener;
     public static ReplayUI replayUI;
+    public static ChatLogUI chatLogUI;
 
     public static string malumVersion = "3.3.0";
     public static List<string> supportedAU = new List<string> { "2026.8.18", "2026.8.18s", "2026.6.5", "2026.3.31" };
@@ -207,7 +208,11 @@ public partial class MalumMenu : BasePlugin
         protectUI = AddComponent<ProtectUI>();
         inventoryOutfitsUI = AddComponent<InventoryOutfitsUI>();
         replayUI = AddComponent<ReplayUI>();
+        chatLogUI = AddComponent<ChatLogUI>();
         // rolesUI = AddComponent<RolesUI>();
+
+        // Create the TextLogs folder (config/TextLogs) that the Chat Log feature exports to
+        ChatLogRecorder.EnsureFolder();
 
         // Components
         keybindListener = AddComponent<KeybindListener>();
@@ -220,16 +225,14 @@ public partial class MalumMenu : BasePlugin
             PerformanceReporting.enabled = false;
         }
 
-        // Create profile file if it is missing
-        if (!File.Exists(ProfilePath))
-        {
-            CheatToggles.SaveTogglesToProfile();
-        }
+        // Initialize the multi-profile manager (creates config/MalumProfiles, migrates the legacy
+        // MalumProfile.txt in as "Default", and selects the current profile)
+        ProfileManager.Initialize();
 
-        // Auto load profile on start if needed
+        // Auto load the current profile on start if needed
         if (autoLoadProfile.Value)
         {
-            CheatToggles.LoadTogglesFromProfile();
+            ProfileManager.LoadCurrent();
         }
 
         SceneManager.add_sceneLoaded((Action<Scene, LoadSceneMode>) ((scene, _) =>
@@ -255,6 +258,13 @@ public partial class MalumMenu : BasePlugin
 
     public void OnApplicationQuit()
     {
+        // Auto-export the chat log if recording was left on, so the session isn't lost on exit
+        if (CheatToggles.recordChat)
+        {
+            CheatToggles.recordChat = false; // avoid re-entrancy if anything else fires during shutdown
+            ChatLogRecorder.ExportToFile();
+        }
+
         PresenceTracker.Stop();
     }
 }

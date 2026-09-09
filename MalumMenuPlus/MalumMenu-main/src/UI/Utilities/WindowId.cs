@@ -7,5 +7,6 @@ public enum WindowId
     RolesUI = 4,
     ProtectUI = 5,
     DebugUI = 6,
-    InventoryOutfitsUI = 7
+    InventoryOutfitsUI = 7,
+    ChatLogUI = 8
 }

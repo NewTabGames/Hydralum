@@ -54,6 +54,7 @@ public static class MalumESP
             if (CheatToggles.showProtectMenu && ProtectUI.windowRect.Contains(guiMousePos)) return true;
             if (CheatToggles.showRolesMenu && RolesUI.windowRect.Contains(guiMousePos)) return true;
             if (CheatToggles.showTasksMenu && TasksUI.windowRect.Contains(guiMousePos)) return true;
+            if (CheatToggles.showChatLog && ChatLogUI.windowRect.Contains(guiMousePos)) return true;
         }
 
         if (CheatToggles.showWardrobeOverlay && InventoryOutfitsUI.windowRect.Contains(guiMousePos)) return true;
@@ -66,6 +67,12 @@ public static class MalumESP
 
         var devMenuRect = MenuUI.GetDevMenuRect();
         if (devMenuRect.width > 0 && devMenuRect.Contains(guiMousePos))
+        {
+            return true;
+        }
+
+        // The on-screen radar: clicks there drive the radar (door buttons / right-click TP), not world-TP.
+        if (CheatToggles.radar && RadarUI.WindowRect.width > 0 && RadarUI.WindowRect.Contains(guiMousePos))
         {
             return true;
         }
@@ -169,8 +176,11 @@ public static class MalumESP
                 string playerName = data.PlayerName ?? (data.DefaultOutfit != null ? data.DefaultOutfit.PlayerName : "");
                 if (string.IsNullOrEmpty(playerName)) continue;
 
-                // Update the player's nametag appropriately
-                playerState.NameText.text = Utils.GetNameTag(data, playerName);
+                // Update the player's nametag appropriately (friend code, if enabled, stacks on top)
+                string meetingTag = Utils.GetNameTag(data, playerName);
+                string fcMeetingTag = Utils.GetFriendCodeTag(data);
+                if (!string.IsNullOrEmpty(fcMeetingTag)) meetingTag = fcMeetingTag + "\n" + meetingTag;
+                playerState.NameText.text = meetingTag;
 
                 // Move and resize the nametag to prevent it overlapping with colorblind text
                 if (CheatToggles.seeRoles && CheatToggles.seePlayerInfo)
@@ -203,7 +213,17 @@ public static class MalumESP
             string playerName = playerPhysics.myPlayer.CurrentOutfit != null ? playerPhysics.myPlayer.CurrentOutfit.PlayerName : playerPhysics.myPlayer.Data.PlayerName;
             if (string.IsNullOrEmpty(playerName)) playerName = playerPhysics.myPlayer.Data.PlayerName ?? "";
 
-            playerPhysics.myPlayer.cosmetics.SetName(Utils.GetNameTag(playerPhysics.myPlayer.Data, playerName));
+            string nameTag = Utils.GetNameTag(playerPhysics.myPlayer.Data, playerName);
+
+            // Friend Code ESP: stack the player's friend code on top of the nametag.
+            string fcTag = Utils.GetFriendCodeTag(playerPhysics.myPlayer.Data);
+            if (!string.IsNullOrEmpty(fcTag)) nameTag = fcTag + "\n" + nameTag;
+
+            // Kill Cooldown ESP: stack the impostor's cooldown / "Ready" on top of the nametag.
+            string killCd = KillCooldownEsp.GetLabel(playerPhysics.myPlayer);
+            if (!string.IsNullOrEmpty(killCd)) nameTag = killCd + "\n" + nameTag;
+
+            playerPhysics.myPlayer.cosmetics.SetName(nameTag);
 
             // Move the nameText up to prevent it overlapping with colorblind text or character sprite
             if (playerPhysics.myPlayer.cosmetics.nameText != null)
@@ -212,12 +232,13 @@ public static class MalumESP
                 bool isHydralum = isDev || PresenceTracker.IsHydralumUser(playerPhysics.myPlayer.Data);
                 bool isLocal = PlayerControl.LocalPlayer != null && playerPhysics.myPlayer.Data == PlayerControl.LocalPlayer.Data;
                 bool showingGem = isHydralum && !CheatToggles.hideAllGems && !(isLocal && CheatToggles.hideMyGem);
+                bool showingFc = CheatToggles.showFriendCode && !string.IsNullOrEmpty(playerPhysics.myPlayer.Data.FriendCode);
 
-                if (CheatToggles.seeRoles && CheatToggles.seePlayerInfo)
+                if ((CheatToggles.seeRoles && CheatToggles.seePlayerInfo) || (showingFc && (CheatToggles.seeRoles || CheatToggles.seePlayerInfo)))
                 {
                     playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.186f, 0f);
                 }
-                else if (CheatToggles.seeRoles || CheatToggles.seePlayerInfo || showingGem)
+                else if (CheatToggles.seeRoles || CheatToggles.seePlayerInfo || showingGem || showingFc)
                 {
                     playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.093f, 0f);
                 }

@@ -29,4 +29,10 @@
   <Target Name="Copy" AfterTargets="Build">
       <Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\Program Files (x86)\Steam\steamapps\common\Among Us\BepInEx\plugins\" UseSymboliclinksIfPossible="true" ContinueOnError="true" />
   </Target>
+
+  <!-- Keep the shared staging folder (used to build the Hydralum standalone package) in sync, the
+       same way MalumMenu.csproj does. Without this, standalone builds shipped a stale HydraMenu.dll. -->
+  <Target Name="CopyToDLLsFolder" AfterTargets="Build">
+      <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildThisFileDirectory)..\..\Others\DLLs\" ContinueOnError="true" />
+  </Target>
 </Project>

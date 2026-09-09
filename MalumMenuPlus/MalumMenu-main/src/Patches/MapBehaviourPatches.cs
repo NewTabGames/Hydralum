@@ -1,5 +1,6 @@
 using HarmonyLib;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace MalumMenu;
 
@@ -75,6 +76,20 @@ public static class MapBehaviour_FixedUpdate
             foreach (var herePoint in MinimapHandler.herePointsToRemove)
             {
                 MinimapHandler.herePoints.Remove(herePoint);
+            }
+
+            // Freeze the local player's own "here" marker at its pre-meeting spot during meetings, so your
+            // own icon doesn't jump to the cafeteria table with everyone else.
+            if (MinimapHandler.IsMeetingActive && __instance.HerePoint != null && PlayerControl.LocalPlayer != null
+                && MinimapHandler.lastPositions.TryGetValue(PlayerControl.LocalPlayer.PlayerId, out var frozenLocal))
+            {
+                Vector3 v = frozenLocal;
+                float mapScale = (ShipStatus.Instance != null && ShipStatus.Instance.MapScale != 0f) ? ShipStatus.Instance.MapScale : 1f;
+                v /= mapScale;
+                float localScaleX = ShipStatus.Instance != null ? ShipStatus.Instance.transform.localScale.x : 1f;
+                v.x *= Mathf.Sign(localScaleX);
+                v.z = -1f;
+                __instance.HerePoint.transform.localPosition = v;
             }
         }
         catch { }

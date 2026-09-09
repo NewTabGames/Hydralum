@@ -99,6 +99,8 @@ public class ShipTab : ITab
 
         CheatToggles.disableSabotage = GUILayout.Toggle(CheatToggles.disableSabotage, " Disable Sabotage");
 
+        CheatToggles.autoFixCriticalSab = GUILayout.Toggle(CheatToggles.autoFixCriticalSab, " Auto-Fix Reactor/O2 (Last 3s)");
+
         if (GUILayout.Button("Sabotage All", GUIStylePreset.NormalButton))
             CheatToggles.sabotageAll = true;
 
@@ -113,7 +115,7 @@ public class ShipTab : ITab
 
         CheatToggles.ventNetwork = GUILayout.Toggle(CheatToggles.ventNetwork, " Vent Network");
 
-        GUILayout.Label("Arrow keys cycle vents, or click any vent to go to it", GUIStylePreset.Hint, GUILayout.Width(MenuUI.windowWidth * 0.34f));
+        GUILayout.Label("Arrow keys cycle vents, or click any vent to go to it", GUIStylePreset.Hint);
 
         CheatToggles.kickVents = GUILayout.Toggle(CheatToggles.kickVents, " Kick All From Vents");
 
