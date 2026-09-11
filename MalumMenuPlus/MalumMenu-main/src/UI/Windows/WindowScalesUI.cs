@@ -23,6 +23,8 @@ public class WindowScalesUI : MonoBehaviour
         ("Roles", "Assign Roles"),
         ("ChatLog", "Chat Log"),
         ("Wardrobe", "Wardrobe Overlay"),
+        ("WindowScales", "Pop-up Window Scales"),
+        ("Keybinds", "Keybind Settings"),
     };
 
     private void Start()
@@ -42,8 +44,12 @@ public class WindowScalesUI : MonoBehaviour
 
         UIHelpers.ApplyUIColor();
 
-        // This window is intentionally NOT scaled itself — it configures everything else.
+        // This window can scale itself too (its own "Pop-up Window Scales" slider), same as every other pop-up.
+        var prevMatrix = GUI.matrix;
+        float scale = CheatToggles.GetWindowScale("WindowScales");
+        GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), windowRect.position);
         windowRect = GUI.Window((int)WindowId.WindowScalesUI, windowRect, (GUI.WindowFunction)DrawWindow, "Pop-up Window Scales");
+        GUI.matrix = prevMatrix;
     }
 
     private void DrawWindow(int windowID)

@@ -802,10 +802,10 @@ public static class PassiveUiElement_Patches
             if (CheatToggles.showChatLog && UIHelpers.ScaledWindowRect(ChatLogUI.windowRect, CheatToggles.GetWindowScale("ChatLog")).Contains(mousePosition))
                 return false;
 
-            if (CheatToggles.showWindowScales && WindowScalesUI.windowRect.Contains(mousePosition))
+            if (CheatToggles.showWindowScales && UIHelpers.ScaledWindowRect(WindowScalesUI.windowRect, CheatToggles.GetWindowScale("WindowScales")).Contains(mousePosition))
                 return false;
 
-            if (CheatToggles.showKeybindSettings && KeybindsUI.windowRect.Contains(mousePosition))
+            if (CheatToggles.showKeybindSettings && UIHelpers.ScaledWindowRect(KeybindsUI.windowRect, CheatToggles.GetWindowScale("Keybinds")).Contains(mousePosition))
                 return false;
         }
 

@@ -48,38 +48,57 @@ public class KeybindsUI : MonoBehaviour
 
         UIHelpers.ApplyUIColor();
 
+        var prevMatrix = GUI.matrix;
+        float scale = CheatToggles.GetWindowScale("Keybinds");
+        GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), windowRect.position);
         windowRect = GUI.Window((int)WindowId.KeybindsUI, windowRect, (GUI.WindowFunction)DrawWindow, "Keybind Settings");
+        GUI.matrix = prevMatrix;
     }
 
     private void DrawWindow(int windowID)
     {
         try
         {
-            // Capture the next key press for the row being rebound (Escape cancels).
+            // Capture the next key press for the row being rebound. Escape cancels; a bare modifier keeps
+            // listening so combos like Ctrl+F are recorded when the real key finally lands.
             if (_listeningFor != null && Event.current.isKey && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None)
             {
-                if (Event.current.keyCode != KeyCode.Escape)
+                var kc = Event.current.keyCode;
+                if (kc == KeyCode.Escape)
                 {
-                    CheatToggles.Keybinds[_listeningFor] = Event.current.keyCode;
-                    KeybindListener.IgnoreKeyUntilRelease(Event.current.keyCode);
+                    _listeningFor = null;
                 }
-                _listeningFor = null;
+                else if (!IsModifierKey(kc))
+                {
+                    var mods = CheatToggles.KeyModifier.None;
+                    if (Event.current.control || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) mods |= CheatToggles.KeyModifier.Ctrl;
+                    if (Event.current.alt || Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)) mods |= CheatToggles.KeyModifier.Alt;
+                    if (Event.current.shift || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) mods |= CheatToggles.KeyModifier.Shift;
+
+                    CheatToggles.Keybinds[_listeningFor] = kc;
+                    CheatToggles.KeybindMods[_listeningFor] = mods;
+                    KeybindListener.IgnoreKeyUntilRelease(kc);
+                    _listeningFor = null;
+                }
+                // else: only a modifier is held so far — wait for the actual key
             }
 
             GUILayout.Label("Feature Hotkeys", GUIStylePreset.TabSubtitle);
+            GUILayout.Label("Hold Ctrl / Alt / Shift while pressing a key to bind a combo.", GUIStylePreset.Hint);
             GUILayout.Space(4);
 
             foreach (var (field, label) in Binds)
             {
                 CheatToggles.Keybinds.TryGetValue(field, out var key);
+                CheatToggles.KeybindMods.TryGetValue(field, out var mods);
 
                 GUILayout.BeginHorizontal();
 
-                GUILayout.Label(label, GUILayout.Width(250f));
+                GUILayout.Label(label, GUILayout.Width(225f));
 
                 bool listening = _listeningFor == field;
-                string btnText = listening ? "<color=yellow>Press a key...</color>" : $"<b>{(key == KeyCode.None ? "None" : key.ToString())}</b>";
-                if (GUILayout.Button(btnText, GUIStylePreset.NormalButton, GUILayout.Width(110f), GUILayout.Height(22f)))
+                string btnText = listening ? "<color=yellow>Press keys...</color>" : $"<b>{FormatBind(key, mods)}</b>";
+                if (GUILayout.Button(btnText, GUIStylePreset.NormalButton, GUILayout.Width(140f), GUILayout.Height(22f)))
                 {
                     _listeningFor = listening ? null : field;
                 }
@@ -88,6 +107,7 @@ public class KeybindsUI : MonoBehaviour
                 if (GUILayout.Button("Clear", GUIStylePreset.NormalButton, GUILayout.Width(55f), GUILayout.Height(22f)))
                 {
                     CheatToggles.Keybinds[field] = KeyCode.None;
+                    CheatToggles.KeybindMods[field] = CheatToggles.KeyModifier.None;
                     if (_listeningFor == field) _listeningFor = null;
                 }
                 GUI.enabled = true;
@@ -99,4 +119,19 @@ public class KeybindsUI : MonoBehaviour
 
         GUI.DragWindow();
     }
+
+    // "None", "F", or a combo like "Ctrl+Shift+F" for display on the bind button.
+    private static string FormatBind(KeyCode key, CheatToggles.KeyModifier mods)
+    {
+        if (key == KeyCode.None) return "None";
+        return CheatToggles.ModifierPrefix(mods) + key;
+    }
+
+    // Modifier keys are never bound as the main key; holding one just adds to the combo.
+    private static bool IsModifierKey(KeyCode k) =>
+        k is KeyCode.LeftControl or KeyCode.RightControl
+          or KeyCode.LeftAlt or KeyCode.RightAlt or KeyCode.AltGr
+          or KeyCode.LeftShift or KeyCode.RightShift
+          or KeyCode.LeftCommand or KeyCode.RightCommand
+          or KeyCode.LeftWindows or KeyCode.RightWindows;
 }

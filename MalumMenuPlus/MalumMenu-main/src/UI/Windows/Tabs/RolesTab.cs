@@ -71,9 +71,7 @@ public class RolesTab : ITab
 
         CheatToggles.killReach = GUILayout.Toggle(CheatToggles.killReach, " Kill Reach");
 
-
-        CheatToggles.sabotageInVents = GUILayout.Toggle(CheatToggles.sabotageInVents, " Allow Sabotaging In Vents");
-
+        // Sabotaging in vents is provided by Hydra's Roles tab (single source of truth), so Malum no longer duplicates it.
         // CheatToggles.impostorTasks = GUILayout.Toggle(CheatToggles.impostorTasks, " Allow Tasks");
     }
 

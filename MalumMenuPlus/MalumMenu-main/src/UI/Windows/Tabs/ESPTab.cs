@@ -91,6 +91,8 @@ public class ESPTab : ITab
 
         CheatToggles.killCooldownEsp = GUILayout.Toggle(CheatToggles.killCooldownEsp, " Impostor Kill Cooldown");
 
+        CheatToggles.gaProtectCooldownEsp = GUILayout.Toggle(CheatToggles.gaProtectCooldownEsp, " Guardian Angel Protect Cooldown");
+
         CheatToggles.seeLobbyInfo = GUILayout.Toggle(CheatToggles.seeLobbyInfo, " See Lobby Info");
 
         CheatToggles.showPing = GUILayout.Toggle(CheatToggles.showPing, " Show Ping");

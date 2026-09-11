@@ -55,8 +55,8 @@ public static class MalumESP
             if (CheatToggles.showRolesMenu && UIHelpers.ScaledWindowRect(RolesUI.windowRect, CheatToggles.GetWindowScale("Roles")).Contains(guiMousePos)) return true;
             if (CheatToggles.showTasksMenu && UIHelpers.ScaledWindowRect(TasksUI.windowRect, CheatToggles.GetWindowScale("Tasks")).Contains(guiMousePos)) return true;
             if (CheatToggles.showChatLog && UIHelpers.ScaledWindowRect(ChatLogUI.windowRect, CheatToggles.GetWindowScale("ChatLog")).Contains(guiMousePos)) return true;
-            if (CheatToggles.showWindowScales && WindowScalesUI.windowRect.Contains(guiMousePos)) return true;
-            if (CheatToggles.showKeybindSettings && KeybindsUI.windowRect.Contains(guiMousePos)) return true;
+            if (CheatToggles.showWindowScales && UIHelpers.ScaledWindowRect(WindowScalesUI.windowRect, CheatToggles.GetWindowScale("WindowScales")).Contains(guiMousePos)) return true;
+            if (CheatToggles.showKeybindSettings && UIHelpers.ScaledWindowRect(KeybindsUI.windowRect, CheatToggles.GetWindowScale("Keybinds")).Contains(guiMousePos)) return true;
         }
 
         if (CheatToggles.showWardrobeOverlay && UIHelpers.ScaledWindowRect(InventoryOutfitsUI.windowRect, CheatToggles.GetWindowScale("Wardrobe")).Contains(guiMousePos)) return true;
@@ -238,6 +238,10 @@ public static class MalumESP
             // Kill Cooldown ESP: stack the impostor's cooldown / "Ready" on top of the nametag.
             string killCd = KillCooldownEsp.GetLabel(playerPhysics.myPlayer);
             if (!string.IsNullOrEmpty(killCd)) nameTag = killCd + "\n" + nameTag;
+
+            // Guardian Angel Protect Cooldown ESP: stack the GA's protect cooldown / "Ready" on top of the nametag.
+            string protectCd = GuardianAngelEsp.GetLabel(playerPhysics.myPlayer);
+            if (!string.IsNullOrEmpty(protectCd)) nameTag = protectCd + "\n" + nameTag;
 
             playerPhysics.myPlayer.cosmetics.SetName(nameTag);
 

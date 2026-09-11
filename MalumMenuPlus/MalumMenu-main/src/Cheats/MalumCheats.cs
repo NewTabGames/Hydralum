@@ -449,16 +449,24 @@ public static class MalumCheats
         else if (Input.GetMouseButtonDown(0) && Camera.main != null && !MalumESP.IsMouseOverActiveMenuGUI())
         {
             Vector2 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            float closestDist = 0.8f;
 
-            foreach (var v in ShipStatus.Instance.AllVents)
+            // The game's HUD buttons are pinned to the screen in the same world space the camera renders,
+            // so a HUD button (e.g. the minimap button in a corner) can sit right on top of a vent's
+            // on-screen position. Don't let a click that's really on a game button fall through and hop
+            // the vent network - that teleported players who were just trying to open the map.
+            if (!IsMouseOverGameButton(mouseWorld))
             {
-                if (v == null || v.Id == current.Id) continue;
-                float dist = Vector2.Distance(mouseWorld, v.transform.position);
-                if (dist < closestDist)
+                float closestDist = 0.8f;
+
+                foreach (var v in ShipStatus.Instance.AllVents)
                 {
-                    closestDist = dist;
-                    target = v;
+                    if (v == null || v.Id == current.Id) continue;
+                    float dist = Vector2.Distance(mouseWorld, v.transform.position);
+                    if (dist < closestDist)
+                    {
+                        closestDist = dist;
+                        target = v;
+                    }
                 }
             }
         }
@@ -473,6 +481,29 @@ public static class MalumCheats
             current.Right = original;
         }
         catch { }
+    }
+
+    // True when the world point sits on a game HUD button (minimap, chat, settings, ability buttons, ...),
+    // so the vent-network click can defer to the button instead of teleporting through it. Vents are
+    // deliberately excluded - they are the legitimate click targets for the vent network.
+    private static bool IsMouseOverGameButton(Vector2 world)
+    {
+        try
+        {
+            var hits = Physics2D.OverlapPointAll(world);
+            if (hits == null) return false;
+
+            foreach (var col in hits)
+            {
+                if (col == null) continue;
+                if (col.GetComponentInParent<PassiveButton>() == null) continue;
+                if (col.GetComponentInParent<Vent>() != null) continue; // a vent is a valid target, not a blocker
+                return true;
+            }
+        }
+        catch { }
+
+        return false;
     }
 
     private static void ClearVentTracers()

@@ -32,10 +32,33 @@ public class KeybindListener : MonoBehaviour
             if (key == _ignoreUntilRelease) continue;
             if (!Input.GetKeyDown(key)) continue;
 
+            // Require the bound modifier combo to be held exactly (so e.g. "F" doesn't fire on Ctrl+F, and
+            // vice-versa), letting combos coexist with plain-key binds without clashing.
+            CheatToggles.KeybindMods.TryGetValue(name, out var mods);
+            if (!ModifiersHeldExactly(key, mods)) continue;
+
             if (!CheatToggles.ToggleFields.TryGetValue(name, out var field)) continue;
 
             var current = (bool)field.GetValue(null);
             field.SetValue(null, !current);
         }
+    }
+
+    // True only when the currently-held Ctrl/Alt/Shift state matches the bind's modifier set exactly.
+    private static bool ModifiersHeldExactly(KeyCode key, CheatToggles.KeyModifier mods)
+    {
+        bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+        bool alt = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+        bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+        // If the bound key IS a modifier (a legacy plain bind like LeftAlt), that modifier is unavoidably
+        // held when the key fires - so don't count it, otherwise the bind could never match.
+        if (key is KeyCode.LeftControl or KeyCode.RightControl) ctrl = mods.HasFlag(CheatToggles.KeyModifier.Ctrl);
+        if (key is KeyCode.LeftAlt or KeyCode.RightAlt or KeyCode.AltGr) alt = mods.HasFlag(CheatToggles.KeyModifier.Alt);
+        if (key is KeyCode.LeftShift or KeyCode.RightShift) shift = mods.HasFlag(CheatToggles.KeyModifier.Shift);
+
+        return ctrl == mods.HasFlag(CheatToggles.KeyModifier.Ctrl)
+            && alt == mods.HasFlag(CheatToggles.KeyModifier.Alt)
+            && shift == mods.HasFlag(CheatToggles.KeyModifier.Shift);
     }
 }

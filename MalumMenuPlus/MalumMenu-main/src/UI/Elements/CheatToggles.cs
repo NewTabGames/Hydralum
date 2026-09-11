@@ -49,7 +49,6 @@ public struct CheatToggles
     public static bool killVanished;
     public static bool noVanishAnim;
     public static bool noShapeshiftAnim;
-    public static bool sabotageInVents;
 
     // Guardian Angel
     public static bool gaInfiniteRange;
@@ -67,6 +66,7 @@ public struct CheatToggles
     public static bool chatColorTags;
     public static bool ventEsp;
     public static bool killCooldownEsp;
+    public static bool gaProtectCooldownEsp;
     public static bool showFriendCode;
     public static bool hideMyGem;
     public static bool hideAllGems;
@@ -309,6 +309,8 @@ public struct CheatToggles
         { "Roles", 1f },
         { "ChatLog", 1f },
         { "Wardrobe", 1f },
+        { "WindowScales", 1f },
+        { "Keybinds", 1f },
     };
     public const float MinWindowScale = 0.5f;
     public const float MaxWindowScale = 2.5f;
@@ -323,6 +325,24 @@ public struct CheatToggles
 
     // Keybind Map: Toggle Name -> KeyCode (KeyCode.None == No Key)
     public static readonly Dictionary<string, KeyCode> Keybinds = new();
+
+    // Optional modifier keys (Ctrl / Alt / Shift) that must be held together with a keybind's main key.
+    // Parallel to Keybinds and defaults to None, so hotkeys can be combinations like Ctrl+F or Alt+Shift+D
+    // to avoid clashing with game controls or other binds. KeybindListener requires an exact match.
+    public static readonly Dictionary<string, KeyModifier> KeybindMods = new();
+
+    [System.Flags]
+    public enum KeyModifier { None = 0, Ctrl = 1, Alt = 2, Shift = 4 }
+
+    // "Ctrl+Alt+Shift+" style prefix for a modifier set (empty when None), used in the profile format and UI.
+    public static string ModifierPrefix(KeyModifier mods)
+    {
+        var s = "";
+        if (mods.HasFlag(KeyModifier.Ctrl)) s += "Ctrl+";
+        if (mods.HasFlag(KeyModifier.Alt)) s += "Alt+";
+        if (mods.HasFlag(KeyModifier.Shift)) s += "Shift+";
+        return s;
+    }
 
     // Map for Reflection Access: Toggle Name -> FieldInfo
     public static readonly Dictionary<string, FieldInfo> ToggleFields = new();
@@ -339,6 +359,7 @@ public struct CheatToggles
 
             ToggleFields[field.Name] = field;
             Keybinds[field.Name] = KeyCode.None;
+            KeybindMods[field.Name] = KeyModifier.None;
         }
     }
 
@@ -379,9 +400,10 @@ public struct CheatToggles
         using var writer = new StreamWriter(path);
 
         writer.WriteLine("# MalumProfile");
-        writer.WriteLine("# Format: ToggleName = True/False = KeyCode.KEY");
+        writer.WriteLine("# Format: ToggleName = True/False = [Ctrl+][Alt+][Shift+]KeyCode.KEY");
         writer.WriteLine("# - List of supported keycodes: https://docs.unity3d.com/Packages/com.unity.tiny@0.16/api/Unity.Tiny.Input.KeyCode.html");
         writer.WriteLine("# - Setting a keybind is optional. Use KeyCode.None to not set a keybind");
+        writer.WriteLine("# - Optional Ctrl+/Alt+/Shift+ prefixes require those modifiers be held with the key (e.g. Ctrl+KeyCode.F)");
         writer.WriteLine("# - Multiple toggles may have the same key, but multiple keys per toggle are NOT supported");
         writer.WriteLine("# - Keybinds are only applied after loading this profile by pressing 'Load from Profile' in the Config menu");
         writer.WriteLine();
@@ -389,7 +411,8 @@ public struct CheatToggles
         foreach (var field in ToggleFields.Values)
         {
             Keybinds.TryGetValue(field.Name, out var key);  // If no key is set then write KeyCode.None
-            writer.WriteLine($"{field.Name} = {field.GetValue(null)} = KeyCode.{key}");
+            KeybindMods.TryGetValue(field.Name, out var mods);
+            writer.WriteLine($"{field.Name} = {field.GetValue(null)} = {ModifierPrefix(mods)}KeyCode.{key}");
         }
 
         writer.WriteLine();
@@ -537,11 +560,23 @@ public struct CheatToggles
                 field.SetValue(null, boolVal);
             }
 
-            // Loads the keybind associated with each cheat
+            // Loads the keybind (and any Ctrl+/Alt+/Shift+ modifiers) associated with each cheat
             KeyCode key = KeyCode.None;
+            KeyModifier mods = KeyModifier.None;
             if (parts.Length >= 3)
             {
                 var keyPart = parts[2].Trim();
+
+                // Strip optional modifier prefixes that precede the KeyCode token
+                bool more = true;
+                while (more)
+                {
+                    if (keyPart.StartsWith("Ctrl+", System.StringComparison.OrdinalIgnoreCase)) { mods |= KeyModifier.Ctrl; keyPart = keyPart.Substring(5).TrimStart(); }
+                    else if (keyPart.StartsWith("Alt+", System.StringComparison.OrdinalIgnoreCase)) { mods |= KeyModifier.Alt; keyPart = keyPart.Substring(4).TrimStart(); }
+                    else if (keyPart.StartsWith("Shift+", System.StringComparison.OrdinalIgnoreCase)) { mods |= KeyModifier.Shift; keyPart = keyPart.Substring(6).TrimStart(); }
+                    else more = false;
+                }
+
                 if (keyPart.StartsWith("KeyCode."))
                 {
                     keyPart = keyPart["KeyCode.".Length..];
@@ -554,6 +589,7 @@ public struct CheatToggles
             }
 
             Keybinds[name] = key;
+            KeybindMods[name] = key == KeyCode.None ? KeyModifier.None : mods;
         }
     }
 }
