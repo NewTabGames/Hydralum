@@ -245,30 +245,22 @@ public static class MalumESP
 
             playerPhysics.myPlayer.cosmetics.SetName(nameTag);
 
-            // Move the nameText up to prevent it overlapping with colorblind text or character sprite
+            // Move the nameText up to prevent it overlapping with colorblind text or character sprite.
             if (playerPhysics.myPlayer.cosmetics.nameText != null)
             {
-                bool isDev = PresenceTracker.IsDevUser(playerPhysics.myPlayer.Data);
-                bool isHydralum = isDev || PresenceTracker.IsHydralumUser(playerPhysics.myPlayer.Data);
-                bool isLocal = PlayerControl.LocalPlayer != null && playerPhysics.myPlayer.Data == PlayerControl.LocalPlayer.Data;
-                bool showingGem = isHydralum && !CheatToggles.hideAllGems && !(isLocal && CheatToggles.hideMyGem);
-                bool showingFc = CheatToggles.showFriendCode && !string.IsNullOrEmpty(playerPhysics.myPlayer.Data.FriendCode);
+                // The player's own name is always the last line of nameTag; everything else (dev/gem tag,
+                // player info, role, friend code, kill/protect cooldown) stacks above it. Lift by one step
+                // per line above the name so the name stays at a consistent height however tall the stack
+                // gets - otherwise extra lines (e.g. the [DEV] tag on top of role + info) drop the name into
+                // the character sprite and, with Colorblind mode on, into the colour-name text beneath it.
+                int linesAbove = 0;
+                for (int i = 0; i < nameTag.Length; i++) if (nameTag[i] == '\n') linesAbove++;
 
                 // Extra lift while the game's Colorblind mode shows the colour name under the player.
                 float cbY = IsColorBlindMode() ? 0.11f : 0f;
 
-                if ((CheatToggles.seeRoles && CheatToggles.seePlayerInfo) || (showingFc && (CheatToggles.seeRoles || CheatToggles.seePlayerInfo)))
-                {
-                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.186f + cbY, 0f);
-                }
-                else if (CheatToggles.seeRoles || CheatToggles.seePlayerInfo || showingGem || showingFc)
-                {
-                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.093f + cbY, 0f);
-                }
-                else
-                {
-                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0f + cbY, 0f);
-                }
+                playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition =
+                    new Vector3(0f, linesAbove * 0.093f + cbY, 0f);
             }
         }
         catch { }
