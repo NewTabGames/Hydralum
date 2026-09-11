@@ -40,7 +40,11 @@ public class ConsoleUI : MonoBehaviour
 
         UIHelpers.ApplyUIColor();
 
+        var prevMatrix = GUI.matrix;
+        float scale = CheatToggles.GetWindowScale("Console");
+        GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), windowRect.position);
         windowRect = GUI.Window((int)WindowId.ConsoleUI, windowRect, (GUI.WindowFunction)ConsoleWindow, "Console");
+        GUI.matrix = prevMatrix;
     }
 
     private void ConsoleWindow(int windowID)

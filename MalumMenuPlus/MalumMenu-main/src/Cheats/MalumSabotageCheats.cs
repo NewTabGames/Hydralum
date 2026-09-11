@@ -217,6 +217,134 @@ public static class MalumSabotageCheats
         CheatToggles.elecSab = CheatToggles.unfixableLights = false;
     }
 
+    private static float _lastMovingSwitch;
+
+    // Disable Lights (Auto Moving Switches): while on, randomly flips the electrical switches every
+    // fraction of a second so they keep "moving" on their own and crew can't hold lights fixed.
+    // Ported from SickoMenu's DisableLightSwitches. Electrical only (Fungle has no lights).
+    public static void HandleAutoMovingSwitches(ShipStatus shipStatus, byte mapId)
+    {
+        if (!CheatToggles.autoMovingSwitches) return;
+
+        if (mapId == 5) // Fungle has no electrical system
+        {
+            HudManager.Instance.Notifier.AddDisconnectMessage("Electrical system not present on this map");
+            CheatToggles.autoMovingSwitches = false;
+            return;
+        }
+
+        // Throttle so we don't flood the host every frame
+        if (UnityEngine.Time.time - _lastMovingSwitch < 0.3f) return;
+        _lastMovingSwitch = UnityEngine.Time.time;
+
+        var elecSys = shipStatus.Systems[SystemTypes.Electrical].Cast<SwitchSystem>();
+        if (elecSys == null) return;
+
+        byte actual = (byte)(elecSys.ActualSwitches & 0x1F);
+        byte expected = (byte)(elecSys.ExpectedSwitches & 0x1F);
+
+        // Random toggle mask for the 5 switches
+        byte mask = 0;
+        for (var i = 0; i < 5; i++)
+        {
+            if (BoolRange.Next(0.5f)) mask |= (byte)(1 << i);
+        }
+
+        // Each toggle flips that switch, so the resulting state is actual ^ mask. If the random walk
+        // would land every switch matching (lights fixed), flip one extra switch so the lights stay
+        // broken — this closes the "chance for all switches to be swapped up to fix it" hole.
+        byte result = (byte)((actual ^ mask) & 0x1F);
+        if (result == expected)
+        {
+            mask ^= (byte)(1 << UnityEngine.Random.Range(0, 5));
+        }
+
+        for (var i = 0; i < 5; i++)
+        {
+            if ((mask & (1 << i)) != 0)
+            {
+                shipStatus.RpcUpdateSystem(SystemTypes.Electrical, (byte)i);
+            }
+        }
+    }
+
+    // One-shot: repairs every currently-active sabotage right now (reactor/lab/heli, oxygen, comms,
+    // lights) and turns off our own sabotage toggles. Unlike Disable Sabotage this does not stay on,
+    // so sabotages can be triggered again afterwards.
+    public static void FixAllSabotages(ShipStatus shipStatus, byte mapId)
+    {
+        try
+        {
+            var systems = shipStatus.Systems;
+            if (systems == null) return;
+
+            // Stop our own sabotage cheats so they don't immediately re-fire
+            CheatToggles.reactorSab = false;
+            CheatToggles.oxygenSab = false;
+            CheatToggles.elecSab = false;
+            CheatToggles.commsSab = false;
+            CheatToggles.unfixableLights = false;
+            CheatToggles.unfixableComms = false;
+            CheatToggles.autoMovingSwitches = false;
+
+            // Stop any door pinning (from Sabotage All) and reopen the doors so it can be undone
+            CheatToggles.spamCloseAllDoors = false;
+            CheatToggles.spamOpenAllDoors = false;
+            CheatToggles.closeAllDoors = false;
+            CheatToggles.openAllDoors = true;
+
+            // Reactor / Laboratory (Polus) / HeliSabotage (Airship)
+            if (mapId == 2)
+            {
+                if (systems.ContainsKey(SystemTypes.Laboratory) && systems[SystemTypes.Laboratory].Cast<ReactorSystemType>().IsActive)
+                    shipStatus.RpcUpdateSystem(SystemTypes.Laboratory, 16);
+            }
+            else if (mapId == 4)
+            {
+                if (systems.ContainsKey(SystemTypes.HeliSabotage) && systems[SystemTypes.HeliSabotage].Cast<HeliSabotageSystem>().IsActive)
+                {
+                    shipStatus.RpcUpdateSystem(SystemTypes.HeliSabotage, 16 | 0);
+                    shipStatus.RpcUpdateSystem(SystemTypes.HeliSabotage, 16 | 1);
+                }
+            }
+            else
+            {
+                if (systems.ContainsKey(SystemTypes.Reactor) && systems[SystemTypes.Reactor].Cast<ReactorSystemType>().IsActive)
+                    shipStatus.RpcUpdateSystem(SystemTypes.Reactor, 16);
+            }
+
+            // Oxygen
+            if (systems.ContainsKey(SystemTypes.LifeSupp) && systems[SystemTypes.LifeSupp].Cast<LifeSuppSystemType>().IsActive)
+                shipStatus.RpcUpdateSystem(SystemTypes.LifeSupp, 16);
+
+            // Comms
+            if (systems.ContainsKey(SystemTypes.Comms))
+            {
+                var isHqHud = mapId is 1 or 5;
+                var commsActive = isHqHud
+                    ? systems[SystemTypes.Comms].Cast<HqHudSystemType>().IsActive
+                    : systems[SystemTypes.Comms].Cast<HudOverrideSystemType>().IsActive;
+                if (commsActive) RepairComms(shipStatus, isHqHud);
+            }
+
+            // Lights (Electrical) — repair each mismatched switch
+            if (mapId != 5 && systems.ContainsKey(SystemTypes.Electrical))
+            {
+                var elecSys = systems[SystemTypes.Electrical].Cast<SwitchSystem>();
+                if (elecSys != null && elecSys.IsActive)
+                {
+                    for (var i = 0; i < 5; i++)
+                    {
+                        var switchMask = 1 << (i & 0x1F);
+                        if ((elecSys.ActualSwitches & switchMask) != (elecSys.ExpectedSwitches & switchMask))
+                            shipStatus.RpcUpdateSystem(SystemTypes.Electrical, (byte)i);
+                    }
+                }
+            }
+        }
+        catch { }
+    }
+
     public static void HandleUnfixLights(ShipStatus shipStatus)
     {
         if (CheatToggles.unfixableLights == _unfixableLights) return;
@@ -364,11 +492,24 @@ public static class MalumSabotageCheats
                 CheatToggles.sabotageAll = false;
             }
 
+            if (CheatToggles.sabotageAllNoDoors)
+            {
+                EnableAllSabotages(false);
+                CheatToggles.sabotageAllNoDoors = false;
+            }
+
+            if (CheatToggles.fixSabotage)
+            {
+                FixAllSabotages(shipStatus, currentMapID);
+                CheatToggles.fixSabotage = false;
+            }
+
             // Handle all sabotage systems
             HandleReactor(shipStatus, currentMapID);
             HandleOxygen(shipStatus, currentMapID);
             HandleComms(shipStatus, currentMapID);
             HandleElectrical(shipStatus, currentMapID);
+            HandleAutoMovingSwitches(shipStatus, currentMapID);
             HandleDoors(shipStatus);
         }
         catch { }
@@ -483,12 +624,14 @@ public static class MalumSabotageCheats
 
     // Turns on Unfixable Lights, Unfixable Comms, Reactor and Oxygen at once (and, if the setting
     // is on, spam-closes all doors). The per-system handlers actually fire the sabotages.
-    private static void EnableAllSabotages()
+    private static void EnableAllSabotages(bool includeDoors = true)
     {
         CheatToggles.unfixableLights = true;
         CheatToggles.unfixableComms = true;
         CheatToggles.reactorSab = true;
         CheatToggles.oxygenSab = true;
+
+        if (!includeDoors) return;
 
         if (CheatToggles.sabotageAllDoors)
             CheatToggles.spamCloseAllDoors = true;

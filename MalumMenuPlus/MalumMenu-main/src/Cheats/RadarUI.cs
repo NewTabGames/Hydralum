@@ -747,21 +747,9 @@ public sealed class RadarUI : MonoBehaviour
         float ty = Mathf.Clamp01((mouse.y - r.y) / Mathf.Max(1f, r.height));
         Vector2 world = new Vector2(_min.x + tx * (_max.x - _min.x), _min.y + (1f - ty) * (_max.y - _min.y));
 
-        var locs = MalumTeleport.GetTeleportLocations();
-        if (locs == null || locs.Count == 0)
-        {
-            MalumTeleport.TeleportTo(world);
-            return;
-        }
-
-        Vector2 best = world;
-        float bestDist = float.MaxValue;
-        foreach (var kv in locs)
-        {
-            float dist = (kv.Value - world).sqrMagnitude;
-            if (dist < bestDist) { bestDist = dist; best = kv.Value; }
-        }
-        MalumTeleport.TeleportTo(best);
+        // Teleport straight to the exact point clicked (like SickoMenu) — hallways and other unnamed
+        // spots included — instead of snapping to the nearest named room/location.
+        MalumTeleport.TeleportTo(world);
     }
 
     private static Color PlayerColor(PlayerControl pc)

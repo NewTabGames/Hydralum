@@ -38,7 +38,11 @@ public class TasksUI : MonoBehaviour
 
         UIHelpers.ApplyUIColor();
 
+        var prevMatrix = GUI.matrix;
+        float scale = CheatToggles.GetWindowScale("Tasks");
+        GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), windowRect.position);
         windowRect = GUI.Window((int)WindowId.TasksUI, windowRect, (GUI.WindowFunction)TasksWindow, "Tasks");
+        GUI.matrix = prevMatrix;
     }
 
     private void TasksWindow(int windowID)

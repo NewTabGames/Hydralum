@@ -12,11 +12,17 @@ public class ConsoleTab : ITab
 
         DrawGeneral();
 
+        GUILayout.Space(15);
+
+        DrawRpcConsole();
+
         GUILayout.EndVertical();
     }
 
     private void DrawGeneral()
     {
+        GUILayout.Label("Console", GUIStylePreset.TabSubtitle);
+
         CheatToggles.showConsole = GUILayout.Toggle(CheatToggles.showConsole, " Show Console");
 
         CheatToggles.logDeaths = GUILayout.Toggle(CheatToggles.logDeaths, " Log Deaths");
@@ -26,5 +32,16 @@ public class ConsoleTab : ITab
         CheatToggles.logVents = GUILayout.Toggle(CheatToggles.logVents, " Log Vents");
 
         CheatToggles.logMeetings = GUILayout.Toggle(CheatToggles.logMeetings, " Log Meetings");
+    }
+
+    private void DrawRpcConsole()
+    {
+        GUILayout.Label("RPC Console", GUIStylePreset.TabSubtitle);
+
+        CheatToggles.showDebugConsole = GUILayout.Toggle(CheatToggles.showDebugConsole, " Show RPC Console");
+
+        CheatToggles.logIncomingRpcs = GUILayout.Toggle(CheatToggles.logIncomingRpcs, " Log Incoming RPCs");
+
+        CheatToggles.logOutgoingRpcs = GUILayout.Toggle(CheatToggles.logOutgoingRpcs, " Log Outgoing RPCs");
     }
 }

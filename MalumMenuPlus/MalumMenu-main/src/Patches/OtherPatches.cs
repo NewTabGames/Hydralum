@@ -784,22 +784,28 @@ public static class PassiveUiElement_Patches
         bool subwindowsAllowed = MenuUI.isGUIActive || (MalumMenu.menuKeepSubwindowsOpen != null && MalumMenu.menuKeepSubwindowsOpen.Value);
         if (subwindowsAllowed)
         {
-            if (CheatToggles.showConsole && ConsoleUI.windowRect.Contains(mousePosition))
+            if (CheatToggles.showConsole && UIHelpers.ScaledWindowRect(ConsoleUI.windowRect, CheatToggles.GetWindowScale("Console")).Contains(mousePosition))
                 return false;
 
-            if (CheatToggles.showDoorsMenu && Utils.isShip && DoorsUI.windowRect.Contains(mousePosition))
+            if (CheatToggles.showDoorsMenu && Utils.isShip && UIHelpers.ScaledWindowRect(DoorsUI.windowRect, CheatToggles.GetWindowScale("Doors")).Contains(mousePosition))
                 return false;
 
-            if (CheatToggles.showProtectMenu && (Utils.isInGame || Utils.isLobby) && ProtectUI.windowRect.Contains(mousePosition))
+            if (CheatToggles.showProtectMenu && (Utils.isInGame || Utils.isLobby) && UIHelpers.ScaledWindowRect(ProtectUI.windowRect, CheatToggles.GetWindowScale("Protect")).Contains(mousePosition))
                 return false;
 
-            if (CheatToggles.showRolesMenu && Utils.isHost && RolesUI.windowRect.Contains(mousePosition))
+            if (CheatToggles.showRolesMenu && Utils.isHost && UIHelpers.ScaledWindowRect(RolesUI.windowRect, CheatToggles.GetWindowScale("Roles")).Contains(mousePosition))
                 return false;
 
-            if (CheatToggles.showTasksMenu && Utils.isPlayer && TasksUI.windowRect.Contains(mousePosition))
+            if (CheatToggles.showTasksMenu && Utils.isPlayer && UIHelpers.ScaledWindowRect(TasksUI.windowRect, CheatToggles.GetWindowScale("Tasks")).Contains(mousePosition))
                 return false;
 
-            if (CheatToggles.showChatLog && ChatLogUI.windowRect.Contains(mousePosition))
+            if (CheatToggles.showChatLog && UIHelpers.ScaledWindowRect(ChatLogUI.windowRect, CheatToggles.GetWindowScale("ChatLog")).Contains(mousePosition))
+                return false;
+
+            if (CheatToggles.showWindowScales && WindowScalesUI.windowRect.Contains(mousePosition))
+                return false;
+
+            if (CheatToggles.showKeybindSettings && KeybindsUI.windowRect.Contains(mousePosition))
                 return false;
         }
 
@@ -810,7 +816,7 @@ public static class PassiveUiElement_Patches
                 var wardrobe = PlayerCustomizationMenu.Instance;
                 if (wardrobe != null && wardrobe.gameObject != null && wardrobe.gameObject.activeInHierarchy)
                 {
-                    if (InventoryOutfitsUI.windowRect.Contains(mousePosition))
+                    if (UIHelpers.ScaledWindowRect(InventoryOutfitsUI.windowRect, CheatToggles.GetWindowScale("Wardrobe")).Contains(mousePosition))
                         return false;
                 }
             }

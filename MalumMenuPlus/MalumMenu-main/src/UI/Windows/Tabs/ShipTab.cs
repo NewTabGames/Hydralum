@@ -79,6 +79,8 @@ public class ShipTab : ITab
 
         CheatToggles.unfixableLights = GUILayout.Toggle(CheatToggles.unfixableLights, " Unfixable Lights");
 
+        CheatToggles.autoMovingSwitches = GUILayout.Toggle(CheatToggles.autoMovingSwitches, " Disable Lights (Auto Moving Switches)");
+
         var newCommsSab = GUILayout.Toggle(CheatToggles.commsSab, " Comms");
         if (newCommsSab && !CheatToggles.commsSab) CheatToggles.unfixableComms = false; // mutually exclusive with Unfixable Comms
         CheatToggles.commsSab = newCommsSab;
@@ -103,6 +105,9 @@ public class ShipTab : ITab
 
         if (GUILayout.Button("Sabotage All", GUIStylePreset.NormalButton))
             CheatToggles.sabotageAll = true;
+
+        if (GUILayout.Button("Fix Sabotages", GUIStylePreset.NormalButton))
+            CheatToggles.fixSabotage = true;
 
         CheatToggles.sabotageAllDoors = GUILayout.Toggle(CheatToggles.sabotageAllDoors, " Sabotage All: Spam Doors");
     }

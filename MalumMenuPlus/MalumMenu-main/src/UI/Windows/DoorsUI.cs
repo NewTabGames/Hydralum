@@ -31,7 +31,11 @@ public class DoorsUI : MonoBehaviour
 
         UIHelpers.ApplyUIColor();
 
+        var prevMatrix = GUI.matrix;
+        float scale = CheatToggles.GetWindowScale("Doors");
+        GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), windowRect.position);
         windowRect = GUI.Window((int)WindowId.DoorsUI, windowRect, (GUI.WindowFunction)DoorsWindow, "Doors");
+        GUI.matrix = prevMatrix;
     }
 
     private void DoorsWindow(int windowID)

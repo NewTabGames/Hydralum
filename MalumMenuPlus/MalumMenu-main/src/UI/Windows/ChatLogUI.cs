@@ -31,7 +31,11 @@ public class ChatLogUI : MonoBehaviour
 
         UIHelpers.ApplyUIColor();
 
+        var prevMatrix = GUI.matrix;
+        float scale = CheatToggles.GetWindowScale("ChatLog");
+        GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), windowRect.position);
         windowRect = GUI.Window((int)WindowId.ChatLogUI, windowRect, (GUI.WindowFunction)ChatLogWindow, "Chat Log");
+        GUI.matrix = prevMatrix;
     }
 
     private void SetStatus(string msg)

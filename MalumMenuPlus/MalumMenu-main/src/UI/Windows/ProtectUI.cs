@@ -31,7 +31,11 @@ public class ProtectUI : MonoBehaviour
 
         UIHelpers.ApplyUIColor();
 
+        var prevMatrix = GUI.matrix;
+        float scale = CheatToggles.GetWindowScale("Protect");
+        GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), windowRect.position);
         windowRect = GUI.Window((int)WindowId.ProtectUI, windowRect, (GUI.WindowFunction)ProtectWindow, "Protect Players");
+        GUI.matrix = prevMatrix;
     }
 
     private void ProtectWindow(int windowID)

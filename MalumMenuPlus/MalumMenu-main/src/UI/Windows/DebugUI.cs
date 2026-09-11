@@ -40,7 +40,11 @@ public class DebugUI : MonoBehaviour
 
         UIHelpers.ApplyUIColor();
 
+        var prevMatrix = GUI.matrix;
+        float scale = CheatToggles.GetWindowScale("RPCConsole");
+        GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), windowRect.position);
         windowRect = GUI.Window((int)WindowId.DebugUI, windowRect, (GUI.WindowFunction)DebugWindow, "RPC Console");
+        GUI.matrix = prevMatrix;
     }
 
     private void DebugWindow(int windowID)

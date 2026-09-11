@@ -9,6 +9,14 @@ public static class UIHelpers
         GUI.backgroundColor = GetGradientColor(offset);
     }
 
+    // Pop-up windows are drawn with GUIUtility.ScaleAroundPivot using their top-left as the pivot, so
+    // on screen they cover width*scale by height*scale from that corner. Mouse-over / click-through
+    // checks must test against this scaled area, not the raw window rect.
+    public static Rect ScaledWindowRect(Rect r, float scale)
+    {
+        return new Rect(r.x, r.y, r.width * scale, r.height * scale);
+    }
+
     public static Color GetGradientColor(float spatialOffset = 0f, float speed = 2.2f, float frequency = 0.02f)
     {
         // RGB mode cycles the full hue spectrum in a continuous wave

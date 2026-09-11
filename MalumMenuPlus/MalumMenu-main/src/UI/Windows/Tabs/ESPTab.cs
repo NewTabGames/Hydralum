@@ -149,12 +149,7 @@ public class ESPTab : ITab
         CheatToggles.radarDoors = GUILayout.Toggle(CheatToggles.radarDoors, " Doors on Radar");
 
         GUILayout.Label("<size=11><color=#888888>Right-click radar = teleport. Door: click=shut, double-click=pin, click=unpin.</color></size>");
-
-        GUILayout.Label($"Size: {CheatToggles.radarSize}%");
-        CheatToggles.radarSize = Mathf.RoundToInt(GUILayout.HorizontalSlider(CheatToggles.radarSize, 60f, 180f));
-
-        GUILayout.Label($"Opacity: {CheatToggles.radarOpacity}%");
-        CheatToggles.radarOpacity = Mathf.RoundToInt(GUILayout.HorizontalSlider(CheatToggles.radarOpacity, 30f, 100f));
+        GUILayout.Label("<size=10><color=#888888>Size & opacity: Config → Pop-up Window Scales</color></size>");
     }
 
     private void DrawReplay()
@@ -165,10 +160,6 @@ public class ESPTab : ITab
         CheatToggles.replayRecording = GUILayout.Toggle(CheatToggles.replayRecording, " Record");
         CheatToggles.replayClearAfterMeeting = GUILayout.Toggle(CheatToggles.replayClearAfterMeeting, " Clear After Meeting");
 
-        GUILayout.Label($"Size: {CheatToggles.replaySize}%");
-        CheatToggles.replaySize = Mathf.RoundToInt(GUILayout.HorizontalSlider(CheatToggles.replaySize, 60f, 180f));
-
-        GUILayout.Label($"Opacity: {CheatToggles.replayOpacity}%");
-        CheatToggles.replayOpacity = Mathf.RoundToInt(GUILayout.HorizontalSlider(CheatToggles.replayOpacity, 30f, 100f));
+        GUILayout.Label("<size=10><color=#888888>Size & opacity: Config → Pop-up Window Scales</color></size>");
     }
 }

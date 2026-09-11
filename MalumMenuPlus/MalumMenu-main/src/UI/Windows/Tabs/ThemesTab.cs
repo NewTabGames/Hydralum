@@ -7,14 +7,26 @@ public class ThemesTab : ITab
 {
     public string name => "Themes";
 
-    private const float ButtonWidth = 150f;
-    private const float ButtonGap = 8f;
+    // 4 uniform columns so everything fits without the content scroll bar (which, right at the
+    // overflow threshold, was flickering on/off and reflowing the buttons — the "wobble").
+    private const int Columns = 4;
+    private const float RowHeight = 28f;
+    private const float Gap = 6f;
+
+    // Fixed, identical width for every button (ExpandWidth made longer-named buttons wider). Derived
+    // from the known window width — the content column is ~0.74 of it after the tab list/separator —
+    // rather than a runtime measurement, which fed back inside the scroll view and blew the layout up.
+    private static float CellWidth()
+    {
+        float contentW = MenuUI.windowWidth * 0.74f;
+        return Mathf.Max(40f, (contentW - (Columns - 1) * Gap) / Columns);
+    }
 
     // Preset accent colors. Empty hex = restore default.
     private static readonly (string name, string hex)[] Themes =
     {
-        ("Default", ""),
-        ("Malum", "#8A2BE2"),
+        ("Malum", ""),
+        ("Violet", "#8A2BE2"),
         ("Ocean", "#1E90FF"),
         ("Emerald", "#2ECC71"),
         ("Crimson", "#E74C3C"),
@@ -56,13 +68,35 @@ public class ThemesTab : ITab
         GUILayout.Label("RGB Mode", GUIStylePreset.TabSubtitle);
         DrawRgbButton();
 
-        GUILayout.Space(12);
+        GUILayout.Space(10);
         GUILayout.Label("Solid Themes", GUIStylePreset.TabSubtitle);
-        DrawSolidThemes();
+        DrawGrid(Themes.Length, ThemeButton);
 
-        GUILayout.Space(14);
+        GUILayout.Space(10);
         GUILayout.Label($"Gradients ({Gradients.Length})", GUIStylePreset.TabSubtitle);
-        DrawGradients();
+        DrawGrid(Gradients.Length, GradientButton);
+    }
+
+    // Lays out `count` cells in fixed columns. Incomplete final rows are padded so every button keeps
+    // the same width (no wobble between rows).
+    private static void DrawGrid(int count, Action<int> drawCell)
+    {
+        for (var i = 0; i < count; i += Columns)
+        {
+            GUILayout.BeginHorizontal();
+            for (var c = 0; c < Columns; c++)
+            {
+                if (c > 0) GUILayout.Space(Gap);
+
+                var idx = i + c;
+                if (idx < count)
+                    drawCell(idx);
+                else
+                    GUILayout.Label("", GUILayout.Width(CellWidth()), GUILayout.Height(RowHeight));
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.Space(4);
+        }
     }
 
     private static void DrawRgbButton()
@@ -70,80 +104,37 @@ public class ThemesTab : ITab
         var previous = GUI.backgroundColor;
         GUI.backgroundColor = Color.HSVToRGB(Mathf.Repeat(Time.time * 0.3f, 1f), 1f, 1f); // live rainbow preview
 
-        if (GUILayout.Button("RGB Mode (Animated Rainbow)", GUIStylePreset.NormalButton, GUILayout.Height(32)))
+        if (GUILayout.Button("RGB Mode (Animated Rainbow)", GUIStylePreset.NormalButton, GUILayout.Height(30)))
             CheatToggles.rgbMode = true;
 
         GUI.backgroundColor = previous;
     }
 
-    private static void DrawSolidThemes()
+    private static void ThemeButton(int i)
     {
-        for (var i = 0; i < Themes.Length; i += 3)
-        {
-            GUILayout.BeginHorizontal();
-            ThemeButton(Themes[i]);
-            if (i + 1 < Themes.Length)
-            {
-                GUILayout.Space(ButtonGap);
-                ThemeButton(Themes[i + 1]);
-            }
-            if (i + 2 < Themes.Length)
-            {
-                GUILayout.Space(ButtonGap);
-                ThemeButton(Themes[i + 2]);
-            }
-            GUILayout.EndHorizontal();
-            GUILayout.Space(4);
-        }
-    }
-
-    private static void DrawGradients()
-    {
-        for (var i = 0; i < Gradients.Length; i += 3)
-        {
-            GUILayout.BeginHorizontal();
-            float t1 = (Mathf.Sin(Time.time * 2.2f + (i * 0.4f)) + 1f) * 0.5f;
-            GradientButton(Gradients[i], t1);
-
-            if (i + 1 < Gradients.Length)
-            {
-                GUILayout.Space(ButtonGap);
-                float t2 = (Mathf.Sin(Time.time * 2.2f + ((i + 1) * 0.4f)) + 1f) * 0.5f;
-                GradientButton(Gradients[i + 1], t2);
-            }
-
-            if (i + 2 < Gradients.Length)
-            {
-                GUILayout.Space(ButtonGap);
-                float t3 = (Mathf.Sin(Time.time * 2.2f + ((i + 2) * 0.4f)) + 1f) * 0.5f;
-                GradientButton(Gradients[i + 2], t3);
-            }
-            GUILayout.EndHorizontal();
-            GUILayout.Space(4);
-        }
-    }
-
-    private static void ThemeButton((string name, string hex) theme)
-    {
+        var theme = Themes[i];
         var previous = GUI.backgroundColor;
         if (!string.IsNullOrEmpty(theme.hex) && ColorUtility.TryParseHtmlString(theme.hex, out var swatch))
             GUI.backgroundColor = swatch;
         else if (string.IsNullOrEmpty(theme.hex))
             GUI.backgroundColor = Color.white;
 
-        if (GUILayout.Button(theme.name, GUIStylePreset.NormalButton, GUILayout.ExpandWidth(true), GUILayout.Height(30)))
+        if (GUILayout.Button(theme.name, GUIStylePreset.NormalButton, GUILayout.Width(CellWidth()), GUILayout.Height(RowHeight)))
             ApplyTheme(theme.hex);
 
         GUI.backgroundColor = previous;
     }
 
-    private static void GradientButton((string name, string a, string b) grad, float t)
+    private static void GradientButton(int i)
     {
+        var grad = Gradients[i];
+        var t = (Mathf.Sin(Time.time * 2.2f + (i * 0.4f)) + 1f) * 0.5f;
+
         var previous = GUI.backgroundColor;
         if (ColorUtility.TryParseHtmlString(grad.a, out var ca) && ColorUtility.TryParseHtmlString(grad.b, out var cb))
             GUI.backgroundColor = Color.Lerp(ca, cb, t);
 
-        if (GUILayout.Button(grad.name, GUIStylePreset.NormalButton, GUILayout.ExpandWidth(true), GUILayout.Height(30)))
+        if (GUILayout.Button(grad.name, GUIStylePreset.NormalButton, GUILayout.Width(CellWidth()), GUILayout.Height(RowHeight)))
             ApplyGradient(grad.a, grad.b);
 
         GUI.backgroundColor = previous;

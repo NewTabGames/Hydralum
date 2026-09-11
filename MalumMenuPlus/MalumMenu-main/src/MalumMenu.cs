@@ -32,6 +32,8 @@ public partial class MalumMenu : BasePlugin
     public static KeybindListener keybindListener;
     public static ReplayUI replayUI;
     public static ChatLogUI chatLogUI;
+    public static WindowScalesUI windowScalesUI;
+    public static KeybindsUI keybindsUI;
 
     public static string malumVersion = "3.3.0";
     public static List<string> supportedAU = new List<string> { "2026.8.18", "2026.8.18s", "2026.6.5", "2026.3.31" };
@@ -209,6 +211,8 @@ public partial class MalumMenu : BasePlugin
         inventoryOutfitsUI = AddComponent<InventoryOutfitsUI>();
         replayUI = AddComponent<ReplayUI>();
         chatLogUI = AddComponent<ChatLogUI>();
+        windowScalesUI = AddComponent<WindowScalesUI>();
+        keybindsUI = AddComponent<KeybindsUI>();
         // rolesUI = AddComponent<RolesUI>();
 
         // Create the TextLogs folder (config/TextLogs) that the Chat Log feature exports to

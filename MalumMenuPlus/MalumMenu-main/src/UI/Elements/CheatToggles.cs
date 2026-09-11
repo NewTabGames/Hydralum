@@ -145,6 +145,7 @@ public struct CheatToggles
     public static bool commsSab;
     public static bool unfixableComms;
     public static bool elecSab;
+    public static bool autoMovingSwitches;
     public static bool reactorSab;
     public static bool oxygenSab;
     public static bool mushSab;
@@ -160,6 +161,12 @@ public struct CheatToggles
     // to the last few seconds (see MalumSabotageCheats), so the sabotage still plays out but never ends the game.
     public static bool autoFixCriticalSab;
     public static bool sabotageAll;
+    // Momentary: sabotages every system at once but never touches doors (used by the Sabotage All
+    // hotkey, so it can't pin doors shut in a way Fix Sabotages can't undo).
+    public static bool sabotageAllNoDoors;
+    // Momentary: fixes every active sabotage once, then resets. Unlike Disable Sabotage (a persistent
+    // toggle that keeps blocking sabotages), this is a one-shot so sabotages can be used again after.
+    public static bool fixSabotage;
     public static bool sabotageAllDoors;
 
     // Vents
@@ -283,6 +290,31 @@ public struct CheatToggles
     internal static bool goonToFortegreenFeet;
     public static bool showStuffTab;
 
+    // Opens the "Pop-up Window Scales" submenu (Config tab).
+    public static bool showWindowScales;
+
+    // Opens the "Keybind Settings" submenu (Config tab).
+    public static bool showKeybindSettings;
+
+    // Per-window scale multipliers for the pop-up windows, configured in that submenu and saved to the
+    // profile. Keyed by a stable id; WindowScalesUI defines the display order and labels. Independent
+    // of the main menu scale so each pop-up can be enlarged on high-resolution displays.
+    public static readonly Dictionary<string, float> WindowScales = new()
+    {
+        { "Console", 1f },
+        { "RPCConsole", 1f },
+        { "Doors", 1f },
+        { "Tasks", 1f },
+        { "Protect", 1f },
+        { "Roles", 1f },
+        { "ChatLog", 1f },
+        { "Wardrobe", 1f },
+    };
+    public const float MinWindowScale = 0.5f;
+    public const float MaxWindowScale = 2.5f;
+
+    public static float GetWindowScale(string key) => WindowScales.TryGetValue(key, out var v) ? v : 1f;
+
     // Config
     public static bool reloadConfig;
     public static bool openConfig;
@@ -368,6 +400,13 @@ public struct CheatToggles
         writer.WriteLine("# Outfits / Color Sniper");
         writer.WriteLine($"ColorSniperTargetColor = {CheatToggles.colorSniperTargetColor}");
 
+        writer.WriteLine();
+        writer.WriteLine("# Per-window pop-up scales (0.50 - 2.50), set via the Pop-up Window Scales submenu");
+        foreach (var kv in WindowScales)
+        {
+            writer.WriteLine($"WindowScale.{kv.Key} = {kv.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+        }
+
 
         writer.WriteLine();
         writer.WriteLine("# Radar config");
@@ -440,6 +479,13 @@ public struct CheatToggles
                     CheatToggles.colorSniperTargetColor = col;
                     if (MalumMenu.colorSniperTargetColor != null) MalumMenu.colorSniperTargetColor.Value = col;
                 }
+                continue;
+            }
+
+            if (name.StartsWith("WindowScale.") && float.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var wscale))
+            {
+                var wkey = name.Substring("WindowScale.".Length);
+                if (WindowScales.ContainsKey(wkey)) WindowScales[wkey] = Mathf.Clamp(wscale, MinWindowScale, MaxWindowScale);
                 continue;
             }
 

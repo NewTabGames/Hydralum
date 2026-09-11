@@ -70,7 +70,11 @@ public class InventoryOutfitsUI : MonoBehaviour
             RefreshOutfits();
         }
 
+        var prevMatrix = GUI.matrix;
+        float scale = CheatToggles.GetWindowScale("Wardrobe");
+        GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), windowRect.position);
         windowRect = GUI.Window((int)WindowId.InventoryOutfitsUI, windowRect, (GUI.WindowFunction)DrawWindow, "Wardrobe Outfit Presets");
+        GUI.matrix = prevMatrix;
     }
 
     private void DrawWindow(int windowId)

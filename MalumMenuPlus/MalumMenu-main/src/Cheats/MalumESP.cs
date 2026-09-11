@@ -48,16 +48,18 @@ public static class MalumESP
         bool subwindowsActive = !MalumMenu.isPanicked && (MenuUI.isGUIActive || keepOpen);
         if (subwindowsActive)
         {
-            if (CheatToggles.showConsole && ConsoleUI.windowRect.Contains(guiMousePos)) return true;
-            if (CheatToggles.showDebugConsole && DebugUI.windowRect.Contains(guiMousePos)) return true;
-            if (CheatToggles.showDoorsMenu && DoorsUI.windowRect.Contains(guiMousePos)) return true;
-            if (CheatToggles.showProtectMenu && ProtectUI.windowRect.Contains(guiMousePos)) return true;
-            if (CheatToggles.showRolesMenu && RolesUI.windowRect.Contains(guiMousePos)) return true;
-            if (CheatToggles.showTasksMenu && TasksUI.windowRect.Contains(guiMousePos)) return true;
-            if (CheatToggles.showChatLog && ChatLogUI.windowRect.Contains(guiMousePos)) return true;
+            if (CheatToggles.showConsole && UIHelpers.ScaledWindowRect(ConsoleUI.windowRect, CheatToggles.GetWindowScale("Console")).Contains(guiMousePos)) return true;
+            if (CheatToggles.showDebugConsole && UIHelpers.ScaledWindowRect(DebugUI.windowRect, CheatToggles.GetWindowScale("RPCConsole")).Contains(guiMousePos)) return true;
+            if (CheatToggles.showDoorsMenu && UIHelpers.ScaledWindowRect(DoorsUI.windowRect, CheatToggles.GetWindowScale("Doors")).Contains(guiMousePos)) return true;
+            if (CheatToggles.showProtectMenu && UIHelpers.ScaledWindowRect(ProtectUI.windowRect, CheatToggles.GetWindowScale("Protect")).Contains(guiMousePos)) return true;
+            if (CheatToggles.showRolesMenu && UIHelpers.ScaledWindowRect(RolesUI.windowRect, CheatToggles.GetWindowScale("Roles")).Contains(guiMousePos)) return true;
+            if (CheatToggles.showTasksMenu && UIHelpers.ScaledWindowRect(TasksUI.windowRect, CheatToggles.GetWindowScale("Tasks")).Contains(guiMousePos)) return true;
+            if (CheatToggles.showChatLog && UIHelpers.ScaledWindowRect(ChatLogUI.windowRect, CheatToggles.GetWindowScale("ChatLog")).Contains(guiMousePos)) return true;
+            if (CheatToggles.showWindowScales && WindowScalesUI.windowRect.Contains(guiMousePos)) return true;
+            if (CheatToggles.showKeybindSettings && KeybindsUI.windowRect.Contains(guiMousePos)) return true;
         }
 
-        if (CheatToggles.showWardrobeOverlay && InventoryOutfitsUI.windowRect.Contains(guiMousePos)) return true;
+        if (CheatToggles.showWardrobeOverlay && UIHelpers.ScaledWindowRect(InventoryOutfitsUI.windowRect, CheatToggles.GetWindowScale("Wardrobe")).Contains(guiMousePos)) return true;
 
         var hydraRect = MenuUI.GetHydraRect();
         if (hydraRect.width > 0 && hydraRect.Contains(guiMousePos))
@@ -158,6 +160,18 @@ public static class MalumESP
         }
     }
 
+    // True when Among Us's own Colorblind mode is on. While it is, the game draws each player's colour
+    // name (e.g. "Red") beneath them, so we lift our nametags a bit to stop them overlapping it.
+    private static bool IsColorBlindMode()
+    {
+        try
+        {
+            var settings = AmongUs.Data.DataManager.Settings;
+            return settings != null && settings.Accessibility != null && settings.Accessibility.ColorBlindMode;
+        }
+        catch { return false; }
+    }
+
     public static void MeetingNametags(MeetingHud meetingHud)
     {
         if (meetingHud == null || meetingHud.playerStates == null) return;
@@ -182,21 +196,23 @@ public static class MalumESP
                 if (!string.IsNullOrEmpty(fcMeetingTag)) meetingTag = fcMeetingTag + "\n" + meetingTag;
                 playerState.NameText.text = meetingTag;
 
-                // Move and resize the nametag to prevent it overlapping with colorblind text
+                // Move and resize the nametag to prevent it overlapping with colorblind text.
+                // Extra lift while the game's Colorblind mode shows the colour name under the avatar.
+                float cbY = IsColorBlindMode() ? 0.06f : 0f;
                 if (CheatToggles.seeRoles && CheatToggles.seePlayerInfo)
                 {
-                    playerState.NameText.transform.localPosition = new Vector3(0.33f, 0.08f, 0f);
+                    playerState.NameText.transform.localPosition = new Vector3(0.33f, 0.08f + cbY, 0f);
                     playerState.NameText.transform.localScale = new Vector3(0.75f, 0.75f, 0.75f);
                 }
                 else if (CheatToggles.seeRoles || CheatToggles.seePlayerInfo)
                 {
-                    playerState.NameText.transform.localPosition = new Vector3(0.3384f, 0.1125f, -0.1f);
+                    playerState.NameText.transform.localPosition = new Vector3(0.3384f, 0.1125f + cbY, -0.1f);
                     playerState.NameText.transform.localScale = new Vector3(0.9f, 1f, 1f);
                 }
                 else
                 {
                     // Reset the position and scale of the nametag to default values
-                    playerState.NameText.transform.localPosition = new Vector3(0.3384f, 0.0311f, -0.1f);
+                    playerState.NameText.transform.localPosition = new Vector3(0.3384f, 0.0311f + cbY, -0.1f);
                     playerState.NameText.transform.localScale = new Vector3(0.9f, 1f, 1f);
                 }
             }
@@ -234,17 +250,20 @@ public static class MalumESP
                 bool showingGem = isHydralum && !CheatToggles.hideAllGems && !(isLocal && CheatToggles.hideMyGem);
                 bool showingFc = CheatToggles.showFriendCode && !string.IsNullOrEmpty(playerPhysics.myPlayer.Data.FriendCode);
 
+                // Extra lift while the game's Colorblind mode shows the colour name under the player.
+                float cbY = IsColorBlindMode() ? 0.11f : 0f;
+
                 if ((CheatToggles.seeRoles && CheatToggles.seePlayerInfo) || (showingFc && (CheatToggles.seeRoles || CheatToggles.seePlayerInfo)))
                 {
-                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.186f, 0f);
+                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.186f + cbY, 0f);
                 }
                 else if (CheatToggles.seeRoles || CheatToggles.seePlayerInfo || showingGem || showingFc)
                 {
-                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.093f, 0f);
+                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0.093f + cbY, 0f);
                 }
                 else
                 {
-                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0f, 0f);
+                    playerPhysics.myPlayer.cosmetics.nameText.transform.localPosition = new Vector3(0f, 0f + cbY, 0f);
                 }
             }
         }

@@ -203,6 +203,10 @@ public class ConfigTab : ITab
     {
         GUILayout.Label("Menu", GUIStylePreset.TabSubtitle);
 
+        CheatToggles.showWindowScales = GUILayout.Toggle(CheatToggles.showWindowScales, " Pop-up Window Scales");
+
+        CheatToggles.showKeybindSettings = GUILayout.Toggle(CheatToggles.showKeybindSettings, " Keybind Settings");
+
         GUILayout.Label("Menu Keybind:");
 
         string currentKey = string.IsNullOrEmpty(MalumMenu.menuKeybind.Value) ? "Delete" : MalumMenu.menuKeybind.Value;
@@ -249,6 +253,7 @@ public class ConfigTab : ITab
         {
             MalumMenu.menuOpacity.Value = MenuUI.uiOpacity;
         }
+
 
         MalumMenu.menuOpenOnMouse.Value =
             GUILayout.Toggle(MalumMenu.menuOpenOnMouse.Value, " Open on Cursor");

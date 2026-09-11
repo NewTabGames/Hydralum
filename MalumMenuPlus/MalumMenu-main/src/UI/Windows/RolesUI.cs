@@ -28,7 +28,11 @@ public class RolesUI : MonoBehaviour
 
         UIHelpers.ApplyUIColor();
 
+        var prevMatrix = GUI.matrix;
+        float scale = CheatToggles.GetWindowScale("Roles");
+        GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), windowRect.position);
         windowRect = GUI.Window((int)WindowId.RolesUI, windowRect, (GUI.WindowFunction)RolesWindow, "Assign Roles");
+        GUI.matrix = prevMatrix;
     }
 
     private void RolesWindow(int windowID)
