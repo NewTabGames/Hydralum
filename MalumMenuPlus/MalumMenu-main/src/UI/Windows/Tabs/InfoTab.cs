@@ -42,6 +42,27 @@ public class InfoTab : ITab
         }
 
         GUILayout.Space(12);
+        GUILayout.Label("Invisible Name Method", GUIStylePreset.TabSubtitle);
+        GUILayout.Label("Give yourself a blank in-game name by editing your local player file.", GUIStylePreset.Hint);
+        GUILayout.Space(4);
+
+        GUILayout.Label("1. Fully close Among Us, then open your Among Us data folder:");
+        if (GUILayout.Button("Open player.amogus Folder", GUIStylePreset.NormalButton, GUILayout.Width(240)))
+        {
+            OpenAmongUsDataFolder();
+        }
+
+        GUILayout.Space(4);
+        GUILayout.Label("2. Open <b>player.amogus</b> with Notepad.");
+        GUILayout.Label("3. Change your name to one of these, then Save:");
+
+        DrawInvisibleNameRow("\\u00AD", "soft hyphen");
+        DrawInvisibleNameRow("\\u2060", "word joiner");
+
+        GUILayout.Space(2);
+        GUILayout.Label("4. Save the file, then launch Among Us.", GUIStylePreset.Hint);
+
+        GUILayout.Space(12);
         GUILayout.Label("Credits & Community", GUIStylePreset.TabSubtitle);
 
         DrawCredit("Hydralum", "Official Discord & GitHub", HydralumUrl, HydralumDiscordUrl);
@@ -60,6 +81,32 @@ public class InfoTab : ITab
         GUILayout.Label($"<color=#00FFAA><b>[{key}]</b></color>", GUILayout.Width(170));
         GUILayout.Label(description);
         GUILayout.EndHorizontal();
+    }
+
+    // "escape" is the literal escape text (e.g. \u00AD) shown in the label and copied to the clipboard.
+    // Pasted into player.amogus, Among Us parses it into the invisible character.
+    private static void DrawInvisibleNameRow(string escape, string label)
+    {
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"<color=#00FFAA><b>{escape}</b></color>  <color=#9A9A9A>({label})</color>", GUILayout.Width(220));
+        if (GUILayout.Button("Copy", GUIStylePreset.NormalButton, GUILayout.Width(90)))
+        {
+            GUIUtility.systemCopyBuffer = escape;
+        }
+        GUILayout.FlexibleSpace();
+        GUILayout.EndHorizontal();
+    }
+
+    private static void OpenAmongUsDataFolder()
+    {
+        try
+        {
+            // persistentDataPath resolves to C:\Users\<user>\AppData\LocalLow\Innersloth\Among Us for the
+            // actual logged-in user, so this works for everyone without hardcoding a username.
+            string path = Application.persistentDataPath.Replace('/', '\\');
+            System.Diagnostics.Process.Start("explorer.exe", $"\"{path}\"");
+        }
+        catch { }
     }
 
     private static void DrawCredit(string title, string author, string githubUrl, string discordUrl = null)
