@@ -79,6 +79,8 @@ jobs:
         name: Hydralum-Standalone-Steam
         path: standalone_build/
         if-no-files-found: error
+        # BepInEx ships a hidden .doorstop_version file; upload-artifact drops hidden files by default.
+        include-hidden-files: true
 
     # The Microsoft Store / Xbox App build of Among Us is 64-bit, so it needs the x64 BepInEx loader
     # (Steam is 32-bit / x86, handled above). The mod DLLs themselves are architecture-agnostic managed
@@ -113,13 +115,16 @@ jobs:
         name: Hydralum-Standalone-MicrosoftStore-XboxApp
         path: msstore_build/
         if-no-files-found: error
+        # BepInEx ships a hidden .doorstop_version file; upload-artifact drops hidden files by default.
+        include-hidden-files: true
 
     - name: Create Release Zip Archives
       if: startsWith(github.ref, 'refs/tags/v')
+      # Zip "." rather than "./*" so hidden files (e.g. BepInEx's required .doorstop_version) are included.
       run: |
-        cd standalone_build && zip -r ../Hydralum-Standalone-Steam.zip ./* && cd ..
-        cd msstore_build && zip -r ../Hydralum-Standalone-MicrosoftStore-XboxApp.zip ./* && cd ..
-        cd DLLs && zip -r ../Hydralum-DLLs.zip ./* && cd ..
+        cd standalone_build && zip -r ../Hydralum-Standalone-Steam.zip . && cd ..
+        cd msstore_build && zip -r ../Hydralum-Standalone-MicrosoftStore-XboxApp.zip . && cd ..
+        cd DLLs && zip -r ../Hydralum-DLLs.zip . && cd ..
 
     - name: Publish GitHub Release
       if: startsWith(github.ref, 'refs/tags/v')
