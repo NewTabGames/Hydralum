@@ -232,18 +232,11 @@ namespace HydraMenu
             "localcourt#0770"
         };
 
-        private static readonly HashSet<string> RemoteDevIds = new(StringComparer.OrdinalIgnoreCase);
-
         public static bool IsDevId(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return false;
             id = id.Trim();
-            if (HardcodedDevPuids.Contains(id) || HardcodedDevFriendCodes.Contains(id)) return true;
-            lock (_peerLock)
-            {
-                if (RemoteDevIds.Contains(id)) return true;
-            }
-            return false;
+            return HardcodedDevPuids.Contains(id) || HardcodedDevFriendCodes.Contains(id);
         }
 
         public static bool IsDevUser(PlayerControl player)
@@ -525,7 +518,7 @@ namespace HydraMenu
                                         }
 
                                         long age = lastSeen > 0 ? Math.Abs(now - lastSeen) : 999999;
-                                        if (age < 90)
+                                        if (age < 60)
                                         {
                                             active++;
 
@@ -595,7 +588,7 @@ namespace HydraMenu
                     // 3. Fetch announcement
                     await AnnouncementManager.RefreshAsync(token);
 
-                    // 4. Fetch stats and verify version requirement (checks /announcement/required_version first to prevent old-client overwrites)
+                    // 4. Check version requirement via /announcement/required_version
                     try
                     {
                         string reqVer = "";
@@ -615,25 +608,6 @@ namespace HydraMenu
                             }
                         }
                         catch { }
-
-                        // Fallback to stats.json
-                        if (string.IsNullOrWhiteSpace(reqVer))
-                        {
-                            string statsUrl = $"https://hydralum-presence-default-rtdb.firebaseio.com/stats.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-                            using var statsResp = await HttpClient.GetAsync(statsUrl, token);
-                            if (statsResp.IsSuccessStatusCode)
-                            {
-                                var statsJson = await statsResp.Content.ReadAsStringAsync(token);
-                                if (!string.IsNullOrWhiteSpace(statsJson) && statsJson != "null")
-                                {
-                                    using var statsDoc = JsonDocument.Parse(statsJson);
-                                    if (statsDoc.RootElement.TryGetProperty("required_version", out var reqVerProp))
-                                    {
-                                        reqVer = reqVerProp.ValueKind == JsonValueKind.String ? (reqVerProp.GetString() ?? "") : reqVerProp.ToString();
-                                    }
-                                }
-                            }
-                        }
 
                         if (!string.IsNullOrWhiteSpace(reqVer))
                         {

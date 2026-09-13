@@ -232,18 +232,11 @@ namespace MalumMenu
             "localcourt#0770"
         };
 
-        private static readonly HashSet<string> RemoteDevIds = new(StringComparer.OrdinalIgnoreCase);
-
         public static bool IsDevId(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return false;
             id = id.Trim();
-            if (HardcodedDevPuids.Contains(id) || HardcodedDevFriendCodes.Contains(id)) return true;
-            lock (_peerLock)
-            {
-                if (RemoteDevIds.Contains(id)) return true;
-            }
-            return false;
+            return HardcodedDevPuids.Contains(id) || HardcodedDevFriendCodes.Contains(id);
         }
 
         public static bool IsDevUser(PlayerControl player)
@@ -544,7 +537,7 @@ namespace MalumMenu
                                         }
 
                                         long age = lastSeen > 0 ? Math.Abs(now - lastSeen) : 999999;
-                                        if (age < 90)
+                                        if (age < 60)
                                         {
                                             active++;
 
@@ -614,7 +607,7 @@ namespace MalumMenu
                     // 3. Fetch announcement
                     await AnnouncementManager.RefreshAsync(token);
 
-                    // 4. Fetch stats and verify version requirement (checks /announcement/required_version first to prevent old-client overwrites)
+                    // 4. Check version requirement via /announcement/required_version
                     try
                     {
                         string reqVer = "";
@@ -634,25 +627,6 @@ namespace MalumMenu
                             }
                         }
                         catch { }
-
-                        // Fallback to stats.json
-                        if (string.IsNullOrWhiteSpace(reqVer))
-                        {
-                            string statsUrl = $"https://hydralum-presence-default-rtdb.firebaseio.com/stats.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-                            using var statsResp = await HttpClient.GetAsync(statsUrl, token);
-                            if (statsResp.IsSuccessStatusCode)
-                            {
-                                var statsJson = await statsResp.Content.ReadAsStringAsync(token);
-                                if (!string.IsNullOrWhiteSpace(statsJson) && statsJson != "null")
-                                {
-                                    using var statsDoc = JsonDocument.Parse(statsJson);
-                                    if (statsDoc.RootElement.TryGetProperty("required_version", out var reqVerProp))
-                                    {
-                                        reqVer = reqVerProp.ValueKind == JsonValueKind.String ? (reqVerProp.GetString() ?? "") : reqVerProp.ToString();
-                                    }
-                                }
-                            }
-                        }
 
                         if (!string.IsNullOrWhiteSpace(reqVer))
                         {
@@ -678,46 +652,6 @@ namespace MalumMenu
                                 AppDomain.CurrentDomain.SetData("HydralumOutdated", false);
                             }
                             AppDomain.CurrentDomain.SetData("HydralumRequiredVersion", RequiredVersion);
-                        }
-                    }
-                    catch { }
-
-                    // 5. Fetch remote dev list if present
-                    try
-                    {
-                        string devsUrl = $"https://hydralum-presence-default-rtdb.firebaseio.com/devs.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-                        using var devsResp = await HttpClient.GetAsync(devsUrl, token);
-                        if (devsResp.IsSuccessStatusCode)
-                        {
-                            var devsJson = await devsResp.Content.ReadAsStringAsync(token);
-                            if (!string.IsNullOrWhiteSpace(devsJson) && devsJson != "null")
-                            {
-                                using var devDoc = JsonDocument.Parse(devsJson);
-                                lock (_peerLock)
-                                {
-                                    RemoteDevIds.Clear();
-                                    if (devDoc.RootElement.ValueKind == JsonValueKind.Array)
-                                    {
-                                        foreach (var item in devDoc.RootElement.EnumerateArray())
-                                        {
-                                            var str = item.GetString();
-                                            if (!string.IsNullOrWhiteSpace(str)) RemoteDevIds.Add(str.Trim());
-                                        }
-                                    }
-                                    else if (devDoc.RootElement.ValueKind == JsonValueKind.Object)
-                                    {
-                                        foreach (var prop in devDoc.RootElement.EnumerateObject())
-                                        {
-                                            RemoteDevIds.Add(prop.Name.Trim());
-                                            if (prop.Value.ValueKind == JsonValueKind.String)
-                                            {
-                                                var str = prop.Value.GetString();
-                                                if (!string.IsNullOrWhiteSpace(str)) RemoteDevIds.Add(str.Trim());
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                         }
                     }
                     catch { }
@@ -927,11 +861,11 @@ namespace MalumMenu
                 {
                     ctZone = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
                 }
-                return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ctZone).ToString("h:mm:ss tt");
+                return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ctZone).ToString("h:mm:ss tt", System.Globalization.CultureInfo.InvariantCulture);
             }
             catch
             {
-                return DateTime.UtcNow.AddHours(-5).ToString("h:mm:ss tt");
+                return DateTime.UtcNow.AddHours(-5).ToString("h:mm:ss tt", System.Globalization.CultureInfo.InvariantCulture);
             }
         }
 
