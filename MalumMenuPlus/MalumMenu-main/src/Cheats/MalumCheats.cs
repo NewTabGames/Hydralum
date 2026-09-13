@@ -390,50 +390,30 @@ public static class MalumCheats
         var current = Vent.currentVent;
         if (current == null || !local.inVent)
         {
+            // Not in a vent yet: allow a left-click on a nearby vent to ENTER it (within our interaction
+            // range), so entering works the same way hopping does. This makes the vent click consistent
+            // everywhere and lets it pair with Hydra's Move In Vents (walk up to a vent, click to enter).
             VentNetworkLabel = "";
             VentNetworkLabelShadow = "";
             ClearVentTracers();
+            TryClickEnterVent(local);
             return;
         }
 
-        var tour = BuildNearestVentTour();
-        if (tour.Count < 2)
-        {
-            VentNetworkLabel = "";
-            VentNetworkLabelShadow = "";
-            ClearVentTracers();
-            return;
-        }
-
-        var index = -1;
-        for (var i = 0; i < tour.Count; i++)
-        {
-            if (tour[i].Id == current.Id) { index = i; break; }
-        }
-
-        if (index < 0)
-        {
-            VentNetworkLabel = "";
-            VentNetworkLabelShadow = "";
-            ClearVentTracers();
-            return;
-        }
-
-        var prevTarget = tour[(index - 1 + tour.Count) % tour.Count];
-        var nextTarget = tour[(index + 1) % tour.Count];
-
-        string prevRoom = Utils.GetRoomFromPosition(prevTarget.transform.position)?.RoomId.ToString() ?? prevTarget.gameObject.name.Replace("Vent_", "").Replace("Vent", "Unknown");
-        string nextRoom = Utils.GetRoomFromPosition(nextTarget.transform.position)?.RoomId.ToString() ?? nextTarget.gameObject.name.Replace("Vent_", "").Replace("Vent", "Unknown");
-
-        VentNetworkLabelShadow = $"< {prevRoom} - {nextRoom} >";
-        VentNetworkLabel = $"< <color=#3388FF>{prevRoom}</color> - <color=#00FF00>{nextRoom}</color> >";
+        // The vent we're in already knows where its arrows go (rewired into the vent chain by the
+        // SetButtons patch). Draw a green tracer to each vent those arrows can reach - no on-screen label,
+        // no separate "previous" colour; every vent you can hop to from here is just green.
+        VentNetworkLabel = "";
+        VentNetworkLabelShadow = "";
 
         foreach (var v in ShipStatus.Instance.AllVents)
         {
             if (v == null) continue;
-            if (v.Id == prevTarget.Id) Utils.DrawTracer(v.gameObject, local.gameObject, new Color(0.1f, 0.3f, 0.9f));
-            else if (v.Id == nextTarget.Id) Utils.DrawTracer(v.gameObject, local.gameObject, Color.green);
-            else Utils.DrawTracer(v.gameObject, local.gameObject, Color.clear);
+            bool reachable = v.Id != current.Id &&
+                ((current.Left != null && v.Id == current.Left.Id)
+                 || (current.Right != null && v.Id == current.Right.Id)
+                 || (current.Center != null && v.Id == current.Center.Id));
+            Utils.DrawTracer(v.gameObject, local.gameObject, reachable ? Color.green : Color.clear);
         }
 
         var forward = Input.GetKeyDown(KeyCode.RightArrow);
@@ -443,8 +423,8 @@ public static class MalumCheats
 
         if (forward || backward)
         {
-            var step = forward ? 1 : -1;
-            target = tour[(index + step + tour.Count) % tour.Count];
+            // Arrow keys hop along the vent's own connections, matching the on-screen arrows.
+            target = forward ? current.Right : current.Left;
         }
         else if (Input.GetMouseButtonDown(0) && Camera.main != null && !MalumESP.IsMouseOverActiveMenuGUI())
         {
@@ -456,11 +436,13 @@ public static class MalumCheats
             // the vent network - that teleported players who were just trying to open the map.
             if (!IsMouseOverGameButton(mouseWorld))
             {
-                float closestDist = 0.8f;
+                float closestDist = VentClickRadius;
 
+                // Note: the current vent is intentionally NOT excluded. With Move In Vents you can walk
+                // away from the vent you entered, so clicking it should snap you back onto it.
                 foreach (var v in ShipStatus.Instance.AllVents)
                 {
-                    if (v == null || v.Id == current.Id) continue;
+                    if (v == null) continue;
                     float dist = Vector2.Distance(mouseWorld, v.transform.position);
                     if (dist < closestDist)
                     {
@@ -475,10 +457,65 @@ public static class MalumCheats
 
         try
         {
-            var original = current.Right;
-            current.Right = target;
-            current.ClickRight();
-            current.Right = original;
+            if (target.Id == current.Id)
+            {
+                // Clicking the vent we're currently in (after walking off it with Move In Vents) teleports
+                // us back onto it rather than hopping to a different vent.
+                MalumTeleport.TeleportTo((Vector2)(current.transform.position + current.Offset));
+            }
+            else
+            {
+                var original = current.Right;
+                current.Right = target;
+                current.ClickRight();
+                current.Right = original;
+            }
+        }
+        catch { }
+    }
+
+    // How close (world units) a click must land to a vent's centre to count as clicking that vent.
+    private const float VentClickRadius = 1.1f;
+
+    // Left-click a nearby vent to enter it when we're not already in one. Gated to roles that can vent
+    // (or Unlock Vents), and only fires if we're actually within our (possibly extended) interaction
+    // range of that vent - so it mirrors the game's own "stand near a vent and press Vent" rule and pairs
+    // with the Vent Interaction Range option to let you enter from a distance.
+    private static void TryClickEnterVent(PlayerControl local)
+    {
+        if (local == null || local.Data == null || local.Data.IsDead) return;
+        if (!Input.GetMouseButtonDown(0) || Camera.main == null) return;
+        if (MalumESP.IsMouseOverActiveMenuGUI()) return;
+        if (MeetingHud.Instance != null || !local.CanMove) return;
+
+        bool canVent = (local.Data.Role != null && local.Data.Role.CanVent) || CheatToggles.unlockVents;
+        if (!canVent) return;
+
+        Vector2 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        if (IsMouseOverGameButton(mouseWorld)) return;
+
+        Vent target = null;
+        float closest = VentClickRadius;
+        foreach (var v in ShipStatus.Instance.AllVents)
+        {
+            if (v == null) continue;
+            float dist = Vector2.Distance(mouseWorld, (Vector2)v.transform.position);
+            if (dist < closest) { closest = dist; target = v; }
+        }
+        if (target == null) return;
+
+        // Must be within our (possibly extended) interaction range of the vent to enter it.
+        float playerDist = Vector2.Distance(local.GetTruePosition(), (Vector2)target.transform.position);
+        float maxDist = target.UsableDistance * (CheatToggles.ventRange ? Mathf.Max(1f, CheatToggles.ventRangeMult) : 1f);
+        if (playerDist > maxDist) return;
+
+        try
+        {
+            // Entering a vent doesn't move you to it, so a far / click-selected vent would leave you
+            // standing in the open while "inside" a vent. Teleport onto the vent first so entering it from
+            // range actually puts you in it - this is what makes extended / infinite range usable by click.
+            MalumTeleport.TeleportTo((Vector2)(target.transform.position + target.Offset));
+            local.MyPhysics.RpcEnterVent(target.Id);
         }
         catch { }
     }
@@ -520,7 +557,7 @@ public static class MalumCheats
     // walk to the closest vent not yet visited. Consecutive entries are physically close, so cycling
     // through the tour feels like short hops around the map rather than random teleports. Recomputed
     // on demand (deterministic from vent positions, so the order stays stable between presses).
-    private static List<Vent> BuildNearestVentTour()
+    internal static List<Vent> BuildNearestVentTour()
     {
         if (ShipStatus.Instance == null || ShipStatus.Instance.AllVents == null) return new List<Vent>();
         int hash = ShipStatus.Instance.AllVents.Length;

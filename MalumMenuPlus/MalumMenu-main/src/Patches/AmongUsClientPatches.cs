@@ -7,6 +7,8 @@ public static class AmongUsClient_Update
 {
     public static void Postfix()
     {
+        LobbyHistory.Tick(); // record the online lobbies you join for the Lobbies tab
+
         // GuestMode cheats are commented out as they are broken in latest updates
 
         // Code to treat temp accounts the same as full accounts, including access to friend codes

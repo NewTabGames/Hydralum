@@ -43,20 +43,7 @@ public class ChatTab : ITab
         CheatToggles.chatTimestamps = GUILayout.Toggle(CheatToggles.chatTimestamps, " Add Timestamps to Messages");
 
         if (CheatToggles.chatTimestamps)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(20);
-
-            var prevTsBg = GUI.backgroundColor;
-            GUI.backgroundColor = CheatToggles.chatTimestamp24hr ? new Color(0.2f, 0.85f, 0.5f) : prevTsBg;
-            if (GUILayout.Button("24hr", GUIStylePreset.NormalButton)) CheatToggles.chatTimestamp24hr = true;
-
-            GUI.backgroundColor = !CheatToggles.chatTimestamp24hr ? new Color(0.2f, 0.85f, 0.5f) : prevTsBg;
-            if (GUILayout.Button("12hr", GUIStylePreset.NormalButton)) CheatToggles.chatTimestamp24hr = false;
-
-            GUI.backgroundColor = prevTsBg;
-            GUILayout.EndHorizontal();
-        }
+            GUILayout.Label("<size=11><color=#888888>24hr / 12hr format is in Config → Account → Time Format</color></size>");
 
         GUILayout.Space(15);
         GUILayout.Label("Advanced Chat Tags", GUIStylePreset.TabSubtitle);

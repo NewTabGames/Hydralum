@@ -183,6 +183,8 @@ public struct CheatToggles
     public static bool disableVents;
     public static bool ventsExcludeSelf;
     public static bool ventNetwork;
+    public static bool ventRange;
+    public static float ventRangeMult = 2.5f;
     public static bool isCheatBootingVents;
 
     // Animations
@@ -444,6 +446,10 @@ public struct CheatToggles
         writer.WriteLine($"ReplayOpacity = {CheatToggles.replayOpacity}");
 
         writer.WriteLine();
+        writer.WriteLine("# Vent interaction range multiplier (applies when the Vent Interaction Range toggle is on)");
+        writer.WriteLine($"VentRangeMult = {CheatToggles.ventRangeMult.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+
+        writer.WriteLine();
         writer.WriteLine("# Auto Complete Tasks config (seconds)");
         writer.WriteLine($"AutoCompleteDelay = {CheatToggles.autoCompleteDelay.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
         writer.WriteLine($"AutoCompleteInterval = {CheatToggles.autoCompleteInterval.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
@@ -519,6 +525,8 @@ public struct CheatToggles
 
             if (name == "ReplaySize" && int.TryParse(parts[1].Trim(), out var rpsize)) { CheatToggles.replaySize = rpsize; continue; }
             if (name == "ReplayOpacity" && int.TryParse(parts[1].Trim(), out var rpopac)) { CheatToggles.replayOpacity = rpopac; continue; }
+
+            if (name == "VentRangeMult" && float.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var vrange)) { CheatToggles.ventRangeMult = Mathf.Clamp(vrange, 1f, 8f); continue; }
 
             if (name == "AutoCompleteDelay" && float.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var acDelay)) { CheatToggles.autoCompleteDelay = Mathf.Clamp(acDelay, 0f, 60f); continue; }
             if (name == "AutoCompleteInterval" && float.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var acInterval)) { CheatToggles.autoCompleteInterval = Mathf.Clamp(acInterval, 0f, 20f); continue; }

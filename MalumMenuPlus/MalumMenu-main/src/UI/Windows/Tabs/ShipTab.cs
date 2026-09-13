@@ -120,7 +120,16 @@ public class ShipTab : ITab
 
         CheatToggles.ventNetwork = GUILayout.Toggle(CheatToggles.ventNetwork, " Vent Network");
 
-        GUILayout.Label("Arrow keys cycle vents, or click any vent to go to it", GUIStylePreset.Hint);
+        GUILayout.Label("Vent arrows connect every vent; arrow keys cycle, or click any vent to enter / go to it", GUIStylePreset.Hint);
+
+        CheatToggles.ventRange = GUILayout.Toggle(CheatToggles.ventRange, " Vent Interaction Range");
+
+        if (CheatToggles.ventRange)
+        {
+            GUILayout.Label($"Range: {CheatToggles.ventRangeMult:0.0}x normal", GUIStylePreset.Hint);
+            CheatToggles.ventRangeMult = (float)System.Math.Round(
+                GUILayout.HorizontalSlider(CheatToggles.ventRangeMult, 1f, 8f), 1);
+        }
 
         CheatToggles.kickVents = GUILayout.Toggle(CheatToggles.kickVents, " Kick All From Vents");
 

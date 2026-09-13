@@ -295,6 +295,17 @@ public class ConfigTab : ITab
         }
 
         GUILayout.Label($"FPS Limit: {FpsUnlocker.TargetFps}");
+
+        GUILayout.Space(6);
+        GUILayout.Label("Time Format");
+        GUILayout.BeginHorizontal();
+        var prevTsBg = GUI.backgroundColor;
+        GUI.backgroundColor = CheatToggles.chatTimestamp24hr ? new Color(0.2f, 0.85f, 0.5f) : prevTsBg;
+        if (GUILayout.Button("24hr", GUIStylePreset.NormalButton)) CheatToggles.chatTimestamp24hr = true;
+        GUI.backgroundColor = !CheatToggles.chatTimestamp24hr ? new Color(0.2f, 0.85f, 0.5f) : prevTsBg;
+        if (GUILayout.Button("12hr", GUIStylePreset.NormalButton)) CheatToggles.chatTimestamp24hr = false;
+        GUI.backgroundColor = prevTsBg;
+        GUILayout.EndHorizontal();
     }
 
     private void DrawModes()

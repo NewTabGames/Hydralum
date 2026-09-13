@@ -69,34 +69,33 @@ public class ESPTab : ITab
 
     private void DrawGeneral()
     {
-        GUILayout.Label("ESP", GUIStylePreset.TabSubtitle);
-        
+        GUILayout.Label("Players", GUIStylePreset.TabSubtitle);
+
         CheatToggles.seePlayerInfo = GUILayout.Toggle(CheatToggles.seePlayerInfo, " See Player Info");
-
-        CheatToggles.showFriendCode = GUILayout.Toggle(CheatToggles.showFriendCode, " See Friend Code");
-
         CheatToggles.seeRoles = GUILayout.Toggle(CheatToggles.seeRoles, " See Roles");
-
+        CheatToggles.showFriendCode = GUILayout.Toggle(CheatToggles.showFriendCode, " See Friend Code");
         CheatToggles.seeGhosts = GUILayout.Toggle(CheatToggles.seeGhosts, " See Ghosts");
-
-        CheatToggles.noShadows = GUILayout.Toggle(CheatToggles.noShadows, " No Shadows");
-
-        CheatToggles.taskArrows = GUILayout.Toggle(CheatToggles.taskArrows, " Task Arrows");
-
+        CheatToggles.chatColorTags = GUILayout.Toggle(CheatToggles.chatColorTags, " Chat Color Tags");
         CheatToggles.revealVotes = GUILayout.Toggle(CheatToggles.revealVotes, " Reveal Votes");
 
-        CheatToggles.chatColorTags = GUILayout.Toggle(CheatToggles.chatColorTags, " Chat Color Tags");
+        GUILayout.Space(10);
+        GUILayout.Label("Cooldowns", GUIStylePreset.TabSubtitle);
 
+        CheatToggles.killCooldownEsp = GUILayout.Toggle(CheatToggles.killCooldownEsp, " Impostor Kill");
+        CheatToggles.gaProtectCooldownEsp = GUILayout.Toggle(CheatToggles.gaProtectCooldownEsp, " Guardian Angel Protect");
+
+        GUILayout.Space(10);
+        GUILayout.Label("World", GUIStylePreset.TabSubtitle);
+
+        CheatToggles.taskArrows = GUILayout.Toggle(CheatToggles.taskArrows, " Task Arrows");
         CheatToggles.ventEsp = GUILayout.Toggle(CheatToggles.ventEsp, " Vent ESP");
+        CheatToggles.noShadows = GUILayout.Toggle(CheatToggles.noShadows, " No Shadows");
 
-        CheatToggles.killCooldownEsp = GUILayout.Toggle(CheatToggles.killCooldownEsp, " Impostor Kill Cooldown");
-
-        CheatToggles.gaProtectCooldownEsp = GUILayout.Toggle(CheatToggles.gaProtectCooldownEsp, " Guardian Angel Protect Cooldown");
+        GUILayout.Space(10);
+        GUILayout.Label("Overlay", GUIStylePreset.TabSubtitle);
 
         CheatToggles.seeLobbyInfo = GUILayout.Toggle(CheatToggles.seeLobbyInfo, " See Lobby Info");
-
         CheatToggles.showPing = GUILayout.Toggle(CheatToggles.showPing, " Show Ping");
-
         CheatToggles.showFps = GUILayout.Toggle(CheatToggles.showFps, " Show FPS");
     }
 

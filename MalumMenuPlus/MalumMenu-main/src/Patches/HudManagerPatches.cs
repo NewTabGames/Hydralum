@@ -76,6 +76,36 @@ public static class MatchInfoHudButton_Update
 	}
 }
 
+// The game blocks opening any map (MapBehaviour.GenericShow) while PlayerControl.CanMove is false, and it
+// is false inside a vent - so the map button clicks (you hear the sound) but the regular map never appears.
+// Force CanMove true for just the duration of a ToggleMapVisible call made while we're in a vent, so the
+// map opens. Scoped to that single call, so normal movement / vent behaviour is otherwise untouched.
+[HarmonyPatch(typeof(HudManager), nameof(HudManager.ToggleMapVisible))]
+public static class HudManager_ToggleMapVisible_VentMap
+{
+	public static bool ForceCanMove;
+
+	public static void Prefix()
+	{
+		var lp = PlayerControl.LocalPlayer;
+		ForceCanMove = lp != null && lp.inVent;
+	}
+
+	public static void Finalizer()
+	{
+		ForceCanMove = false;
+	}
+}
+
+[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.CanMove), MethodType.Getter)]
+public static class PlayerControl_CanMove_VentMap
+{
+	public static void Postfix(ref bool __result)
+	{
+		if (HudManager_ToggleMapVisible_VentMap.ForceCanMove) __result = true;
+	}
+}
+
 [HarmonyPatch(typeof(HudManager), nameof(HudManager.Update))]
 public static class HudManager_Update
 {
