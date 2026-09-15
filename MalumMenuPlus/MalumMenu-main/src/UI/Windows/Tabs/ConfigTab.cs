@@ -17,6 +17,10 @@ public class ConfigTab : ITab
     private static string _profileStatus = "";
     private static float _profileStatusUntil = 0f;
 
+    // FPS type-in field state (IL2CPP-safe input, same approach as the profile name field)
+    private static bool _isTypingFps = false;
+    private static string _fpsInput = "";
+
     public void Draw()
     {
         GUILayout.BeginHorizontal();
@@ -75,6 +79,49 @@ public class ConfigTab : ITab
             _profileNameInput += c;
             e.Use();
         }
+    }
+
+    // Captures a typed FPS number from raw GUI key events (GUILayout.TextField crashes under IL2CPP).
+    private void CaptureFpsInput()
+    {
+        var e = Event.current;
+        if (e == null || e.type != EventType.KeyDown) return;
+
+        if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Escape)
+        {
+            _isTypingFps = false;
+            ApplyTypedFps();
+            e.Use();
+            return;
+        }
+
+        if (e.keyCode == KeyCode.Backspace)
+        {
+            if (!string.IsNullOrEmpty(_fpsInput))
+                _fpsInput = _fpsInput.Substring(0, _fpsInput.Length - 1);
+            e.Use();
+            return;
+        }
+
+        char c = e.character;
+        if (c >= '0' && c <= '9' && (_fpsInput?.Length ?? 0) < 10)
+        {
+            _fpsInput += c;
+            e.Use();
+        }
+    }
+
+    // Applies the typed FPS value (clamped to 1 .. int.MaxValue) to the unlocker and saved config.
+    private void ApplyTypedFps()
+    {
+        if (long.TryParse(_fpsInput, out long typed))
+        {
+            if (typed < 1) typed = 1;
+            if (typed > int.MaxValue) typed = int.MaxValue;
+            FpsUnlocker.TargetFps = (int)typed;
+            if (MalumMenu.fpsLimit != null) MalumMenu.fpsLimit.Value = FpsUnlocker.TargetFps;
+        }
+        _fpsInput = "";
     }
 
     private void DrawProfile()
@@ -286,24 +333,35 @@ public class ConfigTab : ITab
         CheatToggles.spoofAprilFoolsDate = GUILayout.Toggle(CheatToggles.spoofAprilFoolsDate, " Spoof Date to April 1st");
         CheatToggles.unlockFps = GUILayout.Toggle(CheatToggles.unlockFps, " Unlock FPS");
 
-        int prevFps = FpsUnlocker.TargetFps;
-        FpsUnlocker.TargetFps = Mathf.RoundToInt(
-            GUILayout.HorizontalSlider(FpsUnlocker.TargetFps, FpsUnlocker.MinFps, FpsUnlocker.MaxFps));
-        if (FpsUnlocker.TargetFps != prevFps && MalumMenu.fpsLimit != null)
-        {
-            MalumMenu.fpsLimit.Value = FpsUnlocker.TargetFps;
-        }
+        if (_isTypingFps) CaptureFpsInput();
 
-        GUILayout.Label($"FPS Limit: {FpsUnlocker.TargetFps}");
+        string fpsCurrent = FpsUnlocker.TargetFps == int.MaxValue ? "Unlimited" : FpsUnlocker.TargetFps.ToString();
+        string fpsLabel = _isTypingFps
+            ? $"<color=yellow>{(string.IsNullOrEmpty(_fpsInput) ? "Type FPS..." : _fpsInput)}_</color>"
+            : $"FPS Limit: <b>{fpsCurrent}</b> <i>(click to type)</i>";
+        if (GUILayout.Button(fpsLabel, GUIStylePreset.NormalButton, GUILayout.Height(24)))
+        {
+            _isTypingFps = !_isTypingFps;
+            _isTypingName = false; // avoid two key-capture fields active at once
+            if (_isTypingFps) _fpsInput = "";
+            else ApplyTypedFps();
+        }
+        if (GUILayout.Button("Unlock FPS", GUIStylePreset.NormalButton, GUILayout.Height(24)))
+        {
+            FpsUnlocker.TargetFps = int.MaxValue; // effectively unlimited - render as fast as the device can
+            CheatToggles.unlockFps = true;        // turn the feature on so it applies immediately
+            _isTypingFps = false;
+            if (MalumMenu.fpsLimit != null) MalumMenu.fpsLimit.Value = FpsUnlocker.TargetFps;
+        }
 
         GUILayout.Space(6);
         GUILayout.Label("Time Format");
         GUILayout.BeginHorizontal();
         var prevTsBg = GUI.backgroundColor;
         GUI.backgroundColor = CheatToggles.chatTimestamp24hr ? new Color(0.2f, 0.85f, 0.5f) : prevTsBg;
-        if (GUILayout.Button("24hr", GUIStylePreset.NormalButton)) CheatToggles.chatTimestamp24hr = true;
+        if (GUILayout.Button("24hr", GUIStylePreset.NormalButton, GUILayout.Width(90f))) CheatToggles.chatTimestamp24hr = true;
         GUI.backgroundColor = !CheatToggles.chatTimestamp24hr ? new Color(0.2f, 0.85f, 0.5f) : prevTsBg;
-        if (GUILayout.Button("12hr", GUIStylePreset.NormalButton)) CheatToggles.chatTimestamp24hr = false;
+        if (GUILayout.Button("12hr", GUIStylePreset.NormalButton, GUILayout.Width(90f))) CheatToggles.chatTimestamp24hr = false;
         GUI.backgroundColor = prevTsBg;
         GUILayout.EndHorizontal();
     }

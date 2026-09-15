@@ -51,6 +51,10 @@ public class RolesTab : ITab
 
         GUILayout.Space(15);
 
+        DrawJudge();
+
+        GUILayout.Space(15);
+
         DrawChangeRole();
 
         GUILayout.EndVertical();
@@ -150,6 +154,14 @@ public class RolesTab : ITab
         CheatToggles.gaInfiniteRange = GUILayout.Toggle(CheatToggles.gaInfiniteRange, " Infinite Protection Range");
 
         CheatToggles.gaIgnoreImpostors = GUILayout.Toggle(CheatToggles.gaIgnoreImpostors, " Ignore Impostors");
+    }
+
+    private void DrawJudge()
+    {
+        GUILayout.Label("Judge", GUIStylePreset.TabSubtitle);
+
+        CheatToggles.judgeNoTasks = GUILayout.Toggle(CheatToggles.judgeNoTasks,
+            " Enable Judge Overrule <size=11><color=#888888>No Tasks</color></size>");
     }
 
     private RoleTypes selectedRole = RoleTypes.Crewmate;

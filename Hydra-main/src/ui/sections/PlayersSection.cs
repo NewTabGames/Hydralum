@@ -262,6 +262,10 @@ namespace HydraMenu.ui.sections
 				{
 					Hydra.routines.ziplineSpammer.Enabled = Controls.PlayerSpecificToggle("Force Zipline", target, Hydra.routines.ziplineSpammer.targets);
 				}
+
+				bool wasImmortal = HydraMenu.modules.self.Immortality.IsImmortal(target.PlayerId);
+				bool nowImmortal = GUILayout.Toggle(wasImmortal, "Immortal");
+				if(nowImmortal != wasImmortal) HydraMenu.modules.self.Immortality.SetImmortal(target, nowImmortal);
 			}
 
 			if(GUILayout.Button("Teleport"))
@@ -691,6 +695,16 @@ namespace HydraMenu.ui.sections
 				}
 			}
 			GUILayout.EndHorizontal();
+
+				bool allImmortal = validTargets.Count > 0 && validTargets.All(t => HydraMenu.modules.self.Immortality.IsImmortal(t.PlayerId));
+				if(GUILayout.Button(allImmortal ? $"Make Selected Mortal ({validTargets.Count})" : $"Make Selected Immortal ({validTargets.Count})"))
+				{
+					if (validTargets.Count < targets.Count) Hydra.notifications.Send("Error", "Cannot target Developer");
+					foreach(var t in validTargets)
+					{
+						HydraMenu.modules.self.Immortality.SetImmortal(t, !allImmortal);
+					}
+				}
 
 			if(Utilities.GetCurrentMap() == MapNames.Fungle)
 			{

@@ -177,3 +177,25 @@ public static class PlayerControl_RpcSyncSettings
         return !CheatToggles.noOptionsLimits;
     }
 }
+
+// Postfix patch of PlayerControl.CompleteTask to log who completed which task and where.
+[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.CompleteTask))]
+public static class PlayerControl_CompleteTask
+{
+    public static void Postfix(PlayerControl __instance, uint idx)
+    {
+        if (!CheatToggles.logTasks) return;
+
+        try
+        {
+            var task = __instance.myTasks.Find((Il2CppSystem.Predicate<PlayerTask>)(p => (int)p.Id == (int)idx));
+            if (!task) return;
+
+            var room = Utils.GetRoomFromPosition(__instance.GetTruePosition());
+            var roomName = room != null ? room.RoomId.ToString() : "an unknown location";
+
+            ConsoleUI.Log($"<color=#{ColorUtility.ToHtmlStringRGB(__instance.Data.Color)}>{__instance.Data.PlayerName}</color> completed task {task.TaskType} in {roomName}");
+        }
+        catch { }
+    }
+}

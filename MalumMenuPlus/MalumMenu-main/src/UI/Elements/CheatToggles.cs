@@ -9,6 +9,8 @@ namespace MalumMenu;
 public struct CheatToggles
 {
     // Movement
+    public static bool disco;
+    public static float discoSpeed = 6f; // color changes per second
     public static bool noClip;
     public static bool teleportPlayer;
     public static bool teleportCursor;
@@ -54,6 +56,9 @@ public struct CheatToggles
     public static bool gaInfiniteRange;
     public static bool gaIgnoreImpostors;
 
+    // Judge
+    public static bool judgeNoTasks;
+
     // ESP
     public static bool noShadows;
     public static bool seeGhosts;
@@ -68,6 +73,7 @@ public struct CheatToggles
     public static bool killCooldownEsp;
     public static bool gaProtectCooldownEsp;
     public static bool showFriendCode;
+    public static bool nameTagColors;
     public static bool hideMyGem;
     public static bool hideAllGems;
     public static bool showPing = true;
@@ -203,6 +209,8 @@ public struct CheatToggles
     public static bool logShapeshifts;
     public static bool logVents;
     public static bool logMeetings;
+    public static bool logTasks;
+    public static bool logGameState;
 
     // Debug
     public static bool showDebugConsole;
@@ -258,6 +266,7 @@ public struct CheatToggles
 
     // Outfits & Avatar
     public static bool colorSniper;
+    public static bool colorSniperLobbyOnly;
     public static byte colorSniperTargetColor;
     public static bool showWardrobeOverlay = true;
 
@@ -495,7 +504,8 @@ public struct CheatToggles
             {
                 if (int.TryParse(parts[1].Trim(), out var fps))
                 {
-                    FpsUnlocker.TargetFps = Mathf.Clamp(fps, FpsUnlocker.MinFps, FpsUnlocker.MaxFps);
+                    // No upper clamp: the FPS can be typed in or set to "Unlock FPS" (int.MaxValue).
+                    FpsUnlocker.TargetFps = Mathf.Max(1, fps);
                     if (MalumMenu.fpsLimit != null) MalumMenu.fpsLimit.Value = FpsUnlocker.TargetFps;
                 }
                 continue;

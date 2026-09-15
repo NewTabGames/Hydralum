@@ -5,7 +5,7 @@ namespace MalumMenu;
 
 public class MovementTab : ITab
 {
-    public string name => "Movement";
+    public string name => "Self";
 
     public void Draw()
     {
@@ -40,6 +40,13 @@ public class MovementTab : ITab
 
     private void DrawGeneral()
     {
+        CheatToggles.disco = GUILayout.Toggle(CheatToggles.disco, " Disco");
+        float discoMax = Utils.isHost ? 100f : 7f;
+        if (CheatToggles.discoSpeed > discoMax) CheatToggles.discoSpeed = discoMax;
+        GUILayout.Label($"Disco Speed: {CheatToggles.discoSpeed:F0} changes/sec (max {discoMax:F0}{(Utils.isHost ? "" : " — host only above 7")})", GUIStylePreset.Hint);
+        CheatToggles.discoSpeed = GUILayout.HorizontalSlider(CheatToggles.discoSpeed, 1f, discoMax, GUILayout.Width(250f));
+        GUILayout.Space(6);
+
         CheatToggles.noClip = GUILayout.Toggle(CheatToggles.noClip, " NoClip");
 
         CheatToggles.invertControls = GUILayout.Toggle(CheatToggles.invertControls, " Invert Controls");

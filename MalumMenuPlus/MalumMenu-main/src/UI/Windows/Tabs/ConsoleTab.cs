@@ -32,6 +32,10 @@ public class ConsoleTab : ITab
         CheatToggles.logVents = GUILayout.Toggle(CheatToggles.logVents, " Log Vents");
 
         CheatToggles.logMeetings = GUILayout.Toggle(CheatToggles.logMeetings, " Log Meetings");
+
+        CheatToggles.logTasks = GUILayout.Toggle(CheatToggles.logTasks, " Log Tasks");
+
+        CheatToggles.logGameState = GUILayout.Toggle(CheatToggles.logGameState, " Log Game State");
     }
 
     private void DrawRpcConsole()

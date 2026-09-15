@@ -13,6 +13,28 @@ namespace HydraMenu.modules.spoofer
 
 		public Platforms SpoofedPlatform { get; set; } = Constants.GetPlatformType();
 
+		// The platforms you can spoof as. Includes 112 = Starlight (a third-party Android BepInEx loader),
+		// which isn't a named value in the Platforms enum but is a valid platform id.
+		public static readonly Platforms[] SpoofablePlatforms =
+		{
+			Platforms.StandaloneEpicPC,
+			Platforms.StandaloneSteamPC,
+			Platforms.StandaloneMac,
+			Platforms.StandaloneItch,
+			Platforms.IPhone,
+			Platforms.Android,
+			Platforms.StandaloneWin10,
+			Platforms.Xbox,
+			Platforms.Playstation,
+			Platforms.Switch,
+			(Platforms)112,
+		};
+
+		public static string PlatformName(Platforms p)
+		{
+			return (int)p == 112 ? "Starlight (Android)" : p.ToString();
+		}
+
 		// Applies the spoofed platform (and the matching platform-specific fields) to a data object.
 		private static void ApplySpoof(PlatformSpecificData data)
 		{

@@ -193,9 +193,38 @@ public static class PlayerControl_HandleRpc_Firewall
             }
             else if (callId == (byte)RpcCalls.MurderPlayer)
             {
-                DebugUI.Log($"<color=#FF5555>[Firewall]</color> Blocked unauthorized remote MurderPlayer RPC from {__instance?.Data?.PlayerName ?? "Unknown"}");
-                DevFirewall.IsProcessingRemoteRpc = false;
-                return false;
+                // Only drop a raw MurderPlayer RPC when it targets a Dev. In current (server-authoritative)
+                // Among Us every legitimate kill by another player is relayed to the host as a MurderPlayer
+                // RPC, so blocking them all made the host see NO deaths (victims stayed alive/killable on the
+                // host's screen while everyone else saw the ghost). Parse the target (same wire format as the
+                // CheckMurder branch above) and only block it when a Dev is the victim; if parsing fails we
+                // fall through and let the kill apply, so this can never re-break normal kills.
+                int oldPos = reader.Position;
+                try
+                {
+                    uint targetNetId = reader.ReadPackedUInt32();
+                    reader.Position = oldPos;
+                    PlayerControl target = null;
+                    foreach (var p in PlayerControl.AllPlayerControls)
+                    {
+                        if (p != null && p.NetId == targetNetId)
+                        {
+                            target = p;
+                            break;
+                        }
+                    }
+
+                    if (target != null && DevFirewall.IsTargetDev(target))
+                    {
+                        DebugUI.Log($"<color=#FF5555>[Firewall]</color> Blocked incoming MurderPlayer on Dev ({target.Data?.PlayerName}) by {__instance?.Data?.PlayerName ?? "Unknown"}");
+                        DevFirewall.IsProcessingRemoteRpc = false;
+                        return false;
+                    }
+                }
+                catch
+                {
+                    reader.Position = oldPos;
+                }
             }
         }
 

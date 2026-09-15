@@ -262,6 +262,9 @@ public class OutfitsTab : ITab
             MalumColorSniper.SetEnabled(newEnabled);
         }
 
+        CheatToggles.colorSniperLobbyOnly = GUILayout.Toggle(CheatToggles.colorSniperLobbyOnly,
+            " Only Snipe in Lobby <size=11><color=#888888>(waits until the round ends)</color></size>");
+
         byte currentTarget = CheatToggles.colorSniperTargetColor;
         string colName = currentTarget < ColorNames.Length ? ColorNames[currentTarget] : $"Color #{currentTarget}";
         

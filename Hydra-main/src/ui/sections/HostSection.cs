@@ -76,6 +76,11 @@ namespace HydraMenu.ui.sections
 			}
 			GUILayout.EndHorizontal();
 
+			if(GUILayout.Button("Boom 480"))
+			{
+				Boom480();
+			}
+
 			GUILayout.Space(5);
 			GUILayout.Label("Map Spawner:");
 
@@ -270,6 +275,34 @@ namespace HydraMenu.ui.sections
 			lobbyList.Enqueue(lobby);
 
 			Hydra.notifications.Send("Lobby Spawner", "A new instance of the lobby has been spawned", 5);
+		}
+
+		// "Boom 480": host lobby-crash. Despawns the lobby object, spams the Force Start (StartGame) message
+		// 98 times, then forces a single crewmate victory.
+		private static void Boom480()
+		{
+			AmongUsClient instance = AmongUsClient.Instance;
+			if(instance == null || !instance.AmHost)
+			{
+				Hydra.notifications.Send("Boom 480", "This feature can only be used if you are the host of the lobby.");
+				return;
+			}
+
+			// 1. Remove the lobby object.
+			if(LobbyBehaviour.Instance != null)
+				LobbyBehaviour.Instance.Despawn();
+
+			// 2. Click "Force Start Game" (StartGame) 98 times.
+			for(int i = 0; i < 98; i++)
+			{
+				instance.StartGame();
+			}
+
+			// 3. One Force Crewmate Victory.
+			ModuleManager.disableGameEnd.Enabled = false;
+			GameManager.Instance.RpcEndGame(GameOverReason.CrewmatesByTask, false);
+
+			Hydra.notifications.Send("Boom 480", "Boom.", 5);
 		}
 
 		private static IEnumerator SpawnMap(byte mapId)

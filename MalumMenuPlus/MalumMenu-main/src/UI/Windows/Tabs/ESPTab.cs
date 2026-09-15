@@ -74,6 +74,7 @@ public class ESPTab : ITab
         CheatToggles.seePlayerInfo = GUILayout.Toggle(CheatToggles.seePlayerInfo, " See Player Info");
         CheatToggles.seeRoles = GUILayout.Toggle(CheatToggles.seeRoles, " See Roles");
         CheatToggles.showFriendCode = GUILayout.Toggle(CheatToggles.showFriendCode, " See Friend Code");
+        CheatToggles.nameTagColors = GUILayout.Toggle(CheatToggles.nameTagColors, " Name Tag Colors");
         CheatToggles.seeGhosts = GUILayout.Toggle(CheatToggles.seeGhosts, " See Ghosts");
         CheatToggles.chatColorTags = GUILayout.Toggle(CheatToggles.chatColorTags, " Chat Color Tags");
         CheatToggles.revealVotes = GUILayout.Toggle(CheatToggles.revealVotes, " Reveal Votes");

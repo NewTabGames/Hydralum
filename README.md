@@ -80,6 +80,6 @@ Compiled DLLs are output to their respective `bin/Release/net6.0/` folders and c
 - [MalumMenu](https://github.com/scp222thj/MalumMenu) by scp222thj & astra1dev (GPL-3.0)
 - [Hydra](https://github.com/MrDiamond64/Hydra) by MrDiamond64 (GPL-3.0)
 - [SickoMenu](https://github.com/g0aty/SickoMenu) by g0aty (GPL-3.0) - (Replay from Sicko)
-- [OnyxMenu](https://github.com/Veltrix-s/OnyxMenu) by Veltrix-s (GPL-3.0) - (Mini-map from Onyx)
+- [OnyxMenu](https://github.com/Veltrix-s/OnyxMenu) by Veltrix-s (GPL-3.0) - (Mini-map from Onyx — Garbage Slop Menu)
 
 This project is licensed under the GNU General Public License v3.0 (GPL-3.0).

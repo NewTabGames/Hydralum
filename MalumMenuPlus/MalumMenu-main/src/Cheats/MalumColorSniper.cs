@@ -41,6 +41,9 @@ public static class MalumColorSniper
     public static void TrySnipeColor()
     {
         if (!CheatToggles.colorSniper) return;
+        // "Lobby Only" mode: don't grab the color mid-game (which shows two of the same color); wait until
+        // the round ends and we're back in the lobby, then take it.
+        if (CheatToggles.colorSniperLobbyOnly && !Utils.isLobby) return;
         if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
         if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmConnected) return;
 

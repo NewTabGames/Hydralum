@@ -543,6 +543,15 @@ public static class Utils
 
         try
         {
+            // Name Tag Colors ESP: paint the player's own name in their body colour. Wrapping only the
+            // name (not the whole tag) means TMP's nested-colour stack keeps this colour on the name
+            // while any surrounding role/level/platform text below keeps its own colour.
+            if (CheatToggles.nameTagColors)
+            {
+                string bodyHex = GetPlayerColorHex(playerInfo);
+                if (!string.IsNullOrEmpty(bodyHex)) nameTag = $"<color=#{bodyHex}>{nameTag}</color>";
+            }
+
             var client = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetClientFromPlayerInfo(playerInfo) : null;
             var host = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetHost() : null;
             var level = playerInfo.PlayerLevel + 1;
@@ -677,6 +686,28 @@ public static class Utils
     {
         if (!CheatToggles.showFriendCode || playerInfo == null || string.IsNullOrEmpty(playerInfo.FriendCode)) return "";
         return $"<size=55%><color=#4169E1>{playerInfo.FriendCode}</color></size>";
+    }
+
+    // Name Tag Colors ESP: returns the RGB hex ("RRGGBB") of a player's body colour, or null when
+    // it can't be resolved. Uses the currently-displayed outfit colour so it matches disguises,
+    // falling back to the default outfit.
+    public static string GetPlayerColorHex(NetworkedPlayerInfo playerInfo)
+    {
+        if (playerInfo == null) return null;
+
+        try
+        {
+            var pc = playerInfo.Object;
+            int colorId = (pc != null && pc.CurrentOutfit != null)
+                ? pc.CurrentOutfit.ColorId
+                : (playerInfo.DefaultOutfit != null ? playerInfo.DefaultOutfit.ColorId : 0);
+
+            if (Palette.PlayerColors != null && colorId >= 0 && colorId < Palette.PlayerColors.Length)
+                return ColorUtility.ToHtmlStringRGB(Palette.PlayerColors[colorId]);
+        }
+        catch { }
+
+        return null;
     }
 
     // Extra chat-only tags (Tasks / Votekick count / Friend Code), appended after the chat name.

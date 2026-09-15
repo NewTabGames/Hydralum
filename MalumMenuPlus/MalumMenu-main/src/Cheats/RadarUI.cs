@@ -684,7 +684,12 @@ public sealed class RadarUI : MonoBehaviour
         catch { }
     }
 
-    // Draws a square marker at each door; red when that room is pinned (kept shut).
+    // Draws a square marker at each door, coloured by state:
+    //   Pinned (kept shut) = red, Open = lime, Closed = yellow.
+    private static readonly Color DoorPinned = new Color(0.96f, 0.28f, 0.28f); // red
+    private static readonly Color DoorOpen = new Color(0.40f, 0.92f, 0.20f); // lime
+    private static readonly Color DoorClosed = new Color(0.98f, 0.86f, 0.20f); // yellow
+
     private static void Doors(Rect r)
     {
         ShipStatus s = ShipStatus.Instance;
@@ -694,9 +699,11 @@ public sealed class RadarUI : MonoBehaviour
         {
             if (d == null) continue;
             Vector2 sp = Map(d.transform.position, r);
+
             bool pinned = NocturneDoors.IsPinned((int)d.Room);
-            Color col = pinned ? new Color(0.96f, 0.28f, 0.28f) : new Color(0.87f, 0.80f, 0.50f);
+            Color col = pinned ? DoorPinned : (d.IsOpen ? DoorOpen : DoorClosed);
             float half = (pinned ? 4.5f : 4f) * _sc;
+
             NocturneStyle.Fill(new Rect(sp.x - half - 1f, sp.y - half - 1f, half * 2f + 2f, half * 2f + 2f), A(Color.black, 0.75f));
             NocturneStyle.Fill(new Rect(sp.x - half, sp.y - half, half * 2f, half * 2f), A(col, 1f));
         }

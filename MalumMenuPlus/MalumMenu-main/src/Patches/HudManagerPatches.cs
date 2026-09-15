@@ -130,6 +130,7 @@ public static class HudManager_Update
 			}
 
 			MalumCheats.UseVentCheat(__instance);
+			MalumDisco.Tick(); // Self > Disco: strobe the local player's color while enabled
 			MalumESP.ZoomOut(__instance);
 			MalumESP.FreecamCheat();
 			MinimapHandler.TrackPositions(); // record positions so the map can freeze them during meetings

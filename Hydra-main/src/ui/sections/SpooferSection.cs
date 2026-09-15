@@ -79,8 +79,12 @@ namespace HydraMenu.ui.sections
 			GUILayout.Label("Platform Spoofer:");
 
 			ModuleManager.spoofDevice.Enabled = GUILayout.Toggle(ModuleManager.spoofDevice.Enabled, "Enable Platform Spoofing");
-			GUILayout.Label($"Spoofed Platform: {ModuleManager.spoofDevice.SpoofedPlatform}");
-			ModuleManager.spoofDevice.SpoofedPlatform = (Platforms)GUILayout.HorizontalSlider((float)ModuleManager.spoofDevice.SpoofedPlatform, 0, 10);
+			var platforms = HydraMenu.modules.spoofer.SpoofDevice.SpoofablePlatforms;
+			int platformIdx = Array.IndexOf(platforms, ModuleManager.spoofDevice.SpoofedPlatform);
+			if(platformIdx < 0) platformIdx = 0;
+			GUILayout.Label($"Spoofed Platform: {HydraMenu.modules.spoofer.SpoofDevice.PlatformName(ModuleManager.spoofDevice.SpoofedPlatform)}");
+			platformIdx = Mathf.Clamp((int)Mathf.Round(GUILayout.HorizontalSlider(platformIdx, 0, platforms.Length - 1)), 0, platforms.Length - 1);
+			ModuleManager.spoofDevice.SpoofedPlatform = platforms[platformIdx];
 		}
 
 		private void ClampSelectedLevel(uint newLevel)
