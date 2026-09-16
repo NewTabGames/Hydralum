@@ -129,6 +129,7 @@ public static class ChatController_Update
                 if (bubble != null)
                 {
                     MalumESP.UpdateChatBubbleColorTag(bubble);
+                    MalumESP.ApplyGhostChatStyle(bubble);
                 }
             }
         }

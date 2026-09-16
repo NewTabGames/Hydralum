@@ -363,6 +363,35 @@ public static class MalumESP
         catch { }
     }
 
+    // Fades a chat bubble when its sender is a ghost (dead), so ghost/dead chat reads as translucent and is
+    // easy to tell apart from living players' messages. Only touches alpha, so it stacks with Dark Mode's
+    // recolouring. Runs every frame from ChatController.Update, so it's correct even on pooled/reused bubbles.
+    private const float GhostChatAlpha = 0.45f;
+
+    public static void ApplyGhostChatStyle(ChatBubble chatBubble)
+    {
+        if (chatBubble == null) return;
+
+        try
+        {
+            bool ghost = chatBubble.playerInfo != null && chatBubble.playerInfo.IsDead;
+
+            // Only the bubble BACKGROUND is greyed for ghosts - the name, message text and avatar keep their
+            // full colour. Applied both ways because bubbles are pooled/reused.
+            if (chatBubble.Background != null)
+            {
+                var c = chatBubble.Background.color;
+                c.a = ghost ? GhostChatAlpha : 1f;
+                chatBubble.Background.color = c;
+            }
+
+            // Keep the red "dead" X on ghost senders' avatars (shown for dead, hidden for living).
+            if (chatBubble.Xmark != null && chatBubble.Xmark.gameObject.activeSelf != ghost)
+                chatBubble.Xmark.gameObject.SetActive(ghost);
+        }
+        catch { }
+    }
+
     public static void SeeGhostsCheat(PlayerPhysics playerPhysics)
     {
         try

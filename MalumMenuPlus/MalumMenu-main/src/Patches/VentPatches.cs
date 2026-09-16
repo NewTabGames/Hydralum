@@ -127,6 +127,43 @@ public static class ShipStatus_Start_VentReset
     public static void Postfix() => Vent_SetButtons_Network.Reset();
 }
 
+// Vent Interaction Range on exit: with Move In Vents you can walk your avatar away from the vent you
+// entered, so this redirects the local player's exit to pop out at the NEAREST vent within the (extended)
+// interaction range of where you've walked - the exit-side mirror of entering a vent from a distance.
+// When you're standing on the vent you entered it's already the nearest, so the id is unchanged and normal
+// exits behave exactly as before; the redirect only kicks in once you've walked closer to another vent.
+[HarmonyPatch(typeof(PlayerPhysics), nameof(PlayerPhysics.RpcExitVent))]
+public static class PlayerPhysics_RpcExitVent_Range
+{
+    public static void Prefix(PlayerPhysics __instance, ref int ventId)
+    {
+        try
+        {
+            if (!CheatToggles.ventRange) return;
+
+            var local = PlayerControl.LocalPlayer;
+            if (local == null || __instance == null || __instance.myPlayer != local) return;
+            if (local.Data == null || local.Data.IsDead) return;
+            if (ShipStatus.Instance == null || ShipStatus.Instance.AllVents == null) return;
+
+            Vector2 pos = local.GetTruePosition();
+            Vent nearest = null;
+            float best = float.MaxValue;
+
+            foreach (var v in ShipStatus.Instance.AllVents)
+            {
+                if (v == null) continue;
+                float d = Vector2.Distance(pos, (Vector2)v.transform.position);
+                float maxDist = v.UsableDistance * Mathf.Max(1f, CheatToggles.ventRangeMult);
+                if (d <= maxDist && d < best) { best = d; nearest = v; }
+            }
+
+            if (nearest != null) ventId = nearest.Id;
+        }
+        catch { }
+    }
+}
+
 [HarmonyPatch(typeof(Vent), nameof(Vent.EnterVent))]
 public static class Vent_EnterVent
 {

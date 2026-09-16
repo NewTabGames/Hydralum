@@ -406,10 +406,13 @@ public static class MalumCheats
         VentNetworkLabel = "";
         VentNetworkLabelShadow = "";
 
+        // Guide lines are optional: when "Hide Guide Lines" is on we still hop exactly the same (the hop
+        // logic reads current.Left/Right/Center directly), we just draw every tracer clear so nothing shows.
+        bool showLines = !CheatToggles.ventNetworkHideLines;
         foreach (var v in ShipStatus.Instance.AllVents)
         {
             if (v == null) continue;
-            bool reachable = v.Id != current.Id &&
+            bool reachable = showLines && v.Id != current.Id &&
                 ((current.Left != null && v.Id == current.Left.Id)
                  || (current.Right != null && v.Id == current.Right.Id)
                  || (current.Center != null && v.Id == current.Center.Id));

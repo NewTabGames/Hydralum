@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 
 namespace MalumMenu;
@@ -492,6 +493,12 @@ public static class MalumSabotageCheats
                 CheatToggles.sabotageAll = false;
             }
 
+            if (CheatToggles.randomSabotage)
+            {
+                RandomSabotage(shipStatus, currentMapID);
+                CheatToggles.randomSabotage = false;
+            }
+
             if (CheatToggles.sabotageAllNoDoors)
             {
                 EnableAllSabotages(false);
@@ -633,10 +640,69 @@ public static class MalumSabotageCheats
 
         if (!includeDoors) return;
 
+        // Pin Doors: hold every door shut (NocturneDoors.Tick re-closes pinned rooms every 0.7s, running
+        // from HudManager.Update, so they stay shut without the radar being open). Otherwise just close once.
         if (CheatToggles.sabotageAllDoors)
-            CheatToggles.spamCloseAllDoors = true;
+            NocturneDoors.PinAll();
         else
             CheatToggles.closeAllDoors = true;
+    }
+
+    // Fires ONE random sabotage that's valid for the current map and isn't already active. Enables the
+    // matching toggle so the normal per-system handlers do the actual work. If everything sabotageable is
+    // already going (or nothing applies), it does nothing.
+    public static void RandomSabotage(ShipStatus shipStatus, byte mapId)
+    {
+        try
+        {
+            if (shipStatus == null || shipStatus.Systems == null) return;
+            var systems = shipStatus.Systems;
+
+            var options = new List<System.Action>();
+
+            // Reactor / Laboratory (Polus) / HeliSabotage (Airship)
+            if (mapId == 2)
+            {
+                if (systems.ContainsKey(SystemTypes.Laboratory) && !systems[SystemTypes.Laboratory].Cast<ReactorSystemType>().IsActive)
+                    options.Add(() => CheatToggles.reactorSab = true);
+            }
+            else if (mapId == 4)
+            {
+                if (systems.ContainsKey(SystemTypes.HeliSabotage) && !systems[SystemTypes.HeliSabotage].Cast<HeliSabotageSystem>().IsActive)
+                    options.Add(() => CheatToggles.reactorSab = true);
+            }
+            else if (systems.ContainsKey(SystemTypes.Reactor) && !systems[SystemTypes.Reactor].Cast<ReactorSystemType>().IsActive)
+            {
+                options.Add(() => CheatToggles.reactorSab = true);
+            }
+
+            // Oxygen
+            if (systems.ContainsKey(SystemTypes.LifeSupp) && !systems[SystemTypes.LifeSupp].Cast<LifeSuppSystemType>().IsActive)
+                options.Add(() => CheatToggles.oxygenSab = true);
+
+            // Comms
+            if (systems.ContainsKey(SystemTypes.Comms))
+            {
+                var isHqHud = mapId is 1 or 5;
+                var commsActive = isHqHud
+                    ? systems[SystemTypes.Comms].Cast<HqHudSystemType>().IsActive
+                    : systems[SystemTypes.Comms].Cast<HudOverrideSystemType>().IsActive;
+                if (!commsActive) options.Add(() => CheatToggles.commsSab = true);
+            }
+
+            // Lights (Electrical) - not on Fungle
+            if (mapId != 5 && systems.ContainsKey(SystemTypes.Electrical) && !systems[SystemTypes.Electrical].Cast<SwitchSystem>().IsActive)
+                options.Add(() => CheatToggles.elecSab = true);
+
+            // Mushroom Mixup - Fungle only
+            if (mapId == 5 && systems.ContainsKey(SystemTypes.MushroomMixupSabotage))
+                options.Add(() => CheatToggles.mushSab = true);
+
+            if (options.Count == 0) return;
+
+            options[UnityEngine.Random.Range(0, options.Count)]();
+        }
+        catch { }
     }
 
     public static void ProcessFungle(FungleShipStatus shipStatus)

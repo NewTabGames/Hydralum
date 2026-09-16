@@ -17,7 +17,7 @@ namespace MalumMenu
         private static CancellationTokenSource _cts;
         private static bool _started = false;
 
-        public const string CurrentHydralumVersion = "1.6.5";
+        public const string CurrentHydralumVersion = "1.6.6";
         public const string GitHubActionsUrl = "https://github.com/NewTabGames/Hydralum/actions";
         public static bool IsOutdated { get; set; } = false;
         public static string RequiredVersion { get; set; } = "1.2.0";
@@ -536,7 +536,11 @@ namespace MalumMenu
                                             else if (long.TryParse(lsProp.GetString(), out var lsParsed)) lastSeen = lsParsed;
                                         }
 
-                                        long age = lastSeen > 0 ? Math.Abs(now - lastSeen) : 999999;
+                                        // Clamp at 0 (do NOT Math.Abs): a peer whose device clock runs ahead
+                                        // writes a last_seen in the future, so now - lastSeen is negative.
+                                        // Math.Abs turned that into a large fake age that got the peer pruned
+                                        // even though they were online - a big part of the delete war.
+                                        long age = lastSeen > 0 ? Math.Max(0L, now - lastSeen) : 999999;
                                         if (age < 60)
                                         {
                                             active++;
@@ -560,8 +564,12 @@ namespace MalumMenu
                                                 });
                                             }
                                         }
-                                        else if (sessionIdKey != SessionId)
+                                        else if (sessionIdKey != SessionId && age >= 600)
                                         {
+                                            // Only prune genuinely-dead nodes (10+ min with no heartbeat).
+                                            // The old 60s window made every client delete each other's still-
+                                            // active nodes the moment their clocks differed by ~1 min, which
+                                            // just got re-added on the next heartbeat - the endless delete war.
                                             staleSessionIds.Add(sessionIdKey);
                                         }
                                     }

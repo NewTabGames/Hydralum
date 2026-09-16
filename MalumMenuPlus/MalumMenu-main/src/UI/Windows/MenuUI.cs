@@ -316,6 +316,34 @@ public class MenuUI : MonoBehaviour
             }
         }
 
+        // Clock overlay (Sicko/Nocturne style): live date + time pinned to the bottom-left corner, shown
+        // everywhere (menu, lobby, in-game). Respects the 24hr/12hr setting used elsewhere.
+        if (CheatToggles.showClock && !MalumMenu.isPanicked)
+        {
+            float cDpi = Mathf.Max(1f, Screen.height / 1080f);
+            string fmt = CheatToggles.chatTimestamp24hr
+                ? "ddd, MMM d, yyyy   •   HH:mm:ss"
+                : "ddd, MMM d, yyyy   •   h:mm:ss tt";
+            string clock = System.DateTime.Now.ToString(fmt);
+
+            var clockStyle = new GUIStyle(GUI.skin.label)
+            {
+                alignment = TextAnchor.LowerLeft,
+                fontSize = Mathf.RoundToInt(16f * cDpi),
+                fontStyle = FontStyle.Bold,
+                richText = true
+            };
+
+            float cPad = 10f * cDpi;
+            float cH = 26f * cDpi;
+            var cRect = new Rect(cPad, Screen.height - cH - cPad, Screen.width, cH);
+
+            GUI.color = new Color(0, 0, 0, 0.8f);
+            GUI.Label(new Rect(cRect.x + 1.5f * cDpi, cRect.y + 1.5f * cDpi, cRect.width, cRect.height), clock, clockStyle);
+            GUI.color = Color.white;
+            GUI.Label(cRect, clock, clockStyle);
+        }
+
         if (!isGUIActive || MalumMenu.isPanicked) return;
 
         InitStyles();

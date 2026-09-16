@@ -106,10 +106,13 @@ public class ShipTab : ITab
         if (GUILayout.Button("Sabotage All", GUIStylePreset.NormalButton))
             CheatToggles.sabotageAll = true;
 
+        if (GUILayout.Button("Random Sabotage", GUIStylePreset.NormalButton))
+            CheatToggles.randomSabotage = true;
+
         if (GUILayout.Button("Fix Sabotages", GUIStylePreset.NormalButton))
             CheatToggles.fixSabotage = true;
 
-        CheatToggles.sabotageAllDoors = GUILayout.Toggle(CheatToggles.sabotageAllDoors, " Sabotage All: Spam Doors");
+        CheatToggles.sabotageAllDoors = GUILayout.Toggle(CheatToggles.sabotageAllDoors, " Sabotage All: Pin Doors");
     }
 
     private void DrawVents()
@@ -121,6 +124,9 @@ public class ShipTab : ITab
         CheatToggles.ventNetwork = GUILayout.Toggle(CheatToggles.ventNetwork, " Vent Network");
 
         GUILayout.Label("Vent arrows connect every vent; arrow keys cycle, or click any vent to enter / go to it", GUIStylePreset.Hint);
+
+        if (CheatToggles.ventNetwork)
+            CheatToggles.ventNetworkHideLines = GUILayout.Toggle(CheatToggles.ventNetworkHideLines, " Hide Guide Lines");
 
         CheatToggles.ventRange = GUILayout.Toggle(CheatToggles.ventRange, " Vent Interaction Range");
 

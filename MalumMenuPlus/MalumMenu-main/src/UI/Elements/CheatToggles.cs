@@ -78,6 +78,7 @@ public struct CheatToggles
     public static bool hideAllGems;
     public static bool showPing = true;
     public static bool showFps;
+    public static bool showClock;
 
     // Camera
     public static bool spectate;
@@ -167,6 +168,7 @@ public struct CheatToggles
     // to the last few seconds (see MalumSabotageCheats), so the sabotage still plays out but never ends the game.
     public static bool autoFixCriticalSab;
     public static bool sabotageAll;
+    public static bool randomSabotage;
     // Momentary: sabotages every system at once but never touches doors (used by the Sabotage All
     // hotkey, so it can't pin doors shut in a way Fix Sabotages can't undo).
     public static bool sabotageAllNoDoors;
@@ -189,6 +191,7 @@ public struct CheatToggles
     public static bool disableVents;
     public static bool ventsExcludeSelf;
     public static bool ventNetwork;
+    public static bool ventNetworkHideLines;
     public static bool ventRange;
     public static float ventRangeMult = 2.5f;
     public static bool isCheatBootingVents;

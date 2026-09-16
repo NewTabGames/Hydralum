@@ -98,6 +98,7 @@ public class ESPTab : ITab
         CheatToggles.seeLobbyInfo = GUILayout.Toggle(CheatToggles.seeLobbyInfo, " See Lobby Info");
         CheatToggles.showPing = GUILayout.Toggle(CheatToggles.showPing, " Show Ping");
         CheatToggles.showFps = GUILayout.Toggle(CheatToggles.showFps, " Show FPS");
+        CheatToggles.showClock = GUILayout.Toggle(CheatToggles.showClock, " Show Clock (Time/Date)");
     }
 
     private void DrawCamera()

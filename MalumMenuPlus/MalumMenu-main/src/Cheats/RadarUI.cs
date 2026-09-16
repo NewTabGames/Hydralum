@@ -18,9 +18,10 @@ namespace MalumMenu;
 
 public sealed class RadarUI : MonoBehaviour
 {
-    private const float W = 236f, H = 212f, Pad = 2f, Head = 22f;
+    private const float W = 236f, H = 212f, Pad = 2f, Head = 22f, Foot = 24f;
 
     private static GUIStyle _title;
+    private static GUIStyle _btn;
     private static Texture2D _dot;
     private static readonly Dictionary<byte, List<(Vector2 w, float t)>> _trail = new Dictionary<byte, List<(Vector2, float)>>();
 
@@ -38,6 +39,8 @@ public sealed class RadarUI : MonoBehaviour
     // Door-button click state (for single vs double-click detection).
     private static float _lastDoorClickTime = -1f;
     private static int _lastDoorRoom = -1;
+    // Footer "Close" button click state (single vs double-click, same as the door dots but for all doors).
+    private static float _lastCloseClickTime = -1f;
 
     public static void DrawGui()
     {
@@ -53,7 +56,7 @@ public sealed class RadarUI : MonoBehaviour
         float userSc = Mathf.Clamp((CheatToggles.radarSize) / 100f, 0.6f, 1.8f);
         _sc = userSc * Mathf.Clamp(Screen.height / 1080f, 0.85f, 2.2f);
         _al = Mathf.Clamp((CheatToggles.radarOpacity) / 100f, 0.3f, 1f);
-        float w = W * _sc, h = H * _sc;
+        float w = W * _sc, h = (H + Foot) * _sc;
 
         if (!_drag)
         {
@@ -64,8 +67,11 @@ public sealed class RadarUI : MonoBehaviour
         _ry = Mathf.Clamp(_ry, 0f, Mathf.Max(0f, Screen.height - h));
 
         var box = new Rect(_rx, _ry, w, h);
-        float pad = Pad * _sc, head = Head * _sc;
-        var inner = new Rect(box.x + pad, box.y + head + 2f * _sc, box.width - 2f * pad, box.height - head - 2f * _sc - pad);
+        float pad = Pad * _sc, head = Head * _sc, foot = Foot * _sc;
+        // Map area keeps its original size; the box just grew by `foot` to hold the button row beneath it.
+        var inner = new Rect(box.x + pad, box.y + head + 2f * _sc, box.width - 2f * pad, H * _sc - head - 2f * _sc - pad);
+        var footer = new Rect(inner.x, inner.yMax + pad, inner.width, foot - 2f * pad);
+        var footBtns = FooterButtons(footer);
         var lockRect = new Rect(box.xMax - head + 1f * _sc, box.y + 3f * _sc, head - 6f * _sc, head - 6f * _sc);
         bool locked = CheatToggles.radarLocked;
         WindowRect = box;
@@ -88,6 +94,11 @@ public sealed class RadarUI : MonoBehaviour
             else if (e.type == EventType.MouseDown && e.button == 0 && CheatToggles.radarDoors && HandleDoorClick(e.mousePosition, inner))
             {
                 // Consumed a door button (close / pin / unpin) so it doesn't start a window drag.
+                e.Use();
+            }
+            else if (e.type == EventType.MouseDown && e.button == 0 && FooterClick(footBtns, e.mousePosition))
+            {
+                // Consumed a footer action button (Sabo All / Fix / Open / Close) - don't start a drag.
                 e.Use();
             }
             else if (e.type == EventType.MouseDown && e.button == 0 && !locked && box.Contains(e.mousePosition))
@@ -145,6 +156,18 @@ public sealed class RadarUI : MonoBehaviour
             Bodies(inner);
         if (CheatToggles.radarDoors)
             Doors(inner);
+
+        // Bottom action-button row: Sabo All / Fix Sabotage / Open All Doors / Close All Doors.
+        NocturneStyle.Fill(new Rect(box.x, footer.y - pad, box.width, 1f), A(p.Accent, 0.25f));
+        _btn.fontSize = Mathf.Max(8, Mathf.RoundToInt(9.5f * _sc));
+        for (int i = 0; i < footBtns.Length; i++)
+        {
+            bool hov = footBtns[i].Contains(e.mousePosition);
+            NocturneStyle.FillRounded(footBtns[i], A(hov ? p.Accent : new Color(0.24f, 0.26f, 0.30f), hov ? 0.35f : 0.55f), 4);
+            NocturneStyle.StrokeRounded(footBtns[i], A(p.Accent, hov ? 0.7f : 0.35f), 4, 1);
+            _btn.normal.textColor = A(hov ? p.Accent : new Color(0.86f, 0.89f, 0.93f), 1f);
+            GUI.Label(footBtns[i], FootLabels[i], _btn);
+        }
     }
 
     private static void DrawLock(Rect r, Color col)
@@ -174,6 +197,58 @@ public sealed class RadarUI : MonoBehaviour
         if (_title != null)
             return;
         _title = new GUIStyle(GUI.skin.label) { fontSize = 11, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, richText = true };
+        _btn = new GUIStyle(GUI.skin.label) { fontSize = 9, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, richText = true };
+    }
+
+    // Bottom-row action buttons on the radar: Sabo All / Fix Sabotage / Open All Doors / Close All Doors.
+    private static readonly string[] FootLabels = { "Sabo", "Fix", "Open", "Close" };
+
+    private static Rect[] FooterButtons(Rect footer)
+    {
+        int n = FootLabels.Length;
+        float gap = 3f * _sc;
+        float bw = (footer.width - (n - 1) * gap) / n;
+        var r = new Rect[n];
+        for (int i = 0; i < n; i++)
+            r[i] = new Rect(footer.x + i * (bw + gap), footer.y, bw, footer.height);
+        return r;
+    }
+
+    private static bool FooterClick(Rect[] btns, Vector2 mouse)
+    {
+        if (btns == null) return false;
+        for (int i = 0; i < btns.Length; i++)
+        {
+            if (btns[i].Contains(mouse))
+            {
+                switch (i)
+                {
+                    case 0: // Sabo All - all sabotages, but close doors ONCE (never pin, unlike the main button)
+                        CheatToggles.sabotageAllNoDoors = true;
+                        CheatToggles.closeAllDoors = true;
+                        break;
+                    case 1: CheatToggles.fixSabotage = true; break; // Fix Sabotage
+                    case 2: // Open: clear any pins first so the doors actually stay open
+                        NocturneDoors.UnpinAll();
+                        CheatToggles.openAllDoors = true;
+                        break;
+                    case 3: // Close: mirror the door dots - 1 click closes, double-click pins, click-while-pinned unpins
+                    {
+                        float now = Time.unscaledTime;
+                        if (NocturneDoors.HasPins)
+                            NocturneDoors.UnpinAll();                       // click while pinned -> unpin all
+                        else if (now - _lastCloseClickTime < 0.35f)
+                            NocturneDoors.PinAll();                         // double click -> pin all shut
+                        else
+                            NocturneDoors.CloseAll();                       // single click -> close all once
+                        _lastCloseClickTime = now;
+                        break;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     internal static int CurrentMapId()
