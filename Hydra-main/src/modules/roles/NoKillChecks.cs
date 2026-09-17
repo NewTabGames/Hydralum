@@ -86,7 +86,9 @@ namespace HydraMenu.modules.roles
 		{
 			static bool Prefix(PlayerControl __instance)
 			{
-				if(!Instance.Enabled || !Instance.KillAsPhantom) return true;
+				// Also reroute for PhantomVanish's No-Cooldown, which needs the raw Vanish to avoid the
+				// "CheckVanish while in cooldown" ban when the client-side cooldown has been zeroed.
+				if((!Instance.Enabled || !Instance.KillAsPhantom) && !PhantomVanish.ShouldBypassChecks()) return true;
 
 				BatchedMessage batch = new BatchedMessage();
 				batch.QueueVanish(__instance);
@@ -100,7 +102,9 @@ namespace HydraMenu.modules.roles
 		{
 			static bool Prefix(PlayerControl __instance, bool shouldAnimate)
 			{
-				if(!Instance.Enabled || !Instance.KillAsPhantom) return true;
+				// Matches VanishBypass: once vanish is rerouted raw the server no longer thinks we're vanished,
+				// so appear must go raw too or CheckAppear would kick us for "appearing while not vanished".
+				if((!Instance.Enabled || !Instance.KillAsPhantom) && !PhantomVanish.ShouldBypassChecks()) return true;
 
 				BatchedMessage batch = new BatchedMessage();
 				batch.QueueAppear(__instance,  shouldAnimate);

@@ -78,6 +78,24 @@ public static class ChatController_AddChat
 
         return false; // Skips the original method completly
     }
+
+    // Runs for every message (whether the prefix above took over or the original ran), recording whether the
+    // sender was dead AT SEND TIME so ghost-chat styling can't retroactively re-flag a message that was typed
+    // while alive once the sender later dies. The newly-added bubble is the last child of the scroll area.
+    public static void Postfix(PlayerControl sourcePlayer, ChatController __instance)
+    {
+        try
+        {
+            if (sourcePlayer == null || sourcePlayer.Data == null || __instance?.scroller?.Inner == null) return;
+            int n = __instance.scroller.Inner.childCount;
+            if (n <= 0) return;
+            var child = __instance.scroller.Inner.GetChild(n - 1);
+            if (child == null) return;
+            var bubble = child.GetComponent<ChatBubble>();
+            if (bubble != null) MalumESP.RecordChatSendState(bubble, sourcePlayer.Data.IsDead);
+        }
+        catch { }
+    }
 }
 
 [HarmonyPatch(typeof(ChatController), nameof(ChatController.Update))]

@@ -363,10 +363,26 @@ public static class MalumESP
         catch { }
     }
 
-    // Fades a chat bubble when its sender is a ghost (dead), so ghost/dead chat reads as translucent and is
-    // easy to tell apart from living players' messages. Only touches alpha, so it stacks with Dark Mode's
-    // recolouring. Runs every frame from ChatController.Update, so it's correct even on pooled/reused bubbles.
+    // Fades a chat bubble when its sender was a ghost (dead) AT THE MOMENT THEY SENT IT, so ghost/dead chat
+    // reads as translucent and is easy to tell apart from living players' messages. Only touches alpha, so it
+    // stacks with Dark Mode's recolouring. Runs every frame from ChatController.Update, so it's correct even
+    // on pooled/reused bubbles.
     private const float GhostChatAlpha = 0.45f;
+
+    // Send-time dead-state per bubble, keyed by the bubble GameObject's stable Unity instance id. We must key
+    // off send time rather than the sender's CURRENT IsDead: otherwise a message typed while alive would
+    // retroactively turn into a ghost message the instant that player is voted out / killed (worst on the
+    // host, who applies the death first). Recorded once per message in ChatController.AddChat; pooled bubbles
+    // reuse the same GameObject, so re-recording on reuse keeps the map bounded to the pool size.
+    private static readonly Dictionary<int, bool> _chatSentAsGhost = new();
+
+    // Called from the ChatController.AddChat postfix for every incoming message, for the freshly-added bubble.
+    public static void RecordChatSendState(ChatBubble chatBubble, bool sentAsGhost)
+    {
+        if (chatBubble == null) return;
+        try { _chatSentAsGhost[chatBubble.gameObject.GetInstanceID()] = sentAsGhost; }
+        catch { }
+    }
 
     public static void ApplyGhostChatStyle(ChatBubble chatBubble)
     {
@@ -374,20 +390,24 @@ public static class MalumESP
 
         try
         {
-            bool ghost = chatBubble.playerInfo != null && chatBubble.playerInfo.IsDead;
+            // Prefer the recorded send-time state; fall back to live IsDead only for a bubble we never saw
+            // recorded (e.g. one created before this hook ran), which keeps old behaviour for that rare case.
+            bool sentAsGhost;
+            if (!_chatSentAsGhost.TryGetValue(chatBubble.gameObject.GetInstanceID(), out sentAsGhost))
+                sentAsGhost = chatBubble.playerInfo != null && chatBubble.playerInfo.IsDead;
 
-            // Only the bubble BACKGROUND is greyed for ghosts - the name, message text and avatar keep their
-            // full colour. Applied both ways because bubbles are pooled/reused.
+            // Only the bubble BACKGROUND is greyed for ghost messages - the name, message text and avatar keep
+            // their full colour. Applied both ways because bubbles are pooled/reused.
             if (chatBubble.Background != null)
             {
                 var c = chatBubble.Background.color;
-                c.a = ghost ? GhostChatAlpha : 1f;
+                c.a = sentAsGhost ? GhostChatAlpha : 1f;
                 chatBubble.Background.color = c;
             }
 
-            // Keep the red "dead" X on ghost senders' avatars (shown for dead, hidden for living).
-            if (chatBubble.Xmark != null && chatBubble.Xmark.gameObject.activeSelf != ghost)
-                chatBubble.Xmark.gameObject.SetActive(ghost);
+            // Keep the red "dead" X on messages sent while dead; hide it on messages sent while alive.
+            if (chatBubble.Xmark != null && chatBubble.Xmark.gameObject.activeSelf != sentAsGhost)
+                chatBubble.Xmark.gameObject.SetActive(sentAsGhost);
         }
         catch { }
     }

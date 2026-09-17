@@ -20,6 +20,11 @@ namespace HydraMenu.ui.sections
 			// Roles.DisablePhantomEndAnimation = GUILayout.Toggle(Roles.DisablePhantomEndAnimation, "Disable Phantom End Animation");
 
 			GUILayout.Space(5);
+			GUILayout.Label($"Phantom:");
+			ModuleManager.phantomVanish.EndlessDuration = GUILayout.Toggle(ModuleManager.phantomVanish.EndlessDuration, "Endless Vanish Duration");
+			ModuleManager.phantomVanish.NoCooldown = GUILayout.Toggle(ModuleManager.phantomVanish.NoCooldown, "No Vanish Cooldown");
+
+			GUILayout.Space(5);
 			GUILayout.Label($"No Kill Checks:");
 			ModuleManager.noKillChecks.Enabled = GUILayout.Toggle(ModuleManager.noKillChecks.Enabled, "Enabled");
 			ModuleManager.noKillChecks.KillOtherImpostors = GUILayout.Toggle(ModuleManager.noKillChecks.KillOtherImpostors, "Kill Other Impostors");

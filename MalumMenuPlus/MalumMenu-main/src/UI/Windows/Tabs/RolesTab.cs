@@ -145,6 +145,8 @@ public class RolesTab : ITab
         GUILayout.Label("Detective", GUIStylePreset.TabSubtitle);
 
         CheatToggles.interrogateReach = GUILayout.Toggle(CheatToggles.interrogateReach, " Interrogate Reach");
+
+        CheatToggles.noInterrogateCooldown = GUILayout.Toggle(CheatToggles.noInterrogateCooldown, " No Interrogate Cooldown");
     }
 
     private void DrawGuardianAngel()

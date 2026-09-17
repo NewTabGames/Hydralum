@@ -70,17 +70,26 @@ public static class Vent_SetButtons_Network
             if (vents == null || vents.Count < 2) return;
 
             int id = __instance.Id;
-            if (!_orig.ContainsKey(id))
-                _orig[id] = new[] { __instance.Left, __instance.Right, __instance.Center };
 
             if (!CheatToggles.ventNetwork)
             {
-                var o = _orig[id];
-                __instance.Left = o[0];
-                __instance.Right = o[1];
-                __instance.Center = o[2];
+                // Vent Network is off: only undo a rewire we actually applied to this vent. If we never
+                // touched it, leave the vanilla Left/Right/Center alone so the game's normal arrows show.
+                // (Capturing _orig unconditionally here risked snapshotting not-yet-assigned/null links at
+                // map load and then "restoring" those nulls forever, which hid the regular vent arrows.)
+                if (_orig.TryGetValue(id, out var o))
+                {
+                    __instance.Left = o[0];
+                    __instance.Right = o[1];
+                    __instance.Center = o[2];
+                    _orig.Remove(id);
+                }
                 return;
             }
+
+            // Vent Network on: snapshot the real connections once, before we rewire them, so we can restore.
+            if (!_orig.ContainsKey(id))
+                _orig[id] = new[] { __instance.Left, __instance.Right, __instance.Center };
 
             var tour = MalumCheats.BuildNearestVentTour();
             if (tour == null || tour.Count < 2) return;
@@ -175,10 +184,12 @@ public static class Vent_EnterVent
         // Fire the disable-vents boot immediately on this RPC event
         MalumCheats.OnPlayerEnteredVent(pc);
 
-        // Bug fix attempt: force the directional arrows to build the moment the local player enters a vent
-        // while Vent Network is on. Without this the game's default connected-vent arrows sometimes don't
-        // paint until you hop to another vent (which triggers SetButtons via ClickRight).
-        if (pc != null && pc.AmOwner && CheatToggles.ventNetwork && __instance != null)
+        // Force the directional arrows to build the moment the local player enters a vent. Without this the
+        // game's connected-vent arrows sometimes don't paint until you hop to another vent (which triggers
+        // SetButtons via ClickRight). This must fire for Unlock Vents too, not only Vent Network - otherwise a
+        // crewmate venting with just Unlock Vents on gets no arrows at all. SetButtons(true) is idempotent, so
+        // re-calling it for a normal venter is harmless.
+        if (pc != null && pc.AmOwner && __instance != null && (CheatToggles.ventNetwork || CheatToggles.unlockVents))
         {
             try { __instance.SetButtons(true); } catch { }
         }

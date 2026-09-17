@@ -38,6 +38,7 @@ namespace HydraMenu.modules
 		// Roles
 		public static MoveInVents moveInVents = new MoveInVents();
 		public static NoKillChecks noKillChecks = new NoKillChecks();
+		public static PhantomVanish phantomVanish = new PhantomVanish();
 		public static NoSabotageCooldown noSabotageCooldown = new NoSabotageCooldown();
 		public static UnlockSabotageButton unlockSabotageButton = new UnlockSabotageButton();
 
@@ -94,6 +95,7 @@ namespace HydraMenu.modules
 
 				moveInVents,
 				noKillChecks,
+				phantomVanish,
 				noSabotageCooldown,
 				unlockSabotageButton,
 

@@ -61,6 +61,20 @@ public static class TrackerRole_FixedUpdate
     }
 }
 
+[HarmonyPatch(typeof(DetectiveRole), nameof(DetectiveRole.FixedUpdate))]
+public static class DetectiveRole_FixedUpdate
+{
+    public static void Postfix(DetectiveRole __instance)
+    {
+        try {
+            if (__instance != null && __instance.Player != null && __instance.Player.AmOwner)
+            {
+                MalumCheats.HandleDetectiveCheats(__instance);
+            }
+        } catch { }
+    }
+}
+
 [HarmonyPatch(typeof(PhantomRole), nameof(PhantomRole.IsValidTarget))]
 public static class PhantomRole_IsValidTarget
 {

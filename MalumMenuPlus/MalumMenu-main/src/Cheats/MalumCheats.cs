@@ -254,6 +254,19 @@ public static class MalumCheats
         }
     }
 
+    public static void HandleDetectiveCheats(DetectiveRole detectiveRole)
+    {
+        // Interrogate is a purely client-side action (DetectiveRole.Interrogate is a private local method with
+        // no server Check RPC), so zeroing the client cooldown is safe - no anticheat gate, unlike Phantom.
+        if (CheatToggles.noInterrogateCooldown)
+        {
+            detectiveRole.cooldownSecondsRemaining = 0f;
+
+            DestroyableSingleton<HudManager>.Instance.AbilityButton.ResetCoolDown();
+            DestroyableSingleton<HudManager>.Instance.AbilityButton.SetCooldownFill(0f);
+        }
+    }
+
     public static void UseVentCheat(HudManager hudManager)
     {
         // try-catch to prevent errors when role is null

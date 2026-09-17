@@ -213,7 +213,7 @@ public partial class MalumMenu : BasePlugin
         chatLogUI = AddComponent<ChatLogUI>();
         windowScalesUI = AddComponent<WindowScalesUI>();
         keybindsUI = AddComponent<KeybindsUI>();
-        // rolesUI = AddComponent<RolesUI>();
+        // rolesUI = AddComponent<RolesUI>(); // disabled: Roles menu is incomplete (self-only, not a full host roster)
 
         // Create the TextLogs folder (config/TextLogs) that the Chat Log feature exports to
         ChatLogRecorder.EnsureFolder();

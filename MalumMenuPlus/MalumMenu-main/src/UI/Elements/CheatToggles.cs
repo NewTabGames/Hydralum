@@ -44,6 +44,7 @@ public struct CheatToggles
     public static bool noTrackingDelay;
     public static bool trackReach;
     public static bool interrogateReach;
+    public static bool noInterrogateCooldown;
     public static bool noVitalsCooldown;
     public static bool noVentCooldown;
     public static bool endlessVentTime;
