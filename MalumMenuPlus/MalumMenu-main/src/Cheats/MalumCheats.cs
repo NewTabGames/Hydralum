@@ -194,6 +194,16 @@ public static class MalumCheats
 
     public static void HandleShapeshifterCheats(ShapeshifterRole shapeshifterRole)
     {
+        // Shapeshift cooldown is client-side: CmdCheckShapeshift carries no cooldown/timing field for the
+        // server to validate against (unlike Phantom's CmdCheckVanish(maxDuration)), so zeroing it is safe.
+        if (CheatToggles.noShapeshiftCooldown)
+        {
+            shapeshifterRole.cooldownSecondsRemaining = 0f;
+
+            DestroyableSingleton<HudManager>.Instance.AbilityButton.ResetCoolDown();
+            DestroyableSingleton<HudManager>.Instance.AbilityButton.SetCooldownFill(0f);
+        }
+
         if (CheatToggles.endlessSsDuration)
         {
             // Makes shapeshift duration so incredibly long (float.MaxValue) so that it never ends

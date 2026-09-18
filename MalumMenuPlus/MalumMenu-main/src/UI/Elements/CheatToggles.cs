@@ -52,6 +52,7 @@ public struct CheatToggles
     public static bool killVanished;
     public static bool noVanishAnim;
     public static bool noShapeshiftAnim;
+    public static bool noShapeshiftCooldown;
 
     // Guardian Angel
     public static bool gaInfiniteRange;

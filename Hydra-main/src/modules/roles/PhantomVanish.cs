@@ -28,11 +28,26 @@ namespace HydraMenu.modules.roles
 
 		public bool EndlessDuration { get; set; } = false;
 		public bool NoCooldown { get; set; } = false;
+		public bool NoAnimation { get; set; } = false;
 
 		// True when vanish/appear must be rerouted through the raw RPCs to stay ban-safe.
 		public static bool ShouldBypassChecks()
 		{
 			return Instance.NoCooldown;
+		}
+
+		// Strips the reappear ("end") animation by forcing CmdCheckAppear's shouldAnimate flag off - the exact
+		// technique Malum's "No Ss Animation" uses on CmdCheckShapeshift, so it's ban-safe and networked (other
+		// players don't see your reappear puff either). Runs FIRST so it sets the flag before AppearBypass may
+		// consume it: a prefix that returns false (the raw reroute) skips prefixes after it, not before.
+		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.CmdCheckAppear))]
+		[HarmonyPriority(Priority.First)]
+		class NoAppearAnimation
+		{
+			static void Prefix(ref bool shouldAnimate)
+			{
+				if(Instance.NoAnimation) shouldAnimate = false;
+			}
 		}
 
 		[HarmonyPatch(typeof(PhantomRole), nameof(PhantomRole.FixedUpdate))]

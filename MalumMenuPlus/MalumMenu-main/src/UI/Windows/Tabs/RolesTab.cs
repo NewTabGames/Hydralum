@@ -85,6 +85,8 @@ public class RolesTab : ITab
 
         CheatToggles.noShapeshiftAnim = GUILayout.Toggle(CheatToggles.noShapeshiftAnim, " No Ss Animation");
 
+        CheatToggles.noShapeshiftCooldown = GUILayout.Toggle(CheatToggles.noShapeshiftCooldown, " No Ss Cooldown");
+
         CheatToggles.endlessSsDuration = GUILayout.Toggle(CheatToggles.endlessSsDuration, " Endless Ss Duration");
     }
 
