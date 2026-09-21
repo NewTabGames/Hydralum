@@ -81,6 +81,11 @@ namespace HydraMenu.ui.sections
 				Boom480();
 			}
 
+			if(GUILayout.Button("Boom 480 Buffed"))
+			{
+				Boom480Buffed();
+			}
+
 			GUILayout.Space(5);
 			GUILayout.Label("Map Spawner:");
 
@@ -305,6 +310,32 @@ namespace HydraMenu.ui.sections
 			Hydra.notifications.Send("Boom 480", "Boom.", 5);
 		}
 
+		private static void Boom480Buffed()
+		{
+		    AmongUsClient instance = AmongUsClient.Instance;
+		    if(instance == null || !instance.AmHost)
+		    {
+		        Hydra.notifications.Send("Boom 480 Buffed", "This feature can only be used if you are the host of the lobby.");
+		        return;
+		    }
+
+		    // 1. Remove the lobby object.
+		    if(LobbyBehaviour.Instance != null)
+		        LobbyBehaviour.Instance.Despawn();
+
+		    // 2. Click "Force Start Game" (StartGame) 110 times.
+		    for(int i = 0; i < 110; i++)
+		    {
+		        instance.StartGame();
+		    }
+
+		    // 3. One Force Crewmate Victory.
+		    ModuleManager.disableGameEnd.Enabled = false;
+		    GameManager.Instance.RpcEndGame(GameOverReason.CrewmatesByTask, false);
+
+		    Hydra.notifications.Send("Boom 480 Buffed", "Boom.", 5);
+		}
+		
 		private static IEnumerator SpawnMap(byte mapId)
 		{
 			Hydra.Log.LogInfo($"Attempting to spawn in map id {mapId}");
