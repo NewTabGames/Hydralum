@@ -28,6 +28,7 @@ public class MenuUI : MonoBehaviour
         _tabs.Add(new ESPTab());
         _tabs.Add(new RolesTab());
         _tabs.Add(new ShipTab());
+        _tabs.Add(new SchizoTab());
         _tabs.Add(new LobbiesTab());
         _tabs.Add(new ChatTab());
         _tabs.Add(new PlayersTab());
