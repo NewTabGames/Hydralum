@@ -17,7 +17,7 @@ namespace HydraMenu
         private static CancellationTokenSource _cts;
         private static bool _started = false;
 
-        public const string CurrentHydralumVersion = "1.6.8";
+        public const string CurrentHydralumVersion = "1.6.9";
         public const string GitHubActionsUrl = "https://github.com/NewTabGames/Hydralum/actions";
         public static bool IsOutdated { get; set; } = false;
         public static string RequiredVersion { get; set; } = "1.2.0";
@@ -650,8 +650,9 @@ namespace HydraMenu
                     // Ignore network fluctuations
                 }
 
-                // Wait 5 seconds, or wake up sooner if room changed
-                for (int i = 0; i < 10; i++)
+                // Wait 15 seconds, or wake up sooner if room changed. Longer interval = the full-DB fetch +
+                // JSON parse (which feeds the IL2CPP GC and causes a periodic stutter) runs a third as often.
+                for (int i = 0; i < 30; i++)
                 {
                     if (_forceRefresh)
                     {
