@@ -85,9 +85,11 @@ public class RolesTab : ITab
 
         CheatToggles.noShapeshiftAnim = GUILayout.Toggle(CheatToggles.noShapeshiftAnim, " No Ss Animation");
 
+        CheatToggles.endlessSsDuration = GUILayout.Toggle(CheatToggles.endlessSsDuration, " Endless Ss Duration");
+
         CheatToggles.noShapeshiftCooldown = GUILayout.Toggle(CheatToggles.noShapeshiftCooldown, " No Ss Cooldown");
 
-        CheatToggles.endlessSsDuration = GUILayout.Toggle(CheatToggles.endlessSsDuration, " Endless Ss Duration");
+        GUILayout.Label("<size=11><color=#888888>This is broken, but is a new kick method. If you shapeshift, unshift, and then try to shift into another user, it will kick them as long as the cooldown is still active. But this only works if you are Shapeshifter. (Works normally as Host)</color></size>");
     }
 
     private void DrawCrewmate()
