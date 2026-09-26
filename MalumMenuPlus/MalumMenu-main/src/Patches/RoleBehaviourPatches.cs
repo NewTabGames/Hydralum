@@ -75,6 +75,26 @@ public static class DetectiveRole_FixedUpdate
     }
 }
 
+[HarmonyPatch(typeof(DetectiveRole), nameof(DetectiveRole.SetCooldown))]
+public static class DetectiveRole_SetCooldown
+{
+    // SetCooldown runs at role assignment (via Initialize) and after each interrogate. If we only
+    // zeroed the cooldown in FixedUpdate, becoming Detective with the toggle already active could leave
+    // the initial cooldown standing until the freshly-created component starts ticking FixedUpdate.
+    // Skipping SetCooldown when the toggle is on means no cooldown is ever applied in the first place.
+    public static bool Prefix(DetectiveRole __instance)
+    {
+        try {
+            if (CheatToggles.noInterrogateCooldown && __instance != null && __instance.Player != null && __instance.Player.AmOwner)
+            {
+                __instance.cooldownSecondsRemaining = 0f;
+                return false;
+            }
+        } catch { }
+        return true;
+    }
+}
+
 [HarmonyPatch(typeof(PhantomRole), nameof(PhantomRole.IsValidTarget))]
 public static class PhantomRole_IsValidTarget
 {

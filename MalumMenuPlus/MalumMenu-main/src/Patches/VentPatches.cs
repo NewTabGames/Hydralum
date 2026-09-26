@@ -186,10 +186,11 @@ public static class Vent_EnterVent
 
         // Force the directional arrows to build the moment the local player enters a vent. Without this the
         // game's connected-vent arrows sometimes don't paint until you hop to another vent (which triggers
-        // SetButtons via ClickRight). This must fire for Unlock Vents too, not only Vent Network - otherwise a
-        // crewmate venting with just Unlock Vents on gets no arrows at all. SetButtons(true) is idempotent, so
-        // re-calling it for a normal venter is harmless.
-        if (pc != null && pc.AmOwner && __instance != null && (CheatToggles.ventNetwork || CheatToggles.unlockVents))
+        // SetButtons via ClickRight). This fires unconditionally for the local player - not gated on any
+        // cheat toggle - so the plain vanilla vent system (both Unlock Vents and Vent Network off) still
+        // paints its arrows, and any leftover Vent Network rewire is restored by SetButtons's own prefix on
+        // this same call. SetButtons(true) is idempotent, so re-calling it for a normal venter is harmless.
+        if (pc != null && pc.AmOwner && __instance != null)
         {
             try { __instance.SetButtons(true); } catch { }
         }

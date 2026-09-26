@@ -10,6 +10,28 @@ namespace HydraMenu.ui.sections
 
 		private const float ButtonGap = 8f;
 
+		// Custom-color type-in state. GUILayout.TextField is unstripped and crashes under IL2CPP (see
+		// MenuSection), so we capture typed characters ourselves. Only one field is active at a time.
+		private enum HexField { None, Solid, GradA, GradB, Name }
+		private static HexField _typing = HexField.None;
+		private static string _solidInput = "";
+		private static string _gradAInput = "";
+		private static string _gradBInput = "";
+		private static string _nameInput = "";
+
+		// Saved custom themes come from the shared CThemes folder (see CustomThemeStore), so a theme saved
+		// in Malum shows up here too. Cache the disk listing and refresh at most once a second so drawing
+		// this section every frame doesn't hit disk each time.
+		private static System.Collections.Generic.List<(string name, string value)> _savedCache = new System.Collections.Generic.List<(string name, string value)>();
+		private static float _savedCacheUntil = 0f;
+
+		private static void RefreshSaved(bool force = false)
+		{
+			if (!force && Time.unscaledTime < _savedCacheUntil) return;
+			_savedCache = CustomThemeStore.LoadAll();
+			_savedCacheUntil = Time.unscaledTime + 1f;
+		}
+
 		private static readonly (string name, string hex)[] Themes =
 		{
 			("Default", ""),
@@ -84,12 +106,276 @@ namespace HydraMenu.ui.sections
 			DrawRgbButton();
 
 			GUILayout.Space(12);
+			GUILayout.Label("Custom Color");
+			DrawCustom();
+
+			GUILayout.Space(12);
 			GUILayout.Label("Solid Themes");
 			DrawSolidThemes();
 
 			GUILayout.Space(14);
 			GUILayout.Label($"Gradients ({Gradients.Length})");
 			DrawGradients();
+		}
+
+		// Custom hex + custom gradient entry. Applying persists to the current config immediately (via
+		// ApplyTheme/ApplyGradient below), so typed colors survive a restart.
+		private void DrawCustom()
+		{
+			if (_typing != HexField.None) CaptureHex();
+
+			float h = 30 * MainUI.scale;
+
+			// --- Solid custom color: [ #hex field ] [swatch] [Apply] ---
+			GUILayout.BeginHorizontal();
+			string solidLabel = _typing == HexField.Solid
+				? $"<color=yellow>{(string.IsNullOrEmpty(_solidInput) ? "#RRGGBB" : _solidInput)}_</color>"
+				: (string.IsNullOrEmpty(_solidInput) ? "Hex: click to type" : $"Hex: {_solidInput}");
+			if (GUILayout.Button(solidLabel, GUILayout.ExpandWidth(true), GUILayout.Height(h)))
+				SetTyping(HexField.Solid);
+
+			bool solidOk = NormalizeHex(_solidInput, out var solidColor, out var solidNorm);
+			var prevBg = GUI.backgroundColor;
+			if (solidOk) GUI.backgroundColor = solidColor; // Apply button previews the chosen color
+			if (GUILayout.Button("Apply", GUILayout.Width(70 * MainUI.scale), GUILayout.Height(h)))
+			{
+				if (solidOk)
+				{
+					ApplyTheme(solidNorm);
+					Hydra.notifications.Send("Themes", $"Applied {solidNorm}");
+				}
+				else Hydra.notifications.Send("Themes", "Invalid hex color.");
+			}
+			GUI.backgroundColor = prevBg;
+			GUILayout.EndHorizontal();
+
+			// --- Custom gradient: [ Start ] [ End ] on one row, preview + Apply on the next ---
+			GUILayout.Space(6);
+			GUILayout.Label("Custom Gradient");
+
+			GUILayout.BeginHorizontal();
+			string aLabel = _typing == HexField.GradA
+				? $"<color=yellow>{(string.IsNullOrEmpty(_gradAInput) ? "#Start" : _gradAInput)}_</color>"
+				: (string.IsNullOrEmpty(_gradAInput) ? "Start: click" : $"Start: {_gradAInput}");
+			if (GUILayout.Button(aLabel, GUILayout.ExpandWidth(true), GUILayout.Height(h)))
+				SetTyping(HexField.GradA);
+
+			string bLabel = _typing == HexField.GradB
+				? $"<color=yellow>{(string.IsNullOrEmpty(_gradBInput) ? "#End" : _gradBInput)}_</color>"
+				: (string.IsNullOrEmpty(_gradBInput) ? "End: click" : $"End: {_gradBInput}");
+			if (GUILayout.Button(bLabel, GUILayout.ExpandWidth(true), GUILayout.Height(h)))
+				SetTyping(HexField.GradB);
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
+			bool aOk = NormalizeHex(_gradAInput, out var ga, out var gaNorm);
+			bool bOk = NormalizeHex(_gradBInput, out var gb, out var gbNorm);
+			var prevBgG = GUI.backgroundColor;
+			if (aOk && bOk)
+			{
+				float wave = (Mathf.Sin(Time.time * 2.2f) + 1f) * 0.5f;
+				GUI.backgroundColor = Color.Lerp(ga, gb, wave); // Apply Gradient button animates the gradient
+			}
+			if (GUILayout.Button("Apply Gradient", GUILayout.ExpandWidth(true), GUILayout.Height(h)))
+			{
+				if (aOk && bOk)
+				{
+					ApplyGradient(gaNorm, gbNorm);
+					Hydra.notifications.Send("Themes", "Applied custom gradient");
+				}
+				else Hydra.notifications.Send("Themes", "Enter two valid hex colors.");
+			}
+			GUI.backgroundColor = prevBgG;
+			GUILayout.EndHorizontal();
+
+			// --- Save current theme to the shared CThemes folder: [ Name field ] [Save] ---
+			GUILayout.Space(10);
+			GUILayout.Label("Saved Themes <size=10><color=#888888>(shared with Malum)</color></size>");
+
+			GUILayout.BeginHorizontal();
+			string nameLabel = _typing == HexField.Name
+				? $"<color=yellow>{(string.IsNullOrEmpty(_nameInput) ? "Name..." : _nameInput)}_</color>"
+				: (string.IsNullOrEmpty(_nameInput) ? "Name: click to type" : $"Name: {_nameInput}");
+			if (GUILayout.Button(nameLabel, GUILayout.ExpandWidth(true), GUILayout.Height(h)))
+				SetTyping(HexField.Name);
+			if (GUILayout.Button("Save", GUILayout.Width(70 * MainUI.scale), GUILayout.Height(h)))
+				SaveCurrentTheme();
+			GUILayout.EndHorizontal();
+
+			DrawSavedList(h);
+		}
+
+		// The current accent, as stored in ThemeColor: "#RRGGBB", "grad:#a,#b", or "" for default.
+		private static string CurrentThemeValue() => Hydra.mainUI.GetConfigData()?.ThemeColor ?? "";
+
+		private void SaveCurrentTheme()
+		{
+			if (Hydra.mainUI.GetConfigData()?.RgbMode ?? false)
+			{
+				Hydra.notifications.Send("Themes", "Turn off RGB Mode first.");
+				return;
+			}
+			string value = CurrentThemeValue();
+			if (string.IsNullOrEmpty(value))
+			{
+				Hydra.notifications.Send("Themes", "Apply a color first.");
+				return;
+			}
+			string name = CustomThemeStore.Sanitize(_nameInput);
+			if (name == null)
+			{
+				Hydra.notifications.Send("Themes", "Enter a name.");
+				return;
+			}
+
+			if (CustomThemeStore.Save(name, value))
+			{
+				Hydra.notifications.Send("Themes", $"Saved '{name}'.");
+				_nameInput = "";
+				_typing = HexField.None;
+				RefreshSaved(true);
+			}
+			else Hydra.notifications.Send("Themes", "Save failed.");
+		}
+
+		// Two-column list of saved themes: click the name to apply, x to delete. Colors preview the value.
+		private void DrawSavedList(float h)
+		{
+			RefreshSaved();
+			if (_savedCache.Count == 0)
+			{
+				GUILayout.Label("<size=11><color=#888888>None yet - apply a color, name it, then Save.</color></size>");
+				return;
+			}
+
+			for (int i = 0; i < _savedCache.Count; i += 2)
+			{
+				GUILayout.BeginHorizontal();
+				DrawSavedEntry(_savedCache[i], h);
+				if (i + 1 < _savedCache.Count)
+				{
+					GUILayout.Space(ButtonGap);
+					DrawSavedEntry(_savedCache[i + 1], h);
+				}
+				GUILayout.EndHorizontal();
+				GUILayout.Space(4);
+			}
+		}
+
+		private void DrawSavedEntry((string name, string value) theme, float h)
+		{
+			var prev = GUI.backgroundColor;
+			GUI.backgroundColor = PreviewColor(theme.value);
+			if (GUILayout.Button(theme.name, GUILayout.ExpandWidth(true), GUILayout.Height(h)))
+			{
+				ApplySavedValue(theme.value);
+				Hydra.notifications.Send("Themes", $"Applied '{theme.name}'.");
+			}
+			GUI.backgroundColor = prev;
+
+			if (GUILayout.Button("x", GUILayout.Width(26 * MainUI.scale), GUILayout.Height(h)))
+			{
+				CustomThemeStore.Delete(theme.name);
+				Hydra.notifications.Send("Themes", $"Deleted '{theme.name}'.");
+				RefreshSaved(true);
+			}
+		}
+
+		// Applies a stored value (hex or "grad:#a,#b") via the same paths the preset buttons use.
+		private void ApplySavedValue(string value)
+		{
+			if (!string.IsNullOrEmpty(value) && value.StartsWith("grad:"))
+			{
+				var parts = value.Substring(5).Split(',');
+				if (parts.Length == 2) { ApplyGradient(parts[0], parts[1]); return; }
+			}
+			ApplyTheme(value);
+		}
+
+		// Static preview color for a stored value (animated for gradients).
+		private static Color PreviewColor(string value)
+		{
+			if (string.IsNullOrEmpty(value)) return Color.white;
+			if (value.StartsWith("grad:"))
+			{
+				var parts = value.Substring(5).Split(',');
+				if (parts.Length == 2
+					&& ColorUtility.TryParseHtmlString(parts[0], out var a)
+					&& ColorUtility.TryParseHtmlString(parts[1], out var b))
+				{
+					float wave = (Mathf.Sin(Time.time * 2.2f) + 1f) * 0.5f;
+					return Color.Lerp(a, b, wave);
+				}
+				return Color.white;
+			}
+			return ColorUtility.TryParseHtmlString(value, out var c) ? c : Color.white;
+		}
+
+		private static void SetTyping(HexField field)
+		{
+			_typing = _typing == field ? HexField.None : field;
+		}
+
+		// Adds '#' if missing and validates.
+		private static bool NormalizeHex(string raw, out Color color, out string normalized)
+		{
+			color = Color.white;
+			normalized = null;
+			if (string.IsNullOrWhiteSpace(raw)) return false;
+			string s = raw.Trim();
+			if (!s.StartsWith("#")) s = "#" + s;
+			if (ColorUtility.TryParseHtmlString(s, out color)) { normalized = s; return true; }
+			return false;
+		}
+
+		// Manual hex-key capture (IL2CPP-safe). Accepts 0-9 a-f A-F and '#'; caps at 9 chars (#RRGGBBAA).
+		private void CaptureHex()
+		{
+			var e = Event.current;
+			if (e == null || e.type != EventType.KeyDown) return;
+
+			if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Escape)
+			{
+				_typing = HexField.None;
+				e.Use();
+				return;
+			}
+
+			if (e.keyCode == KeyCode.Backspace)
+			{
+				ref string buf = ref ActiveBuffer();
+				if (!string.IsNullOrEmpty(buf)) buf = buf.Substring(0, buf.Length - 1);
+				e.Use();
+				return;
+			}
+
+			char c = e.character;
+			if (_typing == HexField.Name)
+			{
+				if (c != ' ' && !char.IsControl(c))
+				{
+					ref string nb = ref ActiveBuffer();
+					if ((nb?.Length ?? 0) < 24) { nb += c; e.Use(); }
+				}
+				return;
+			}
+			bool isHex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == '#';
+			if (isHex)
+			{
+				ref string buf = ref ActiveBuffer();
+				if ((buf?.Length ?? 0) < 9) { buf += c; e.Use(); }
+			}
+		}
+
+		private ref string ActiveBuffer()
+		{
+			switch (_typing)
+			{
+				case HexField.GradA: return ref _gradAInput;
+				case HexField.GradB: return ref _gradBInput;
+				case HexField.Name: return ref _nameInput;
+				default: return ref _solidInput;
+			}
 		}
 
 		private void DrawRgbButton()
@@ -102,6 +388,7 @@ namespace HydraMenu.ui.sections
 				var config = Hydra.mainUI.GetConfigData();
 				config.RgbMode = true;
 				Hydra.mainUI.LoadConfigData(config);
+				PersistTheme();
 			}
 
 			GUI.backgroundColor = previous;
@@ -186,6 +473,7 @@ namespace HydraMenu.ui.sections
 			config.RgbMode = false;
 			config.ThemeColor = hex;
 			Hydra.mainUI.LoadConfigData(config);
+			PersistTheme();
 		}
 
 		private void ApplyGradient(string hexA, string hexB)
@@ -194,6 +482,15 @@ namespace HydraMenu.ui.sections
 			config.RgbMode = false;
 			config.ThemeColor = $"grad:{hexA},{hexB}";
 			Hydra.mainUI.LoadConfigData(config);
+			PersistTheme();
+		}
+
+		// LoadConfigData only updates the in-memory menu state, so on its own a theme choice is lost on
+		// restart unless the user manually hits Save. Writing the current config here makes every theme
+		// pick (preset or custom) persist automatically, which is what "saveable" colors need.
+		private static void PersistTheme()
+		{
+			try { Hydra.config.SaveConfig(Hydra.config.currentConfig); } catch { }
 		}
 	}
 }
