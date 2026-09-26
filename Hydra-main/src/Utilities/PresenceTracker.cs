@@ -457,29 +457,36 @@ namespace HydraMenu
                     string pFriendCode = LocalFriendCode;
                     string pPuid = LocalPuid;
 
-                    // 1. Send heartbeat
-                    var payloadObj = new PresenceNode
+                    // 1. Send heartbeat - but only once we actually have a player name. At launch the loop
+                    // can tick before LocalPlayer/the account name has loaded (pName is still ""); publishing
+                    // then would create an empty-named "Nameless" node in the presence DB (visible only in the
+                    // DevMenu) that lingers until it prunes. Skipping the write until named avoids ever creating
+                    // it - we still fall through to the fetch below, so the online count keeps working meanwhile.
+                    if (!string.IsNullOrEmpty(pName))
                     {
-                        name = pName,
-                        room = roomCode,
-                        state = pState,
-                        p_id = pId,
-                        friend_code = pFriendCode,
-                        friend_puid = pPuid,
-                        last_seen = now,
-                        last_seen_time = GetCentralTimeString(),
-                        versions = new VersionInfo
+                        var payloadObj = new PresenceNode
                         {
-                            hydralum = CurrentHydralumVersion,
-                            hydra = "2.0.0",
-                            malum = "3.3.0"
-                        }
-                    };
+                            name = pName,
+                            room = roomCode,
+                            state = pState,
+                            p_id = pId,
+                            friend_code = pFriendCode,
+                            friend_puid = pPuid,
+                            last_seen = now,
+                            last_seen_time = GetCentralTimeString(),
+                            versions = new VersionInfo
+                            {
+                                hydralum = CurrentHydralumVersion,
+                                hydra = "2.0.0",
+                                malum = "3.3.0"
+                            }
+                        };
 
-                    string payload = JsonSerializer.Serialize(payloadObj);
-                    using (var content = new StringContent(payload, Encoding.UTF8, "application/json"))
-                    {
-                        using var putResp = await HttpClient.PutAsync($"{FirebaseUrl}/{SessionId}.json", content, token);
+                        string payload = JsonSerializer.Serialize(payloadObj);
+                        using (var content = new StringContent(payload, Encoding.UTF8, "application/json"))
+                        {
+                            using var putResp = await HttpClient.PutAsync($"{FirebaseUrl}/{SessionId}.json", content, token);
+                        }
                     }
 
                     // 2. Fetch active presence nodes
