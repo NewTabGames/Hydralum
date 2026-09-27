@@ -18,7 +18,13 @@ public static class PlayerControl_SetKillTimer
 [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.CmdCheckMurder))]
 public static class PlayerControl_CmdCheckMurder
 {
-    // Prefix patch of PlayerControl.CmdCheckMurder to always bypass checks when killing players
+    // Prefix patch of PlayerControl.CmdCheckMurder to bypass the client-side kill gating.
+    // Host kills go through the game's own CheckMurder (its single-apply, server-authoritative murder
+    // path) rather than a raw RpcMurderPlayer. Firing RpcMurderPlayer directly applied the kill locally
+    // AND had the server relay the same MurderPlayer RPC back to the host, so the victim was murdered
+    // twice (two death records -> the next meeting/report showed one kill as two deaths). CheckMurder does
+    // not self-echo, so the death registers once. Kill Anyone / Kill Reach / No Kill Cooldown still work
+    // because those live in the IsValidTarget / FindClosestTarget / SetKillTimer patches, not here.
     public static bool Prefix(PlayerControl __instance, PlayerControl target)
     {
         if (__instance == null || target == null) return true;
@@ -27,10 +33,9 @@ public static class PlayerControl_CmdCheckMurder
 
         if (!Utils.isHost) return true;
 
-        // __instance.isKilling = true;
         if (PlayerControl.LocalPlayer != null)
         {
-            PlayerControl.LocalPlayer.RpcMurderPlayer(target, true);
+            PlayerControl.LocalPlayer.CheckMurder(target);
         }
 
         return false;
