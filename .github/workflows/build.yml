@@ -60,7 +60,7 @@ jobs:
       if: steps.cache-bepinex.outputs.cache-hit != 'true'
       run: |
         mkdir -p .bepinex_cache
-        curl --http1.1 --retry 5 --retry-delay 3 -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip" -o .bepinex_cache/bepinex.zip
+        curl --http1.1 --retry 8 --retry-delay 5 --retry-all-errors -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip" -o .bepinex_cache/bepinex.zip
 
     - name: Package Standalone Game Folder
       run: |
@@ -98,7 +98,7 @@ jobs:
       if: steps.cache-bepinex-x64.outputs.cache-hit != 'true'
       run: |
         mkdir -p .bepinex_cache_x64
-        curl --http1.1 --retry 5 --retry-delay 3 -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip" -o .bepinex_cache_x64/bepinex.zip
+        curl --http1.1 --retry 8 --retry-delay 5 --retry-all-errors -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip" -o .bepinex_cache_x64/bepinex.zip
 
     - name: Package Standalone Game Folder (Microsoft Store / Xbox, x64)
       run: |
