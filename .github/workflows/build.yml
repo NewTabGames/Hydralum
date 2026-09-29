@@ -54,13 +54,13 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .bepinex_cache
-        key: bepinex-788-win-x86
+        key: bepinex-788-win-x64-steam
 
     - name: Download BepInEx (If Not Cached)
       if: steps.cache-bepinex.outputs.cache-hit != 'true'
       run: |
         mkdir -p .bepinex_cache
-        curl --http1.1 --retry 5 --retry-delay 3 -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.788%2B5b766a3.zip" -o .bepinex_cache/bepinex.zip
+        curl --http1.1 --retry 5 --retry-delay 3 -L -f -s -S "https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip" -o .bepinex_cache/bepinex.zip
 
     - name: Package Standalone Game Folder
       run: |
@@ -82,9 +82,11 @@ jobs:
         # BepInEx ships a hidden .doorstop_version file; upload-artifact drops hidden files by default.
         include-hidden-files: true
 
-    # The Microsoft Store / Xbox App build of Among Us is 64-bit, so it needs the x64 BepInEx loader
-    # (Steam is 32-bit / x86, handled above). The mod DLLs themselves are architecture-agnostic managed
-    # assemblies, so the exact same plugins are reused here - only the loader differs.
+    # Both the Steam and the Microsoft Store / Xbox App builds of Among Us are 64-bit and need the x64
+    # BepInEx loader. (Steam was 32-bit / x86 until the 2026-09-29 update flipped it to 64-bit; the x86
+    # loader no longer injects, which is why the Steam standalone above now downloads x64 too.) The mod
+    # DLLs are architecture-agnostic managed assemblies, so the same plugins are reused - only the loader
+    # download differs by cache path.
     - name: Cache BepInEx Download (x64)
       id: cache-bepinex-x64
       uses: actions/cache@v4
