@@ -50,6 +50,48 @@ namespace HydraMenu.network
 			msgCount++;
 		}
 
+		public void QueueDespawn(InnerNetObject netObject)
+		{
+			// Keep a copy of the net object's net ID
+			// AmongUsClient::RemoveNetObject will result in the net object's net ID being set to uint.MaxValue
+			uint netId = netObject.NetId;
+
+			if(IsGlobal || AmTarget)
+			{
+				Object.Destroy(netObject.gameObject);
+				AmongUsClient.Instance.RemoveNetObject(netObject);
+				if(AmTarget) return;
+			}
+
+			QueueDespawn(netId);
+		}
+
+		public void QueueDespawn(uint netId)
+		{
+			writer.StartMessage((byte)GameDataTypes.DespawnFlag);
+			writer.WritePacked(netId);
+			writer.EndMessage();
+
+			msgCount++;
+		}
+
+		public void QueueSendChat(PlayerControl source, string text)
+		{
+			if(IsGlobal || AmTarget)
+			{
+				HudManager.Instance.Chat.AddChat(source, text, false);
+				if(AmTarget) return;
+			}
+
+			writer.StartMessage((byte)GameDataTypes.RpcFlag);
+			writer.WritePacked(source.NetId);
+			writer.Write((byte)RpcCalls.SendChat);
+			writer.Write(text);
+			writer.EndMessage();
+
+			msgCount++;
+		}
+
 		public void QueueSpawn(InnerNetObject netObject, int ownerId = (int)Constants.OwnerIds.Host, SpawnFlags flags = SpawnFlags.None)
 		{
 			SpawnGameDataMessage spawn = AmongUsClient.Instance.CreateSpawnMessage(netObject, ownerId, flags);

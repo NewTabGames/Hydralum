@@ -142,6 +142,21 @@ public static class Utils
         return RoleManager.Instance.AllRoles.ToArray().FirstOrDefault(r => r != null && r.Role == roleType);
     }
 
+    // Resolves a RoleType to its in-game display name (e.g. SpiritGuide -> "Influencer"), read live from
+    // the game each call. Falls back to the enum's codename if the game can't provide a name yet, so a
+    // newly added role shows its codename instead of a bare number and needs no hardcoding here.
+    public static string GetRoleDisplayName(RoleTypes roleType)
+    {
+        try
+        {
+            var behaviour = GetBehaviourByRoleType(roleType);
+            if (behaviour != null && !string.IsNullOrWhiteSpace(behaviour.NiceName)) return behaviour.NiceName;
+        }
+        catch { }
+
+        return roleType.ToString();
+    }
+
     // Gets RoleBehaviour from a TeamType
     public static RoleBehaviour GetBehaviourByTeamType(RoleTeamTypes roleTeamType)
     {

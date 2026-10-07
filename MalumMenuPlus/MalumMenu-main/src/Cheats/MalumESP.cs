@@ -243,6 +243,11 @@ public static class MalumESP
             string protectCd = GuardianAngelEsp.GetLabel(playerPhysics.myPlayer);
             if (!string.IsNullOrEmpty(protectCd)) nameTag = protectCd + "\n" + nameTag;
 
+            // Advanced Role Cooldown ESP: per-role ability cooldowns (kill/viper/shapeshift/disappear/vent),
+            // colour-coded and stacked. Suppresses the standalone Kill label while on, so they don't double up.
+            string advCd = AdvancedRoleCooldownEsp.GetLabel(playerPhysics.myPlayer);
+            if (!string.IsNullOrEmpty(advCd)) nameTag = advCd + "\n" + nameTag;
+
             playerPhysics.myPlayer.cosmetics.SetName(nameTag);
 
             // Move the nameText up to prevent it overlapping with colorblind text or character sprite.

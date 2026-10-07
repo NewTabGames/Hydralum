@@ -17,7 +17,7 @@ namespace HydraMenu
         private static CancellationTokenSource _cts;
         private static bool _started = false;
 
-        public const string CurrentHydralumVersion = "1.7.1";
+        public const string CurrentHydralumVersion = "1.7.2";
         public const string GitHubActionsUrl = "https://github.com/NewTabGames/Hydralum/actions";
         public static bool IsOutdated { get; set; } = false;
         public static string RequiredVersion { get; set; } = "1.2.0";
@@ -477,7 +477,7 @@ namespace HydraMenu
                             versions = new VersionInfo
                             {
                                 hydralum = CurrentHydralumVersion,
-                                hydra = "2.0.0",
+                                hydra = "2.1.0",
                                 malum = "3.3.0"
                             }
                         };
@@ -869,7 +869,7 @@ namespace HydraMenu
         public class VersionInfo
         {
             public string hydralum { get; set; } = CurrentHydralumVersion;
-            public string hydra { get; set; } = "2.0.0";
+            public string hydra { get; set; } = "2.1.0";
             public string malum { get; set; } = "3.3.0";
         }
 

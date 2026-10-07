@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using Hazel;
 using InnerNet;
@@ -8,14 +9,30 @@ namespace MalumMenu;
 
 public static class RpcLoggingHelper
 {
+    // RPCs added after the pinned AmongUs.GameLibs version, so they aren't in the referenced RpcCalls enum
+    // and would otherwise log as "UnknownRpc_N". Keep this in sync as new roles/features are added.
+    private static readonly Dictionary<byte, string> ExtraRpcNames = new Dictionary<byte, string>
+    {
+        { 67, "SpiritGuideMessage" }, // Influencer (SpiritGuide) - added in the 2026-09 update
+    };
+
+    // Resolves an RPC's name: the game's RpcCalls enum first, then our extra map for newer RPCs, then a
+    // numeric fallback. Used by both the incoming and outgoing RPC loggers.
+    public static string ResolveRpcName(byte callId)
+    {
+        if (Enum.IsDefined(typeof(RpcCalls), (RpcCalls)callId))
+            return ((RpcCalls)callId).ToString();
+        if (ExtraRpcNames.TryGetValue(callId, out var name))
+            return name;
+        return $"UnknownRpc_{callId}";
+    }
+
     public static void LogIncoming(PlayerControl player, byte callId, string fallbackName = "Object")
     {
         if (!CheatToggles.logIncomingRpcs) return;
         try
         {
-            string rpcName = Enum.IsDefined(typeof(RpcCalls), (RpcCalls)callId)
-                ? ((RpcCalls)callId).ToString()
-                : $"UnknownRpc_{callId}";
+            string rpcName = ResolveRpcName(callId);
 
             string playerText = fallbackName;
             string idText = "?";
@@ -102,9 +119,7 @@ public static class InnerNetClient_StartRpcImmediately_Patch
         if (!CheatToggles.logOutgoingRpcs) return;
         try
         {
-            string rpcName = Enum.IsDefined(typeof(RpcCalls), (RpcCalls)callId)
-                ? ((RpcCalls)callId).ToString()
-                : $"UnknownRpc_{callId}";
+            string rpcName = RpcLoggingHelper.ResolveRpcName(callId);
 
             DebugUI.Log($"Starting RPC: {callId} ({rpcName}) as {targetNetId} with SendOption {option} to {targetClientId}");
         }

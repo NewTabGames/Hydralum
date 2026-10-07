@@ -141,6 +141,12 @@ namespace HydraMenu
 
 		public static void TeleportTo(Vector2 position)
 		{
+			if(PlayerControl.LocalPlayer == null || ShipStatus.Instance == null)
+			{
+				Hydra.notifications.Send("Teleport", "This feature can only be used inside of a game.");
+				return;
+			}
+
 			if(UseSnapToRPC)
 			{
 				PlayerControl.LocalPlayer.NetTransform.RpcSnapTo(position);

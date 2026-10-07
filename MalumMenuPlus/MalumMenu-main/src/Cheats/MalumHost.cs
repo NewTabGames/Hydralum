@@ -246,6 +246,7 @@ public static class MalumHost
         RoleTypes.Detective,
         RoleTypes.Viper,
         (RoleTypes)19,
+        (RoleTypes)21, // SpiritGuide (aka Influencer) - crewmate ghost role added in the 2026-09 update; not named in the pinned GameLibs yet
         RoleTypes.CrewmateGhost,
         RoleTypes.ImpostorGhost
     };

@@ -84,6 +84,8 @@ public class ESPTab : ITab
 
         CheatToggles.killCooldownEsp = GUILayout.Toggle(CheatToggles.killCooldownEsp, " Impostor Kill");
         CheatToggles.gaProtectCooldownEsp = GUILayout.Toggle(CheatToggles.gaProtectCooldownEsp, " Guardian Angel Protect");
+        CheatToggles.advancedRoleCooldownEsp = GUILayout.Toggle(CheatToggles.advancedRoleCooldownEsp, " Advanced Role Cooldown");
+        GUILayout.Label("<size=11><color=#888888>Per-role ability cooldowns, colour-coded (kill, Viper, shapeshift, disappear, engineer vent). Takes over the Impostor Kill line while on.</color></size>");
 
         GUILayout.Space(10);
         GUILayout.Label("World", GUIStylePreset.TabSubtitle);

@@ -21,6 +21,28 @@ public class MenuUI : MonoBehaviour
     public static float uiScale = 1f;   // menu font scaling (Menu Scale slider)
     public static float uiOpacity = 1f; // menu transparency (Menu Opacity slider)
 
+    // Solid backdrop texture so the menu can reach FULL opacity. Unity's default IMGUI window texture is
+    // itself translucent, so tinting it / lowering GUI.color alpha can never make the panel truly opaque -
+    // busy game elements always bled through. We draw this solid dark fill behind the window at the current
+    // Menu Opacity, so 100% opacity reads as a fully solid, readable panel.
+    private static Texture2D _menuPanelTex;
+    private static GUIStyle _menuPanelStyle;
+    private static GUIStyle MenuPanelStyle
+    {
+        get
+        {
+            if (_menuPanelTex == null)
+            {
+                _menuPanelTex = new Texture2D(1, 1, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave };
+                _menuPanelTex.SetPixel(0, 0, new Color(0.09f, 0.09f, 0.11f, 1f));
+                _menuPanelTex.Apply();
+            }
+            if (_menuPanelStyle == null) _menuPanelStyle = new GUIStyle();
+            _menuPanelStyle.normal.background = _menuPanelTex;
+            return _menuPanelStyle;
+        }
+    }
+
     private void Start()
     {
         // Add all tabs on start
@@ -269,23 +291,31 @@ public class MenuUI : MonoBehaviour
         // (drawn in a full-width, centre-aligned rect, so it sits at true screen centre regardless of length).
         // Only while actually inside a lobby or a live game - not the main menu and not while searching for
         // a lobby (matchmaking is still NetworkModes.OnlineGame, but LobbyBehaviour/ShipStatus don't exist yet).
-        if ((CheatToggles.showPing || CheatToggles.showFps) && !MalumMenu.isPanicked
+        // FPS is a local stat, so it shows wherever it's enabled (menu, lobby, freeplay, in-game). Ping needs
+        // an actual server connection, so it's still limited to an online lobby/game (not the main menu and not
+        // while searching for a lobby - matchmaking is still NetworkModes.OnlineGame, but LobbyBehaviour/ShipStatus
+        // don't exist yet). Previously FPS was bundled under Ping's online-only gate, so it silently didn't show
+        // in freeplay/local/menu.
+        bool showFpsNow = CheatToggles.showFps && !MalumMenu.isPanicked;
+        bool showPingNow = CheatToggles.showPing && !MalumMenu.isPanicked
             && AmongUsClient.Instance != null && AmongUsClient.Instance.NetworkMode == NetworkModes.OnlineGame
-            && (LobbyBehaviour.Instance != null || ShipStatus.Instance != null))
+            && (LobbyBehaviour.Instance != null || ShipStatus.Instance != null);
+
+        if (showFpsNow || showPingNow)
         {
             float pfDpi = Mathf.Max(1f, Screen.height / 1080f);
 
             string rich = "";
             string plain = "";
 
-            if (CheatToggles.showPing)
+            if (showPingNow)
             {
                 int ping = AmongUsClient.Instance.Ping;
                 rich += Utils.GetColoredPingText($"PING: {ping} ms", ping);
                 plain += $"PING: {ping} ms";
             }
 
-            if (CheatToggles.showFps)
+            if (showFpsNow)
             {
                 if (rich.Length > 0) { rich += "   "; plain += "   "; }
                 int fps = Utils.GetFps();
@@ -356,6 +386,15 @@ public class MenuUI : MonoBehaviour
 
         var prevMatrix = GUI.matrix;
         GUIUtility.ScaleAroundPivot(new Vector2(uiScale, uiScale), _windowRect.position);
+
+        // Opaque backdrop behind the window (at the current Menu Opacity) so 100% opacity is truly solid.
+        // The window's own translucent chrome + content still draw on top, so the title/look are preserved.
+        // Drawn as a GUI.Box with a solid background style - GUI.DrawTexture is one of the IMGUI methods that
+        // can't be unstripped under IL2CPP ("Method unstripping failed") and throws, which was blanking the menu.
+        var prevPanelBg = GUI.backgroundColor;
+        GUI.backgroundColor = Color.white; // don't tint the dark panel with the current theme colour
+        GUI.Box(_windowRect, GUIContent.none, MenuPanelStyle);
+        GUI.backgroundColor = prevPanelBg;
 
         _windowRect = GUI.Window((int)WindowId.MenuUI, _windowRect, (GUI.WindowFunction)WindowFunction, $"Hydralum v{PresenceTracker.CurrentHydralumVersion} - Malum Menu v{MalumMenu.malumVersion}  |  Online: {PresenceTracker.GetOnlineCount()}");
 

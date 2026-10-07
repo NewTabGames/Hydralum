@@ -272,6 +272,24 @@ namespace HydraMenu
 			return PlayerControl.LocalPlayer.Data.OwnerId != (int)OwnerIds.Host;
 		}
 
+		// Resolves a RoleType to its in-game display name (e.g. SpiritGuide -> "Influencer"), read live from
+		// the game each call. Falls back to the enum's codename if the game can't provide a name yet, so a
+		// newly added role shows its codename instead of a bare number and needs no hardcoding here.
+		public static string GetRoleDisplayName(RoleTypes roleType)
+		{
+			try
+			{
+				if(RoleManager.Instance != null)
+				{
+					RoleBehaviour behaviour = RoleManager.Instance.GetRole(roleType);
+					if(behaviour != null && !string.IsNullOrWhiteSpace(behaviour.NiceName)) return behaviour.NiceName;
+				}
+			}
+			catch { }
+
+			return roleType.ToString();
+		}
+
 		public static string GetPlayerColor(NetworkedPlayerInfo player)
 		{
 			int colorId = player.DefaultOutfit.ColorId;

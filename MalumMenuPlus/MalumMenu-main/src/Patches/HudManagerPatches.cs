@@ -136,6 +136,7 @@ public static class HudManager_Update
 			MalumESP.FreecamCheat();
 			MinimapHandler.TrackPositions(); // record positions so the map can freeze them during meetings
 			KillCooldownEsp.Update(); // reset impostor cooldowns when gameplay resumes after a meeting/exile
+			AdvancedRoleCooldownEsp.Update(); // freeze role-ability cooldown estimates during meetings/exile
 			NocturneDoors.Tick(); // keep pinned doors (from the radar) shut
 
 			// Close PlayerPickMenu if there is no PPM cheat enabled

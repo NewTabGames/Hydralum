@@ -54,12 +54,17 @@ public struct CheatToggles
     public static bool noShapeshiftAnim;
     public static bool noShapeshiftCooldown;
 
+    // Influencer (SpiritGuide)
+    public static bool spiritGuideReach;
+
     // Guardian Angel
     public static bool gaInfiniteRange;
     public static bool gaIgnoreImpostors;
 
     // Judge
     public static bool judgeNoTasks;
+    public static bool judgeInfiniteOverrules;
+    public static bool judgeImmune;
 
     // ESP
     public static bool noShadows;
@@ -74,6 +79,7 @@ public struct CheatToggles
     public static bool ventEsp;
     public static bool killCooldownEsp;
     public static bool gaProtectCooldownEsp;
+    public static bool advancedRoleCooldownEsp;
     public static bool showFriendCode;
     public static bool nameTagColors;
     public static bool hideMyGem;

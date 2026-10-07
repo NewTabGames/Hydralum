@@ -356,6 +356,8 @@ namespace HydraMenu.ui.sections
 				}
 			}
 
+			ModuleManager.whisper.Enabled = Controls.PlayerSpecificToggle("Whisper", target, ref ModuleManager.whisper.target);
+
 			GUILayout.Space(5);
 			GUILayout.Label("Host Only Features:" + (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost ? "" : "\n(Using these will get you kicked!)"));
 
@@ -395,6 +397,10 @@ namespace HydraMenu.ui.sections
 				{
 					Hydra.notifications.Send("Error", "Cannot target Developer");
 				}
+				else if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
+				{
+					Hydra.notifications.Send("Vote Forcer", "This feature can only be used if you are the host of the lobby.");
+				}
 				else if(MeetingHud.Instance == null)
 				{
 					Hydra.notifications.Send("Vote Forcer", "This option can only be used when there is an active meeting.");
@@ -425,6 +431,10 @@ namespace HydraMenu.ui.sections
 				if(IsDevTarget(target))
 				{
 					Hydra.notifications.Send("Error", "Cannot target Developer");
+				}
+				else if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
+				{
+					Hydra.notifications.Send("Eject Player", "You must be the host of the lobby in order to use this feature.");
 				}
 				else
 				{

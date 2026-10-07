@@ -16,7 +16,7 @@ namespace HydraMenu.ui.sections
 
 		public override void Render()
 		{
-			GUILayout.Label($"<b>Hydralum</b> v{PresenceTracker.CurrentHydralumVersion} (Malum Menu v3.3.0 | Hydra Menu v2.0.0)");
+			GUILayout.Label($"<b>Hydralum</b> v{PresenceTracker.CurrentHydralumVersion} (Malum Menu v3.3.0 | Hydra Menu v{MyPluginInfo.PLUGIN_VERSION})");
 			GUILayout.Label("A fork of Hydra, with features drawn from MalumMenu.");
 			GUILayout.Space(6);
 			int online = PresenceTracker.GetOnlineCount();

@@ -27,6 +27,7 @@ namespace HydraMenu.ui
 			RoleTypes.Viper,
 			RoleTypes.CrewmateGhost,
 			RoleTypes.GuardianAngel,
+			(RoleTypes)21, // SpiritGuide (aka Influencer) - crewmate ghost role added in the 2026-09 update; not named in the pinned GameLibs yet
 			RoleTypes.ImpostorGhost
 		};
 

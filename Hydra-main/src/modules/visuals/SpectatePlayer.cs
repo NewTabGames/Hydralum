@@ -36,6 +36,10 @@ namespace HydraMenu.modules.visuals
 
 		protected override void OnDisable()
 		{
+			// Clear the spectate target so a later enable (e.g. from loading a new config) can't resume
+			// spectating a stale player instead of properly turning the feature off.
+			target = null;
+
 			if(PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null)
 			{
 				FollowerCamera camera = Camera.main.GetComponent<FollowerCamera>();

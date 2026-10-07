@@ -1,7 +1,5 @@
-﻿using AmongUs.Data;
-using AmongUs.InnerNet.GameDataMessages;
+using AmongUs.Data;
 using HarmonyLib;
-using Hazel;
 
 namespace HydraMenu.modules.spoofer
 {
@@ -16,18 +14,14 @@ namespace HydraMenu.modules.spoofer
 			get { return ModuleManager.spoofLevel; }
 		}
 
-		// PlayerControl::RpcSetLevel is inlined in PlayerControl::Start so we cannot patch that function directly
-		[HarmonyPatch(typeof(RpcSetLevelMessage), nameof(RpcSetLevelMessage.SerializeRpcValues))]
-		class SerializeLevel
+		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.RpcSetLevel))]
+		class SetLevel
 		{
-			static bool Prefix(MessageWriter msg)
+			static void Prefix(ref uint level)
 			{
-				if(!Instance.Enabled) return true;
-				uint level = Instance.SpoofedLevel - 1;
+				if(!Instance.Enabled) return;
 
-				msg.WritePacked(level);
-				PlayerControl.LocalPlayer.SetLevel(level);
-				return false;
+				level = Instance.SpoofedLevel - 1;
 			}
 		}
 

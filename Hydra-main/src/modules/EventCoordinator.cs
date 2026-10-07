@@ -43,6 +43,10 @@ namespace HydraMenu.modules
 		// Network Events
 		public static event Action<InnerNetObject> OnNetObjectSpawn;
 
+		// System Events
+		public static event Action OnHudOverrideSabotage;
+		public static event Action OnHudOverrideRepair;
+
 		private static readonly HashSet<Il2CppSystem.Type> ShipNetObjects = [Il2CppType.From(typeof(ShipStatus)), Il2CppType.From(typeof(SkeldShipStatus)), Il2CppType.From(typeof(MiraShipStatus)), Il2CppType.From(typeof(PolusShipStatus)), Il2CppType.From(typeof(AirshipStatus)), Il2CppType.From(typeof(FungleShipStatus))];
 
 		[HarmonyPatch(typeof(AmongUsClient), nameof(AmongUsClient.CoStartGame))]
@@ -316,6 +320,49 @@ namespace HydraMenu.modules
 
 				end:
 				reader.Position = oldReadPosition;
+			}
+		}
+
+		[HarmonyPatch(typeof(HudOverrideSystemType), nameof(HudOverrideSystemType.UpdateSystem))]
+		class UpdateHudOverrideHost
+		{
+			// After the host applies the comms update, IsActive reflects the new state: true = sabotaged,
+			// false = repaired. We read it post-update instead of parsing the operation byte so we don't
+			// depend on the HudOverrideSystemOperation enum, which isn't exposed in the reference assembly.
+			static void Postfix(HudOverrideSystemType __instance)
+			{
+				if(__instance.IsActive)
+				{
+					Hydra.Log.LogMessage($"HudOverride system was sabotaged");
+					PublishEvent(OnHudOverrideSabotage);
+				}
+				else
+				{
+					Hydra.Log.LogMessage($"HudOverride system was repaired");
+					PublishEvent(OnHudOverrideRepair);
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(HudOverrideSystemType), nameof(HudOverrideSystemType.Deserialize))]
+		class UpdateHudOverrideNonHost
+		{
+			static void Prefix(HudOverrideSystemType __instance, MessageReader reader)
+			{
+				bool isActive = reader.ReadBoolean();
+				bool wasActive = __instance.IsActive;
+				reader.Position--;
+
+				if(!wasActive && isActive)
+				{
+					Hydra.Log.LogMessage($"HudOverride system was sabotaged");
+					PublishEvent(OnHudOverrideSabotage);
+				}
+				else if(wasActive && !isActive)
+				{
+					Hydra.Log.LogMessage($"HudOverride system was repaired");
+					PublishEvent(OnHudOverrideRepair);
+				}
 			}
 		}
 

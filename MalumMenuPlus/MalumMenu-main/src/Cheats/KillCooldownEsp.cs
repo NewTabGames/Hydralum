@@ -55,9 +55,16 @@ public static class KillCooldownEsp
         _wasBusy = busy;
     }
 
+    // Remaining kill-cooldown estimate for a player (0 if ready / unknown). Exposed so Advanced Role
+    // Cooldown ESP can render the kill line in its own colour/stack without re-estimating.
+    public static float GetRemaining(byte playerId) => _readyAt.TryGetValue(playerId, out var t) ? t - Time.time : 0f;
+
     // Label drawn above an impostor's head (empty for non-impostors / toggle off / dead).
     public static string GetLabel(PlayerControl player)
     {
+        // Advanced Role Cooldown ESP renders the kill line itself, so suppress the standalone one to avoid a
+        // duplicate when both are on.
+        if (CheatToggles.advancedRoleCooldownEsp) return "";
         if (!CheatToggles.killCooldownEsp || player == null || player.Data == null || player.Data.Role == null) return "";
         if (!player.Data.Role.IsImpostor || player.Data.IsDead) return "";
 

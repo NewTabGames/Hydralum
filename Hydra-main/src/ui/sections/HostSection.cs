@@ -48,7 +48,26 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Force Start Game"))
 			{
-				AmongUsClient.Instance.StartGame();
+				// Local lobbies are the only lobbies where we can start the game without being the host
+				if(AmongUsClient.Instance.NetworkMode != NetworkModes.LocalGame && !AmongUsClient.Instance.AmHost)
+				{
+					Hydra.notifications.Send("Start Game", "This feature can only be used if you are the host of the lobby.");
+				}
+				else if(AmongUsClient.Instance.GameState == InnerNetClient.GameStates.Started && Utilities.IsAnticheatPresent())
+				{
+					Hydra.notifications.Send("Start Game", "The game has already been started.");
+				}
+				else
+				{
+					AmongUsClient.Instance.StartGame();
+
+					// PlayerControl::RpcSetRole has checks against playing the intro cutscene in Freeplay
+					// To avoid a black screen in Freeplay, we force the intro cutscene to start
+					if(AmongUsClient.Instance.NetworkMode == NetworkModes.FreePlay)
+					{
+						HudManager.Instance.StartCoroutine(HudManager.Instance.CoShowIntro());
+					}
+				}
 			}
 
 			if(GUILayout.Button("Kill Everyone"))
@@ -129,7 +148,11 @@ namespace HydraMenu.ui.sections
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Despawn Lobby"))
 			{
-				if(lobbyList.Count > 0)
+				if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
+				{
+					Hydra.notifications.Send("Despawn Lobby", "This feature can only be used if you are the host of the lobby.");
+				}
+				else if(lobbyList.Count > 0)
 				{
 					InnerNetObject lobby = lobbyList.Dequeue();
 					lobby.Despawn();
@@ -151,7 +174,9 @@ namespace HydraMenu.ui.sections
 			GUILayout.Space(5);
 			GUILayout.Label("Assign roles for next round:");
 			ModuleManager.assignRoles.Enabled = GUILayout.Toggle(ModuleManager.assignRoles.Enabled, "Enabled");
-			GUILayout.Label($"Role to assign: {ModuleManager.assignRoles.AssignedRole}");
+			// Resolve the display name live from the game (codename -> display name), falling back to the
+			// codename if the game can't name it. No per-role hardcoding, so new roles work automatically.
+			GUILayout.Label($"Role to assign: {Utilities.GetRoleDisplayName(ModuleManager.assignRoles.AssignedRole)}");
 			ModuleManager.assignRoles.AssignedRole = Controls.HorizontalRoleSlider(ModuleManager.assignRoles.AssignedRole);
 
 			GUILayout.Space(5);
@@ -163,7 +188,11 @@ namespace HydraMenu.ui.sections
 
 			if(GUILayout.Button("Close Meeting"))
 			{
-				if(MeetingHud.Instance == null)
+				if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
+				{
+					Hydra.notifications.Send("Close Meeting", "This feature can only be used if you are the host of the lobby.");
+				}
+				else if(MeetingHud.Instance == null)
 				{
 					Hydra.notifications.Send("Skip Meeting", "This option can only be used in a meeting.");
 				}
@@ -336,7 +365,7 @@ namespace HydraMenu.ui.sections
 		    Hydra.notifications.Send("Boom 480 Buffed", "Boom.", 5);
 		}
 		
-		private static IEnumerator SpawnMap(byte mapId)
+		internal static IEnumerator SpawnMap(byte mapId)
 		{
 			Hydra.Log.LogInfo($"Attempting to spawn in map id {mapId}");
 

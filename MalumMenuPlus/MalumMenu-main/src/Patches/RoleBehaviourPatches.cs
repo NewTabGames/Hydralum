@@ -95,6 +95,27 @@ public static class DetectiveRole_SetCooldown
     }
 }
 
+[HarmonyPatch(typeof(SpiritGuideRole), nameof(SpiritGuideRole.FindClosestTarget))]
+public static class SpiritGuideRole_FindClosestTarget
+{
+    // Infinite reach: pick the closest LIVING player (the Influencer sends photos to the living) with no
+    // distance limit, mirroring the other role reach patches.
+    public static bool Prefix(ref PlayerControl __result)
+    {
+        if (!CheatToggles.spiritGuideReach) return true;
+
+        var sorted = Utils.GetPlayersSortedByDistance();
+        if (sorted == null) { __result = null; return false; }
+
+        var local = PlayerControl.LocalPlayer;
+        var playerList = sorted.Where(player => !player.IsNull() && player.Data != null && !player.Data.IsDead
+            && (local == null || player != local) && player.Collider != null && player.Collider.enabled).ToList();
+
+        __result = playerList.Count > 0 ? playerList[0] : null;
+        return false;
+    }
+}
+
 [HarmonyPatch(typeof(PhantomRole), nameof(PhantomRole.IsValidTarget))]
 public static class PhantomRole_IsValidTarget
 {
