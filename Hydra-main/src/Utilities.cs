@@ -282,10 +282,20 @@ namespace HydraMenu
 				if(RoleManager.Instance != null)
 				{
 					RoleBehaviour behaviour = RoleManager.Instance.GetRole(roleType);
-					if(behaviour != null && !string.IsNullOrWhiteSpace(behaviour.NiceName)) return behaviour.NiceName;
+					string nice = behaviour != null ? behaviour.NiceName : null;
+					// Skip the game's "STRMISS" placeholder, returned for newer/prototype roles whose
+					// display-name string isn't loaded here (e.g. Judge, SpiritGuide/Influencer).
+					if(!string.IsNullOrWhiteSpace(nice) && !nice.StartsWith("STRMISS")) return nice;
 				}
 			}
 			catch { }
+
+			// Fallback names so the role picker shows something readable instead of "STRMISS" or a raw enum value.
+			switch((int)roleType)
+			{
+				case 19: return "Judge";
+				case 21: return "Influencer"; // SpiritGuide
+			}
 
 			return roleType.ToString();
 		}

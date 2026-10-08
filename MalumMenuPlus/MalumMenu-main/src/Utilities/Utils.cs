@@ -150,9 +150,20 @@ public static class Utils
         try
         {
             var behaviour = GetBehaviourByRoleType(roleType);
-            if (behaviour != null && !string.IsNullOrWhiteSpace(behaviour.NiceName)) return behaviour.NiceName;
+            var nice = behaviour != null ? behaviour.NiceName : null;
+            // Skip the game's "STRMISS" placeholder, which comes back for newer/prototype roles
+            // whose display-name string isn't loaded in this context (e.g. Judge, SpiritGuide).
+            if (!string.IsNullOrWhiteSpace(nice) && !nice.StartsWith("STRMISS")) return nice;
         }
         catch { }
+
+        // Fallback names for roles the game won't name here, so the role picker shows something
+        // readable instead of "STRMISS" or a raw enum value.
+        switch ((int)roleType)
+        {
+            case 19: return "Judge";
+            case 21: return "Influencer"; // SpiritGuide
+        }
 
         return roleType.ToString();
     }

@@ -32,7 +32,7 @@ namespace HydraMenu.ui.sections
 			ModuleManager.noKillChecks.NoKillCooldown = GUILayout.Toggle(ModuleManager.noKillChecks.NoKillCooldown, "No Kill Cooldown (Host-only)");
 			ModuleManager.noKillChecks.KillGhosts = GUILayout.Toggle(ModuleManager.noKillChecks.KillGhosts, "Kill Ghosts (Host-only)");
 
-			GUILayout.Label($"Change role to: {selectedRole}");
+			GUILayout.Label($"Change role to: {Utilities.GetRoleDisplayName(selectedRole)}");
 			GUILayout.BeginHorizontal();
 			selectedRole = Controls.HorizontalRoleSlider(selectedRole);
 
