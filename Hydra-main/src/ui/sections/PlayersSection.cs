@@ -204,7 +204,8 @@ namespace HydraMenu.ui.sections
 			string playerInfo =
 				$"Name: {target.Data.PlayerName} ({Utilities.GetPlayerColor(target.Data)})" +
 				$"\nRole: {target.Data.RoleType}" +
-				$"\nState: " + (target.Data.IsDead ? "Dead" : "Alive");
+				$"\nState: " + (target.Data.IsDead ? "Dead" : "Alive") +
+				$"\nClient: {(HydraMenu.anticheat.ModDetection.IsDetected(target.Data.PlayerId) ? HydraMenu.anticheat.ModDetection.GetClientLabel(target.Data.PlayerId) : "Unmodded")}";
 
 			ClientData clientData = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetClientFromCharacter(target) : null;
 			if(clientData != null)

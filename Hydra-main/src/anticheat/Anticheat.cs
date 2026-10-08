@@ -62,6 +62,8 @@ namespace HydraMenu.anticheat
 		{
 			static bool Prefix(PlayerControl __instance, byte callId, MessageReader reader)
 			{
+				// Fingerprint the sending client on every PlayerControl RPC, before the anticheat may discard it.
+				ModDetection.Observe(__instance, callId);
 				return HandleRpc(typeof(PlayerControl), __instance, (RpcCalls)callId, reader);
 			}
 		}

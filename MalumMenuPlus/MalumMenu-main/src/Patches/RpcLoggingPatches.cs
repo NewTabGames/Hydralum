@@ -27,6 +27,9 @@ public static class RpcLoggingHelper
         return $"UnknownRpc_{callId}";
     }
 
+    // Newer-but-vanilla RPCs (added after the pinned GameLibs) that mod detection must not flag.
+    public static bool IsKnownExtraRpc(byte callId) => ExtraRpcNames.ContainsKey(callId);
+
     public static void LogIncoming(PlayerControl player, byte callId, string fallbackName = "Object")
     {
         if (!CheatToggles.logIncomingRpcs) return;
@@ -72,6 +75,8 @@ public static class PlayerControl_HandleRpc_Patch
     public static void Prefix(PlayerControl __instance, byte callId, MessageReader reader)
     {
         RpcLoggingHelper.LogIncoming(__instance, callId);
+        // Client fingerprinting runs on every PlayerControl RPC regardless of the logging toggle.
+        MalumModDetection.Observe(__instance, callId);
     }
 }
 

@@ -125,6 +125,7 @@ public class PlayersTab : ITab
             GUILayout.Label($"Player ID: {data.PlayerId}      Client ID: {data.ClientId}");
             GUILayout.Label($"Color: {Blank(data.ColorName)}      Level: {data.PlayerLevel + 1}");
             GUILayout.Label($"Platform: {GetPlatform(data)}");
+            GUILayout.Label($"Client: {GetClientLabel(data.PlayerId)}");
 
             // Location only exists once in a game (a ship is loaded)
             if (Utils.isShip)
@@ -360,6 +361,15 @@ public class PlayersTab : ITab
         }
         catch { }
         return "-";
+    }
+
+    // Shows the detected client: green "Unmodded" when no mod-signature RPC has been seen, red with the
+    // menu name(s) once one is. Detection only catches menus that emit custom (non-vanilla) RPCs.
+    private static string GetClientLabel(byte playerId)
+    {
+        if (MalumModDetection.IsDetected(playerId))
+            return $"<color=#ff5555>{MalumModDetection.GetClientLabel(playerId)}</color>";
+        return "<color=#55ff88>Unmodded</color>";
     }
 
     private static string Blank(string value) => string.IsNullOrEmpty(value) ? "-" : value;
