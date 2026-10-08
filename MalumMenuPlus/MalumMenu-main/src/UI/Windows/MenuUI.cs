@@ -27,20 +27,57 @@ public class MenuUI : MonoBehaviour
     // Menu Opacity, so 100% opacity reads as a fully solid, readable panel.
     private static Texture2D _menuPanelTex;
     private static GUIStyle _menuPanelStyle;
+    // Corner radius (unscaled points) for the backdrop - picked to sit just inside the window chrome's own
+    // rounded corners so the dark fill never pokes out past them as a square.
+    private const int MenuPanelCornerRadius = 12;
     private static GUIStyle MenuPanelStyle
     {
         get
         {
             if (_menuPanelTex == null)
             {
-                _menuPanelTex = new Texture2D(1, 1, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave };
-                _menuPanelTex.SetPixel(0, 0, new Color(0.09f, 0.09f, 0.11f, 1f));
-                _menuPanelTex.Apply();
+                _menuPanelTex = BuildRoundedRectTex(MenuPanelCornerRadius, new Color(0.09f, 0.09f, 0.11f, 1f));
             }
-            if (_menuPanelStyle == null) _menuPanelStyle = new GUIStyle();
+            if (_menuPanelStyle == null)
+            {
+                _menuPanelStyle = new GUIStyle
+                {
+                    // 9-slice on the rounded corners so they stay crisp at any window size / menu scale.
+                    border = new RectOffset { left = MenuPanelCornerRadius, right = MenuPanelCornerRadius, top = MenuPanelCornerRadius, bottom = MenuPanelCornerRadius }
+                };
+            }
             _menuPanelStyle.normal.background = _menuPanelTex;
             return _menuPanelStyle;
         }
+    }
+
+    // Builds a solid rounded-rectangle texture (corners faded to alpha 0, 1px anti-aliased) sized for
+    // 9-slicing with a `radius` border, so the menu backdrop follows the window's rounded corners instead
+    // of filling the rect as a square.
+    private static Texture2D BuildRoundedRectTex(int radius, Color fill)
+    {
+        int size = radius * 2 + 2;
+        int innerMax = size - 1 - radius; // = radius + 1
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            hideFlags = HideFlags.HideAndDontSave,
+            wrapMode = TextureWrapMode.Clamp
+        };
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float dx = Mathf.Max(Mathf.Max(radius - x, x - innerMax), 0);
+                float dy = Mathf.Max(Mathf.Max(radius - y, y - innerMax), 0);
+                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                float a = Mathf.Clamp01(radius - dist + 0.5f); // 1 inside, 0 outside, soft 1px edge
+                tex.SetPixel(x, y, new Color(fill.r, fill.g, fill.b, fill.a * a));
+            }
+        }
+
+        tex.Apply();
+        return tex;
     }
 
     private void Start()

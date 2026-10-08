@@ -40,10 +40,14 @@ public class MovementTab : ITab
 
     private void DrawGeneral()
     {
+        CheatToggles.invisibility = GUILayout.Toggle(CheatToggles.invisibility, " Invisibility");
+
         CheatToggles.disco = GUILayout.Toggle(CheatToggles.disco, " Disco");
         float discoMax = Utils.isHost ? 100f : 7f;
         if (CheatToggles.discoSpeed > discoMax) CheatToggles.discoSpeed = discoMax;
-        GUILayout.Label($"Disco Speed: {CheatToggles.discoSpeed:F0} changes/sec (max {discoMax:F0}{(Utils.isHost ? "" : " — host only above 7")})", GUIStylePreset.Hint);
+        // Pin the width so this wrapped hint doesn't flip between 1 and 2 lines as the window is dragged
+        // (IMGUI resolves an unpinned wrapped label's width slightly differently frame-to-frame).
+        GUILayout.Label($"Disco Speed: {CheatToggles.discoSpeed:F0} changes/sec (max {discoMax:F0}{(Utils.isHost ? "" : " — host only above 7")})", GUIStylePreset.Hint, GUILayout.Width(MenuUI.windowWidth * 0.40f));
         CheatToggles.discoSpeed = GUILayout.HorizontalSlider(CheatToggles.discoSpeed, 1f, discoMax, GUILayout.Width(250f));
         GUILayout.Space(6);
 

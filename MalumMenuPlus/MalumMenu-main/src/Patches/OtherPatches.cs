@@ -278,6 +278,22 @@ public static class MushroomDoorSabotageMinigame_Begin
     }
 }
 
+// Roles > Impostor > Allow Tasks: vanilla consoles reject Impostor interaction (AllowImpostor == false),
+// so force it true while the toggle is on. This only unlocks the interaction prompt / minigame locally
+// (no RPC is sent), letting an Impostor "do" tasks to blend in. Whether a completion actually networks is
+// still governed by PlayerControl_RpcCompleteTask_Patch, which only lets it through when we're the host.
+[HarmonyPatch(typeof(Console), nameof(Console.CanUse))]
+public static class Console_CanUse_ImpostorTasksPatch
+{
+    public static void Prefix(Console __instance)
+    {
+        if (!CheatToggles.impostorTasks || __instance == null) return;
+
+        var lp = PlayerControl.LocalPlayer;
+        if (lp != null && lp.myTasks != null) __instance.AllowImpostor = true;
+    }
+}
+
 [HarmonyPatch(typeof(Console), nameof(Console.CanUse))]
 public static class Console_CanUse_MedScanPatch
 {
@@ -571,10 +587,14 @@ public static class PlayerControl_RpcCompleteTask_Patch
         if (__instance != PlayerControl.LocalPlayer) return true;
         if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return true;
 
-        // If local player is an Impostor, never send RpcCompleteTask (instant kick by server anticheat)
+        // If local player is an Impostor, never send RpcCompleteTask (instant kick by server anticheat) -
+        // EXCEPT when we're the host with Roles > Impostor > Allow Tasks on. As host we're the authority and
+        // no external anticheat can kick us, so an Impostor's task completions are permitted to register.
         if (PlayerControl.LocalPlayer.Data.Role != null && PlayerControl.LocalPlayer.Data.Role.IsImpostor)
         {
-            return false;
+            bool hostAllowTasks = CheatToggles.impostorTasks
+                && AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost;
+            if (!hostAllowTasks) return false;
         }
 
         // Fix logic bug: allow valid tasks to be completed, block if tasks is null or index is out of bounds

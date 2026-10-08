@@ -75,6 +75,16 @@ namespace HydraMenu.routines
 				return;
 			}
 
+			// Forcing other players onto the zipline sends a UseZipline RPC on their behalf, which official
+			// servers reject with an instant kick. Only allow it as host or on host-authoritative (lax/modded)
+			// lobbies, mirroring the other force-other-player features.
+			if(Utilities.IsAnticheatPresent() && AmongUsClient.Instance != null && !AmongUsClient.Instance.AmHost)
+			{
+				Hydra.notifications.Send("Zipline Spammer", "Forcing players onto the zipline requires Host authority on official servers.", 10);
+				Enabled = false;
+				return;
+			}
+
 			shipStatus = ShipStatus.Instance.Cast<FungleShipStatus>();
 
 			EventCoordinator.OnDisconnect += OnDisconnect;

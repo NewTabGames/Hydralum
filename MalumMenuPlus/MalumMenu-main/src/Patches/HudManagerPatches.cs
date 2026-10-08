@@ -130,7 +130,8 @@ public static class HudManager_Update
 			}
 
 			MalumCheats.UseVentCheat(__instance);
-			ChatSender.Tick(); // Chat > Chat Sender: repeat the queued message while Spam is enabled
+			MalumInvisibility.Tick(); // Self > Invisibility: snap back to real position when toggled off
+				ChatSender.Tick(); // Chat > Chat Sender: repeat the queued message while Spam is enabled
 			MalumDisco.Tick(); // Self > Disco: strobe the local player's color while enabled
 			MalumESP.ZoomOut(__instance);
 			MalumESP.FreecamCheat();

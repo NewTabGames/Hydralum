@@ -79,8 +79,10 @@ public class RolesTab : ITab
 
         CheatToggles.killReach = GUILayout.Toggle(CheatToggles.killReach, " Kill Reach");
 
-        // Sabotaging in vents is provided by Hydra's Roles tab (single source of truth), so Malum no longer duplicates it.
-        // CheatToggles.impostorTasks = GUILayout.Toggle(CheatToggles.impostorTasks, " Allow Tasks");
+        // Lets an Impostor interact with and play task consoles (Console.CanUse -> AllowImpostor). Completing
+        // tasks only registers when you're the host; off-host completion stays blocked so the server anticheat
+        // can't kick you. See Console_CanUse_ImpostorTasksPatch / PlayerControl_CompleteTask_ImpostorTasks.
+        CheatToggles.impostorTasks = GUILayout.Toggle(CheatToggles.impostorTasks, " Allow Tasks");
     }
 
     private void DrawShapeshifter()
@@ -161,7 +163,12 @@ public class RolesTab : ITab
     {
         GUILayout.Label("Influencer", GUIStylePreset.TabSubtitle);
 
+        // "Reach" is KrushMenu's Infinite Message Range (SpiritGuideRole.FindClosestTarget bypass).
         CheatToggles.spiritGuideReach = GUILayout.Toggle(CheatToggles.spiritGuideReach, " Reach");
+        CheatToggles.noMessageCooldown = GUILayout.Toggle(CheatToggles.noMessageCooldown, " No Message Cooldown");
+        CheatToggles.noSelectionCooldown = GUILayout.Toggle(CheatToggles.noSelectionCooldown, " No Selection Cooldown");
+        CheatToggles.noPhotoLimit = GUILayout.Toggle(CheatToggles.noPhotoLimit, " No Photo Limit");
+        CheatToggles.noRefreshCooldown = GUILayout.Toggle(CheatToggles.noRefreshCooldown, " No Refresh Cooldown");
     }
 
     private void DrawGuardianAngel()
@@ -173,8 +180,6 @@ public class RolesTab : ITab
         CheatToggles.gaIgnoreImpostors = GUILayout.Toggle(CheatToggles.gaIgnoreImpostors, " Ignore Impostors");
     }
 
-    private int overruleTargetIndex;
-
     private void DrawJudge()
     {
         GUILayout.Label("Judge", GUIStylePreset.TabSubtitle);
@@ -182,28 +187,7 @@ public class RolesTab : ITab
         CheatToggles.judgeNoTasks = GUILayout.Toggle(CheatToggles.judgeNoTasks,
             " Enable Judge Overrule <size=11><color=#888888>No Tasks</color></size>");
 
-        CheatToggles.judgeInfiniteOverrules = GUILayout.Toggle(CheatToggles.judgeInfiniteOverrules, " Infinite Overrules");
-
         CheatToggles.judgeImmune = GUILayout.Toggle(CheatToggles.judgeImmune, " Judge Immune");
-
-        // Force Overrule: pick a living player and force a Judge overrule verdict on them. Only meaningful
-        // during a meeting. Works as the Judge (real ability) or as host (direct); as a non-judge non-host it
-        // forges one, which only lands on lax/modded hosts (official servers will reject it).
-        var targets = MalumJudge.GetOverruleTargets();
-        if (targets.Count > 0)
-        {
-            overruleTargetIndex = Mathf.Clamp(overruleTargetIndex, 0, targets.Count - 1);
-            GUILayout.Label($"Force Overrule: {targets[overruleTargetIndex].Data.PlayerName}");
-            overruleTargetIndex = Mathf.Clamp(Mathf.RoundToInt(GUILayout.HorizontalSlider(overruleTargetIndex, 0, targets.Count - 1)), 0, targets.Count - 1);
-            if (GUILayout.Button("Force Overrule", GUIStylePreset.NormalButton))
-                MalumJudge.ForceOverrule(targets[overruleTargetIndex]);
-        }
-        else
-        {
-            GUILayout.Label("<size=11><color=#888888>Force Overrule: available during a meeting</color></size>");
-        }
-
-        GUILayout.Label("<size=11><color=#ffaa55>As non-host, Force Overrule usually kicks you.</color></size>");
     }
 
     private RoleTypes selectedRole = RoleTypes.Crewmate;

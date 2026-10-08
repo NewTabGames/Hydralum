@@ -216,6 +216,7 @@ namespace HydraMenu.ui.sections
 
 				playerInfo +=
 					$"\nFriendcode: " + (streamerMode ? "REDACTED" : friendCodeStr) +
+						$"\nPUID: " + (streamerMode ? "REDACTED" : puidStr) +
 					$"\nLevel: {target.Data.PlayerLevel + 1}" +
 					$"\nDevice: {platform?.Platform}" +
 					(AmongUsClient.Instance != null && target.OwnerId == AmongUsClient.Instance.HostId ? "\nHost: true" : "");
@@ -244,24 +245,12 @@ namespace HydraMenu.ui.sections
 				{
 					Hydra.notifications.Send("Error", "Cannot target Developer");
 				}
-				if(Utilities.GetCurrentMap() == MapNames.Fungle)
-				{
-					if(GUILayout.Button("Force Zipline"))
-					{
-						Hydra.notifications.Send("Error", "Cannot target Developer");
-					}
-				}
 			}
 			else
 			{
 				Hydra.routines.petPlayer.Enabled = Controls.PlayerSpecificToggle("Pet Player", target, ref Hydra.routines.petPlayer.target);
 				Hydra.routines.playerFollower.Enabled = Controls.PlayerSpecificToggle("Follow", target, ref Hydra.routines.playerFollower.target);
 				Hydra.routines.jailPlayer.Enabled = Controls.PlayerSpecificToggle("Place in Jail", target, Hydra.routines.jailPlayer.targets);
-				
-				if(Utilities.GetCurrentMap() == MapNames.Fungle)
-				{
-					Hydra.routines.ziplineSpammer.Enabled = Controls.PlayerSpecificToggle("Force Zipline", target, Hydra.routines.ziplineSpammer.targets);
-				}
 
 				bool wasImmortal = HydraMenu.modules.self.Immortality.IsImmortal(target.PlayerId);
 				bool nowImmortal = GUILayout.Toggle(wasImmortal, "Immortal");
@@ -376,6 +365,21 @@ namespace HydraMenu.ui.sections
 			{
 				
 				Hydra.routines.discoHost.Enabled = Controls.PlayerSpecificToggle("Disco Mode", target, Hydra.routines.discoHost.targets);
+			}
+
+			if(Utilities.GetCurrentMap() == MapNames.Fungle)
+			{
+				if(IsDevTarget(target))
+				{
+					if(GUILayout.Button("Force Zipline"))
+					{
+						Hydra.notifications.Send("Error", "Cannot target Developer");
+					}
+				}
+				else
+				{
+					Hydra.routines.ziplineSpammer.Enabled = Controls.PlayerSpecificToggle("Force Zipline", target, Hydra.routines.ziplineSpammer.targets);
+				}
 			}
 
 			if(GUILayout.Button("Force Meeting As"))
@@ -716,24 +720,6 @@ namespace HydraMenu.ui.sections
 					}
 				}
 
-			if(Utilities.GetCurrentMap() == MapNames.Fungle)
-			{
-				bool allZiplining = validTargets.Count > 0 && validTargets.All(t => Hydra.routines.ziplineSpammer.targets.Contains(t.GetHashCode()));
-				if(GUILayout.Button(allZiplining ? "Release All from Zipline" : "Force All to Zipline"))
-				{
-					if (validTargets.Count < targets.Count) Hydra.notifications.Send("Error", "Cannot target Developer");
-					if(allZiplining)
-					{
-						foreach(var t in validTargets) Hydra.routines.ziplineSpammer.targets.Remove(t.GetHashCode());
-					}
-					else
-					{
-						foreach(var t in validTargets) Hydra.routines.ziplineSpammer.targets.Add(t.GetHashCode());
-					}
-					Hydra.routines.ziplineSpammer.Enabled = Hydra.routines.ziplineSpammer.targets.Count > 0;
-				}
-			}
-
 			SortedDictionary<int, string> vents = MapAssets.GetVents();
 			int ventCount = vents != null && vents.Count > 0 ? vents.Count : (ShipStatus.Instance != null && ShipStatus.Instance.AllVents != null ? ShipStatus.Instance.AllVents.Count : 0);
 			string ventName = vents != null && vents.ContainsKey(selectedVent) ? vents[selectedVent] : selectedVent.ToString();
@@ -764,6 +750,24 @@ namespace HydraMenu.ui.sections
 					foreach(var t in validTargets) Hydra.routines.discoHost.targets.Add(t.GetHashCode());
 				}
 				Hydra.routines.discoHost.Enabled = Hydra.routines.discoHost.targets.Count > 0;
+			}
+
+			if(Utilities.GetCurrentMap() == MapNames.Fungle)
+			{
+				bool allZiplining = validTargets.Count > 0 && validTargets.All(t => Hydra.routines.ziplineSpammer.targets.Contains(t.GetHashCode()));
+				if(GUILayout.Button(allZiplining ? "Release All from Zipline" : "Force All to Zipline"))
+				{
+					if (validTargets.Count < targets.Count) Hydra.notifications.Send("Error", "Cannot target Developer");
+					if(allZiplining)
+					{
+						foreach(var t in validTargets) Hydra.routines.ziplineSpammer.targets.Remove(t.GetHashCode());
+					}
+					else
+					{
+						foreach(var t in validTargets) Hydra.routines.ziplineSpammer.targets.Add(t.GetHashCode());
+					}
+					Hydra.routines.ziplineSpammer.Enabled = Hydra.routines.ziplineSpammer.targets.Count > 0;
+				}
 			}
 
 			if(GUILayout.Button("Eject Selected"))

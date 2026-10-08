@@ -204,3 +204,29 @@ public static class PlayerControl_CompleteTask
         catch { }
     }
 }
+
+// Roles > Impostor > Allow Tasks: when we're the host, make an Impostor's task completion actually register
+// (mark the PlayerTask complete + refresh the task-completion check). Host-only and sends no RPC, so there's
+// no anticheat exposure - mirrors KrushMenu's ForceCompleteAnyTask (which was also host-gated).
+[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.CompleteTask))]
+public static class PlayerControl_CompleteTask_ImpostorTasks
+{
+    public static void Prefix(PlayerControl __instance, uint idx)
+    {
+        if (!CheatToggles.impostorTasks) return;
+        if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
+        if (__instance == null || __instance.myTasks == null) return;
+
+        try
+        {
+            var task = __instance.myTasks.Find((Il2CppSystem.Predicate<PlayerTask>)(p => (int)p.Id == (int)idx));
+            if (!task || task.IsComplete) return;
+
+            try { task.Complete(); } catch { }
+
+            var gm = GameManager.Instance;
+            if (gm != null) { try { gm.CheckTaskCompletion(); } catch { } }
+        }
+        catch { }
+    }
+}

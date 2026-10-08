@@ -1,6 +1,8 @@
 using HarmonyLib;
 using System.Linq;
 using Sentry.Internal.Extensions;
+using UnityEngine;
+using UnityEngine.Audio;
 
 namespace MalumMenu;
 
@@ -113,6 +115,83 @@ public static class SpiritGuideRole_FindClosestTarget
 
         __result = playerList.Count > 0 ? playerList[0] : null;
         return false;
+    }
+}
+
+// --- Influencer (SpiritGuideRole) ability cheats, ported from KrushMenu ---
+// The Influencer's ability is sending photo "messages": it has a message cooldown, a per-target selection
+// cooldown, a cap on how many photos can be selected at once, and a cooldown after refreshing the image
+// grid. These zero/bypass each of those. (Infinite Message Range is already the "Reach" toggle above.)
+
+// No Message Cooldown + No Selection Cooldown both live on the role's per-frame Update; only touch our own
+// SpiritGuide instance (AmOwner), like the other role-behaviour patches.
+[HarmonyPatch(typeof(SpiritGuideRole), nameof(SpiritGuideRole.Update))]
+public static class SpiritGuideRole_Update_InfluencerCheats
+{
+    public static void Postfix(SpiritGuideRole __instance)
+    {
+        if (!CheatToggles.noMessageCooldown && !CheatToggles.noSelectionCooldown) return;
+
+        try
+        {
+            if (__instance == null || __instance.Player == null || !__instance.Player.AmOwner) return;
+
+            if (CheatToggles.noMessageCooldown)
+            {
+                __instance.cooldownSecondsRemaining = 0f;
+
+                var hud = HudManager.Instance;
+                if (hud != null && hud.AbilityButton != null)
+                {
+                    ((ActionButton)hud.AbilityButton).ResetCoolDown();
+                    ((ActionButton)hud.AbilityButton).SetCooldownFill(0f);
+                }
+            }
+
+            if (CheatToggles.noSelectionCooldown)
+                __instance.selectionCooldown = false;
+        }
+        catch { }
+    }
+}
+
+// No Refresh Cooldown: zero the message cooldown whenever the image grid is refreshed. Skipped when No
+// Message Cooldown is already holding it at zero every frame (mirrors KrushMenu).
+[HarmonyPatch(typeof(SpiritGuideRole), nameof(SpiritGuideRole.RefreshImages))]
+public static class SpiritGuideRole_RefreshImages_InfluencerCheats
+{
+    public static void Prefix(SpiritGuideRole __instance)
+    {
+        if (!CheatToggles.noRefreshCooldown || CheatToggles.noMessageCooldown) return;
+        try { if (__instance != null) __instance.cooldownSecondsRemaining = 0f; } catch { }
+    }
+}
+
+// No Photo Limit: re-add every toggled image button to the selection set so the vanilla cap never stops us
+// selecting more photos to send at once.
+[HarmonyPatch(typeof(SpiritGuideImageButton), nameof(SpiritGuideImageButton.ToggleSelection))]
+public static class SpiritGuideImageButton_ToggleSelection_InfluencerCheats
+{
+    public static void Postfix(SpiritGuideImageButton __instance)
+    {
+        if (!CheatToggles.noPhotoLimit || __instance == null) return;
+
+        try
+        {
+            var role = __instance.spiritGuideRole;
+            if (role == null || role.SendingImage) return;
+
+            var selected = role.selectedImageButtons;
+            if (selected == null || selected.Contains(__instance)) return;
+
+            selected.Add(__instance);
+
+            if (__instance.highlight != null) __instance.highlight.SetActive(true);
+            if (__instance.spiritGuideImage != null) __instance.spiritGuideImage.color = __instance.selectedColor;
+            if (__instance.selectAudio != null && SoundManager.Instance != null)
+                SoundManager.Instance.PlaySound(__instance.selectAudio, false, 1f, (AudioMixerGroup)null);
+        }
+        catch { }
     }
 }
 

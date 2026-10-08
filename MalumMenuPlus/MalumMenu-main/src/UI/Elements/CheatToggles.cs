@@ -9,6 +9,7 @@ namespace MalumMenu;
 public struct CheatToggles
 {
     // Movement
+    public static bool invisibility; // serverside/networked invisibility (see MalumInvisibility)
     public static bool disco;
     public static float discoSpeed = 6f; // color changes per second
     public static bool noClip;
@@ -55,7 +56,11 @@ public struct CheatToggles
     public static bool noShapeshiftCooldown;
 
     // Influencer (SpiritGuide)
-    public static bool spiritGuideReach;
+    public static bool spiritGuideReach; // = KrushMenu's "Infinite Message Range"
+    public static bool noMessageCooldown;
+    public static bool noSelectionCooldown;
+    public static bool noPhotoLimit;
+    public static bool noRefreshCooldown;
 
     // Guardian Angel
     public static bool gaInfiniteRange;
@@ -63,7 +68,6 @@ public struct CheatToggles
 
     // Judge
     public static bool judgeNoTasks;
-    public static bool judgeInfiniteOverrules;
     public static bool judgeImmune;
 
     // ESP
@@ -222,6 +226,15 @@ public struct CheatToggles
     public static bool logMeetings;
     public static bool logTasks;
     public static bool logGameState;
+    // Console - added event loggers (see ConsoleLoggers)
+    public static bool logJoins;
+    public static bool logDisconnects;
+    public static bool logGuardianProtect;
+    public static bool logVotes;
+    public static bool logVotekicks;
+    public static bool logVerdict;
+    public static bool logSabotages;
+    public static bool logChat;
 
     // Debug
     public static bool showDebugConsole;

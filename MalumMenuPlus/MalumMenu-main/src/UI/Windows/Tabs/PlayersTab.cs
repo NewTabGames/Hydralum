@@ -138,11 +138,18 @@ public class PlayersTab : ITab
             }
 
             GUILayout.Label($"Friend Code: {Blank(data.FriendCode)}");
+            GUILayout.Label($"PUID: {GetPuid(data, player)}");
 
             GUILayout.Space(8);
             if (GUILayout.Button("Copy Name", GUIStylePreset.NormalButton))
             {
                 GUIUtility.systemCopyBuffer = System.Text.RegularExpressions.Regex.Replace(data.PlayerName, "<.*?>", string.Empty);
+            }
+
+            if (GUILayout.Button("Copy PUID", GUIStylePreset.NormalButton))
+            {
+                var puid = GetPuid(data, player);
+                GUIUtility.systemCopyBuffer = puid == "-" ? "" : puid;
             }
 
             GUILayout.Space(8);
@@ -336,6 +343,23 @@ public class PlayersTab : ITab
     {
         try { return Utils.GetRoleName(data); }
         catch { return "-"; }
+    }
+
+    // PUID (Epic/Innersloth Product User ID). Pulled from the player's ClientData.ProductUserId - the same
+    // source the rest of the fork uses - with a fallback to our own EOS id for the local player (e.g. in
+    // local/freeplay, where there's no client row). Returns "-" when it can't be resolved.
+    private static string GetPuid(NetworkedPlayerInfo data, PlayerControl player)
+    {
+        try
+        {
+            var client = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetClientFromPlayerInfo(data) : null;
+            if (client != null && !string.IsNullOrEmpty(client.ProductUserId)) return client.ProductUserId;
+
+            if (player != null && player.AmOwner && EOSManager.Instance != null && !string.IsNullOrEmpty(EOSManager.Instance.ProductUserId))
+                return EOSManager.Instance.ProductUserId;
+        }
+        catch { }
+        return "-";
     }
 
     private static string Blank(string value) => string.IsNullOrEmpty(value) ? "-" : value;

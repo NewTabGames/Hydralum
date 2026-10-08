@@ -247,6 +247,14 @@ namespace HydraMenu.ui.sections
 
 			GUILayout.Label($"Color randomization delay: {Hydra.routines.discoHost.RandomizationDelay:F2}s");
 			Hydra.routines.discoHost.RandomizationDelay = GUILayout.HorizontalSlider(Hydra.routines.discoHost.RandomizationDelay, 0.1f, 2.0f);
+
+			// Zipline Spammer (moved here from the Troll tab): forces players onto The Fungle zipline, which
+			// is host-authoritative - the routine itself refuses to run on official servers as non-host.
+			if(Utilities.GetCurrentMap() == MapNames.Fungle)
+			{
+				GUILayout.Space(5);
+				Hydra.routines.ziplineSpammer.Enabled = Controls.GlobalPlayerSpecificToggle("Zipline Spammer", Hydra.routines.ziplineSpammer.targets);
+			}
 		}
 
 		private static void KillAllPlayers()

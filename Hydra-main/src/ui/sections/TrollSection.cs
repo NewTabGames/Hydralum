@@ -34,7 +34,6 @@ namespace HydraMenu.ui.sections
 			if(newImmortalAll != immortalAll) HydraMenu.modules.self.Immortality.SetEveryone(newImmortalAll);
 
 			Hydra.routines.glitterBomb.Enabled = GUILayout.Toggle(Hydra.routines.glitterBomb.Enabled, "Glitterbomb");
-			Hydra.routines.ziplineSpammer.Enabled = Controls.GlobalPlayerSpecificToggle("Zipline Spammer", Hydra.routines.ziplineSpammer.targets);
 
 			if(GUILayout.Button("Kick All Players"))
 			{
