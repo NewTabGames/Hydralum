@@ -267,6 +267,10 @@ public struct CheatToggles
     public static bool discoParty;
     public static bool spamReportBodies;
 
+    // Host Role Assigner (see MalumRoleAssign / HostOnlyTab). When enabled, as host we hook
+    // AssignRolesFromList to force each player's pre-chosen role.
+    public static bool roleAssignerEnabled;
+
     // Protections (ported from Hydra) - all default off (opt-in); several sit in the network
     // receive path, so they stay inert until you enable them.
     public static bool forceDtls;

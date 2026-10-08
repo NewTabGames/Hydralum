@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using AmongUs.GameOptions;
 using UnityEngine;
 
 namespace MalumMenu;
@@ -8,6 +10,8 @@ public class HostOnlyTab : ITab
 
     public void Draw()
     {
+        var players = MalumRoleAssign.CollectPlayers();
+
         GUILayout.BeginHorizontal();
 
         GUILayout.BeginVertical(GUILayout.Width(MenuUI.windowWidth * 0.425f));
@@ -28,9 +32,20 @@ public class HostOnlyTab : ITab
 
         DrawMeetings();
 
+        GUILayout.Space(15);
+
+        // Role Assign controls sit in the right column, under Meetings.
+        DrawRoleAssignControls(players);
+
         GUILayout.EndVertical();
 
         GUILayout.EndHorizontal();
+
+        // The player list spans the full width below both columns (the menu wraps tab content in its
+        // own scroll view, so it can grow without clipping).
+        GUILayout.Space(15);
+
+        DrawRoleAssignPlayerList(players);
     }
 
     private void DrawGeneral()
@@ -97,5 +112,100 @@ public class HostOnlyTab : ITab
         CheatToggles.voteImmune = GUILayout.Toggle(CheatToggles.voteImmune, " Vote Immune");
 
         CheatToggles.ejectPlayer = GUILayout.Toggle(CheatToggles.ejectPlayer, " Eject Player");
+    }
+
+    // ---- Role Assign ------------------------------------------------------------------------------
+    // Pick each player's role before the match; everyone left on Random is filled in normally. The
+    // assignment runs in RoleManager.SelectRoles as host (see MalumRoleAssign / RoleAssignPatches).
+
+    private void DrawRoleAssignControls(List<PlayerControl> players)
+    {
+        GUILayout.Label("Role Assign", GUIStylePreset.TabSubtitle);
+
+        CheatToggles.roleAssignerEnabled = GUILayout.Toggle(CheatToggles.roleAssignerEnabled, " Enable Role Assigner");
+
+        if (!Utils.isHost && !Utils.isFreePlay)
+            GUILayout.Label("<color=#ffcc55>You must be the host for this to take effect.</color>", GUIStylePreset.Hint);
+
+        GUILayout.Space(6f);
+
+        DrawRoleAssignSummary(players);
+
+        GUILayout.Space(4f);
+
+        if (GUILayout.Button("Clear All (Random)", GUIStylePreset.NormalButton, GUILayout.Width(160f), GUILayout.Height(24f)))
+            MalumRoleAssign.ClearAll();
+    }
+
+    private void DrawRoleAssignSummary(List<PlayerControl> players)
+    {
+        int maxImps = MalumRoleAssign.GetMaxImpostorAmount(players.Count);
+        int chosenImps = MalumRoleAssign.CountChosenImpostors();
+        int chosen = MalumRoleAssign.CountChosen();
+
+        GUILayout.Label($"<color=#888888>Players: {players.Count}   Assigned: {chosen}</color>");
+
+        string impColor = chosenImps > maxImps ? "#ff6666" : "#88ff88";
+        GUILayout.Label($"Chosen impostors: <color={impColor}>{chosenImps}</color> / max {maxImps}");
+        if (chosenImps > maxImps)
+            GUILayout.Label("<color=#ffcc55>More impostors chosen than the cap - they'll all still be forced.</color>", GUIStylePreset.Hint);
+    }
+
+    private void DrawRoleAssignPlayerList(List<PlayerControl> players)
+    {
+        if (players.Count == 0)
+        {
+            GUILayout.Label("Join a lobby to assign roles.");
+            return;
+        }
+
+        int hostId = AmongUsClient.Instance != null ? AmongUsClient.Instance.HostId : -1;
+
+        foreach (var player in players)
+        {
+            var data = player.Data;
+            if (data == null) continue;
+
+            byte playerId = data.PlayerId;
+            var chosen = MalumRoleAssign.GetChosen(playerId);
+
+            var colorHex = ColorUtility.ToHtmlStringRGB(data.Color);
+            string hostTag = player.OwnerId == hostId ? " <color=#ffcc00>(Host)</color>" : "";
+            string youTag = player.AmOwner ? " <color=#00d0ff>(You)</color>" : "";
+
+            GUILayout.BeginHorizontal();
+
+            GUILayout.Label($"<color=#{colorHex}>{data.PlayerName}</color>{youTag}{hostTag}",
+                GUILayout.Width(MenuUI.windowWidth * 0.40f));
+
+            if (GUILayout.Button("<", GUIStylePreset.NormalButton, GUILayout.Width(28f), GUILayout.Height(24f)))
+                MalumRoleAssign.CycleRole(playerId, -1);
+
+            GUILayout.Label(RoleLabel(chosen), GUIStylePreset.Hint, GUILayout.Width(130f));
+
+            if (GUILayout.Button(">", GUIStylePreset.NormalButton, GUILayout.Width(28f), GUILayout.Height(24f)))
+                MalumRoleAssign.CycleRole(playerId, 1);
+
+            GUILayout.FlexibleSpace();
+
+            GUILayout.EndHorizontal();
+            GUILayout.Space(2f);
+        }
+    }
+
+    // Colored label for the chosen role: red for impostor-side, cyan for special crew, gray for
+    // plain Crewmate / Random.
+    private static string RoleLabel(RoleTypes? chosen)
+    {
+        if (chosen == null) return "<color=#888888><b>Random</b></color>";
+
+        var role = chosen.Value;
+        string name = Utils.GetRoleDisplayName(role);
+
+        bool impostor = role == RoleTypes.Impostor || role == RoleTypes.Shapeshifter
+            || role == RoleTypes.Phantom || role == RoleTypes.Viper;
+
+        string color = impostor ? "#ff6666" : (role == RoleTypes.Crewmate ? "#dddddd" : "#55ddff");
+        return $"<color={color}><b>{name}</b></color>";
     }
 }
