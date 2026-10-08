@@ -35,6 +35,13 @@ public static class PlayerPhysics_LateUpdate
             MalumPPMCheats.KillPlayerPPM();
             MalumPPMCheats.TelekillPlayerPPM();
             MalumPPMCheats.TeleportPlayerPPM();
+
+            // Before a new match, clear the role Set Fake Role cached last game so it can't carry over.
+            if (Utils.isLobby || Utils.isFreePlay)
+            {
+                MalumPPMCheats.ClearFakeRoleCache();
+            }
+
             MalumPPMCheats.SetFakeRolePPM();
             MalumPPMCheats.SetFakeAlivePPM();
             // MalumPPMCheats.ForceRolePPM();

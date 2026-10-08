@@ -35,7 +35,7 @@ public partial class MalumMenu : BasePlugin
     public static WindowScalesUI windowScalesUI;
     public static KeybindsUI keybindsUI;
 
-    public static string malumVersion = "3.3.0";
+    public static string malumVersion = "3.3.1";
     public static List<string> supportedAU = new List<string> { "2026.9.29", "2026.9.29s", "2026.8.18", "2026.8.18s", "2026.6.5", "2026.3.31" };
     public static bool isPanicked = false;
 
