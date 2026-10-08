@@ -22,5 +22,5 @@
 .DS_Store
 Thumbs.db
 
-# Local untracked folder (holds DevMenu, DLLs output, HydralumLogo.png, scratch, notes, etc.)
+# Local untracked folder
 Others/
