@@ -232,6 +232,7 @@ public struct CheatToggles
     public static bool logGuardianProtect;
     public static bool logVotes;
     public static bool logVotekicks;
+    public static bool notifVotekick = true;
     public static bool logVerdict;
     public static bool logSabotages;
     public static bool logChat;

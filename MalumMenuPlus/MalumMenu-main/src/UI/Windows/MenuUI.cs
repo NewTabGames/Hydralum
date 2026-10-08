@@ -94,6 +94,7 @@ public class MenuUI : MonoBehaviour
         _tabs.Add(new OutfitsTab());
         _tabs.Add(new ConsoleTab());
         _tabs.Add(new HostOnlyTab());
+        _tabs.Add(new VotekickTab());
         _tabs.Add(new ConfigTab());
         _tabs.Add(new ThemesTab());
         _tabs.Add(new InfoTab());

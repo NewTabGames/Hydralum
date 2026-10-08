@@ -139,6 +139,7 @@ public static class HudManager_Update
 			KillCooldownEsp.Update(); // reset impostor cooldowns when gameplay resumes after a meeting/exile
 			AdvancedRoleCooldownEsp.Update(); // freeze role-ability cooldown estimates during meetings/exile
 			NocturneDoors.Tick(); // keep pinned doors (from the radar) shut
+			VotekickHandler.Tick(); // Auto votekick cycle & condition checks
 
 			// Close PlayerPickMenu if there is no PPM cheat enabled
 			if (PlayerPickMenu.playerpickMenu != null && CheatToggles.ShouldPPMClose())

@@ -10,19 +10,21 @@ public static class VoteBanSystem_AddVote
     // this method already returns false (votes never accumulate), so you are blocked either way.
     public static bool Prefix(VoteBanSystem __instance, int srcClient, int clientId)
     {
-        if (CheatToggles.preventVotekick
+        if ((CheatToggles.preventVotekick || VotekickProtection.Enabled)
             && PlayerControl.LocalPlayer != null
             && clientId == PlayerControl.LocalPlayer.OwnerId
+            && AmongUsClient.Instance != null
             && srcClient != AmongUsClient.Instance.ClientId)
         {
             var client = AmongUsClient.Instance.FindClientById(srcClient);
-            var name = client != null ? client.PlayerName : "Someone";
+            var name = client != null ? client.PlayerName : $"Player {srcClient}";
             try { HudManager.Instance.Notifier.AddDisconnectMessage($"{name} voted to kick you"); } catch { }
+            return !AmongUsClient.Instance.AmHost;
         }
 
         if (!Utils.isHost) return true;
 
-        if (AmongUsClient.Instance.ClientId == srcClient)
+        if (AmongUsClient.Instance != null && AmongUsClient.Instance.ClientId == srcClient)
         {
             AmongUsClient.Instance.KickPlayer(clientId, false);
         }
