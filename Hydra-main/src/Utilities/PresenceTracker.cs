@@ -18,6 +18,9 @@ namespace HydraMenu
         private static bool _started = false;
 
         public const string CurrentHydralumVersion = "1.7.6";
+        // Malum's version, reported in presence/info. Hydra can't reference Malum's assembly, so keep
+        // this in sync with MalumMenu.malumVersion on each Malum bump.
+        public const string MalumVersion = "3.3.1";
         public const string GitHubActionsUrl = "https://github.com/NewTabGames/Hydralum/actions";
         public static bool IsOutdated { get; set; } = false;
         public static string RequiredVersion { get; set; } = "1.2.0";
@@ -477,8 +480,8 @@ namespace HydraMenu
                             versions = new VersionInfo
                             {
                                 hydralum = CurrentHydralumVersion,
-                                hydra = "2.1.0",
-                                malum = "3.3.0"
+                                hydra = MyPluginInfo.PLUGIN_VERSION,
+                                malum = MalumVersion
                             }
                         };
 
@@ -869,8 +872,8 @@ namespace HydraMenu
         public class VersionInfo
         {
             public string hydralum { get; set; } = CurrentHydralumVersion;
-            public string hydra { get; set; } = "2.1.0";
-            public string malum { get; set; } = "3.3.0";
+            public string hydra { get; set; } = MyPluginInfo.PLUGIN_VERSION;
+            public string malum { get; set; } = MalumVersion;
         }
 
         public class PeerData
