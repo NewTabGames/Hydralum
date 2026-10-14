@@ -10,20 +10,92 @@ using System.Collections.Generic;
 
 namespace MalumMenu;
 
+// Platform spoofer. Mirrors Hydra's SpoofDevice: it isn't enough to set Platform + a name - each
+// platform must carry the platform-specific fields (PlatformName / XboxPlatformId / PsnPlatformId)
+// the server's anticheat validates. Sending only Platform (with XUID/PSID left at 0 and the wrong
+// name) makes the platform data invalid, and the server kicks you for it (e.g. when venting).
+public static class PlatformSpoofHelper
+{
+    // True when a valid spoof platform is configured; outputs it.
+    public static bool TryGetSpoofPlatform(out Platforms platform)
+    {
+        platform = default;
+        if (!Utils.StringToPlatformType(MalumMenu.spoofPlatform.Value, out Platforms? parsed) || parsed == null)
+            return false;
+        platform = (Platforms)parsed;
+        return true;
+    }
+
+    // Applies the spoofed platform and the matching platform-specific fields the server expects.
+    public static void Apply(PlatformSpecificData data, Platforms platform)
+    {
+        if (data == null) return;
+
+        data.Platform = platform;
+
+        switch (platform)
+        {
+            case Platforms.StandaloneWin10:
+                data.PlatformName = "TESTNAME";
+                data.XboxPlatformId = 2584878536129841;
+                data.PsnPlatformId = 0;
+                break;
+
+            case Platforms.Xbox:
+                // Xbox requires a real-looking gamertag (3-16 chars) and a valid XUID.
+                data.PlatformName = "Major Nelson";
+                data.XboxPlatformId = 2584878536129841;
+                data.PsnPlatformId = 0;
+                break;
+
+            case Platforms.Playstation:
+                data.PlatformName = "";
+                data.XboxPlatformId = 0;
+                data.PsnPlatformId = 0;
+                break;
+
+            case Platforms.Switch:
+                data.PlatformName = "Sus";
+                data.XboxPlatformId = 0;
+                data.PsnPlatformId = 0;
+                break;
+
+            default:
+                // PC / mobile / Starlight send no additional platform-specific data.
+                data.PlatformName = "TESTNAME";
+                data.XboxPlatformId = 0;
+                data.PsnPlatformId = 0;
+                break;
+        }
+    }
+}
+
 [HarmonyPatch(typeof(Constants), nameof(Constants.GetPlatformData))]
 public static class Constants_GetPlatformData
 {
-    // Postfix patch of Constants.GetPlatformData to spoof the user's platform type
+    // Primary hook: GetPlatformData is the source the game reads the local platform from when it
+    // builds the data it sends. A fresh object is returned so toggling the spoof off restores the
+    // real platform instead of leaving a mutated cached instance behind.
     public static void Postfix(ref PlatformSpecificData __result)
     {
-        if (Utils.StringToPlatformType(MalumMenu.spoofPlatform.Value, out Platforms? platformType))
-        {
-            __result = new PlatformSpecificData
-            {
-                Platform = (Platforms)platformType,
-                PlatformName = Constants.GetPlatformName()
-            };
-        }
+        if (!PlatformSpoofHelper.TryGetSpoofPlatform(out Platforms platform)) return;
+
+        var data = new PlatformSpecificData();
+        PlatformSpoofHelper.Apply(data, platform);
+        __result = data;
+    }
+}
+
+[HarmonyPatch(typeof(PlatformSpecificData), nameof(PlatformSpecificData.Serialize))]
+public static class PlatformSpecificData_Serialize_Spoof
+{
+    // Belt-and-suspenders: also cover the serialize path in case the game serializes a
+    // PlatformSpecificData that didn't come through GetPlatformData.
+    public static void Prefix(PlatformSpecificData __instance)
+    {
+        if (!PlatformSpoofHelper.TryGetSpoofPlatform(out Platforms platform)) return;
+
+        PlatformSpoofHelper.Apply(__instance, platform);
     }
 }
 

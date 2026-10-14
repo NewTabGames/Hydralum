@@ -248,6 +248,13 @@ public static class MalumESP
             string advCd = AdvancedRoleCooldownEsp.GetLabel(playerPhysics.myPlayer);
             if (!string.IsNullOrEmpty(advCd)) nameTag = advCd + "\n" + nameTag;
 
+            // Self Invisibility tag: while networked invisibility is active, stack a client-side marker
+            // above our own avatar so it's obvious at a glance that we're currently hidden. Only we see
+            // this - everyone else can't see our avatar at all - and it's purely local (sends nothing).
+            // Gated on ShipStatus like MalumInvisibility itself, since the spoof only runs in a match.
+            if (playerPhysics.myPlayer.AmOwner && CheatToggles.invisibility && ShipStatus.Instance != null)
+                nameTag = "<color=#8EC6FF><size=70%>INVISIBLE</size></color>\n" + nameTag;
+
             playerPhysics.myPlayer.cosmetics.SetName(nameTag);
 
             // Move the nameText up to prevent it overlapping with colorblind text or character sprite.

@@ -65,6 +65,7 @@ public struct CheatToggles
     // Guardian Angel
     public static bool gaInfiniteRange;
     public static bool gaIgnoreImpostors;
+    public static bool gaNoCooldown;
 
     // Judge
     public static bool judgeNoTasks;

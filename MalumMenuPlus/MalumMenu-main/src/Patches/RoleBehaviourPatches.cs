@@ -279,6 +279,36 @@ public static class TrackerRole_FindClosestTarget
     }
 }
 
+// Guardian Angel No Protect Cooldown: zero the protect cooldown each tick (and clear the ability
+// button's cooldown fill) so the Guardian Angel can protect on demand. Purely client-side and not
+// host-only - GuardianAngelRole.cooldownSecondsRemaining is a local field read by the IsCoolingDown
+// gate, and RpcProtectPlayer isn't cooldown-validated by the server - so it only touches our own GA
+// (AmOwner). Same mechanism as the Influencer's No Message Cooldown above. Postfix runs after the
+// role's own UpdateCooldown so our zero is what sticks for the frame.
+[HarmonyPatch(typeof(GuardianAngelRole), nameof(GuardianAngelRole.FixedUpdate))]
+public static class GuardianAngelRole_FixedUpdate_NoCooldown
+{
+    public static void Postfix(GuardianAngelRole __instance)
+    {
+        if (!CheatToggles.gaNoCooldown) return;
+
+        try
+        {
+            if (__instance == null || __instance.Player == null || !__instance.Player.AmOwner) return;
+
+            __instance.cooldownSecondsRemaining = 0f;
+
+            var hud = HudManager.Instance;
+            if (hud != null && hud.AbilityButton != null)
+            {
+                ((ActionButton)hud.AbilityButton).ResetCoolDown();
+                ((ActionButton)hud.AbilityButton).SetCooldownFill(0f);
+            }
+        }
+        catch { }
+    }
+}
+
 [HarmonyPatch(typeof(GuardianAngelRole), nameof(GuardianAngelRole.FindClosestTarget))]
 public static class GuardianAngelRole_FindClosestTarget
 {

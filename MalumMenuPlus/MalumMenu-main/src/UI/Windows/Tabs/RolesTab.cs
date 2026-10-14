@@ -178,6 +178,8 @@ public class RolesTab : ITab
         CheatToggles.gaInfiniteRange = GUILayout.Toggle(CheatToggles.gaInfiniteRange, " Infinite Protection Range");
 
         CheatToggles.gaIgnoreImpostors = GUILayout.Toggle(CheatToggles.gaIgnoreImpostors, " Ignore Impostors");
+
+        CheatToggles.gaNoCooldown = GUILayout.Toggle(CheatToggles.gaNoCooldown, " No Protect Cooldown");
     }
 
     private void DrawJudge()
