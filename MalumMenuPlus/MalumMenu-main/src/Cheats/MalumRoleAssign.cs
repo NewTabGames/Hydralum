@@ -64,6 +64,9 @@ public static class MalumRoleAssign
 
     public static void ClearAll() => _assigned.Clear();
 
+    // Directly set a player's pre-chosen role (used by the auto-loop to force itself Impostor each cycle).
+    public static void SetChosen(byte playerId, RoleTypes role) => _assigned[playerId] = role;
+
     public static int CountChosen() => _assigned.Count;
 
     public static int CountChosenImpostors()

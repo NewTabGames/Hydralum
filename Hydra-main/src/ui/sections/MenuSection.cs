@@ -12,6 +12,11 @@ namespace HydraMenu.ui.sections
 		private string configNameInput = "";
 		private bool typingConfigName = false;
 
+		// Start the selector on the ACTIVE config (the one loaded at launch), not just the first file in
+		// the list. Otherwise Save/Load/Delete default to configList[0], so saving silently writes to the
+		// wrong config and your changes are gone on the next launch (which reloads the active one).
+		private bool syncedToActiveConfig = false;
+
 		// Builds the config name from raw GUI key events. GUILayout.TextField is unstripped under IL2CPP
 		// and crashes ("Method unstripping failed"), so we capture typed characters ourselves instead.
 		private void CaptureConfigNameInput()
@@ -54,6 +59,14 @@ namespace HydraMenu.ui.sections
 
 			GUILayout.Space(5);
 			GUILayout.Label($"Config:\nCurrent Config: {Hydra.config.currentConfig}");
+
+			// One-time: point the selector at the active config so Save targets the config you're using.
+			if(!syncedToActiveConfig)
+			{
+				int activeIndex = Hydra.config.configList.IndexOf(Hydra.config.currentConfig);
+				if(activeIndex >= 0) configIndex = (byte)activeIndex;
+				syncedToActiveConfig = true;
+			}
 
 			// Keep the selection in range (a delete can shrink the list beneath the old index)
 			if(configIndex >= Hydra.config.configList.Count) configIndex = (byte)(Hydra.config.configList.Count - 1);

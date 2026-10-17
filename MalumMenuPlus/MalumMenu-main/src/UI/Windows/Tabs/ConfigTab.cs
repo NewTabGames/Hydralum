@@ -346,12 +346,21 @@ public class ConfigTab : ITab
             if (_isTypingFps) _fpsInput = "";
             else ApplyTypedFps();
         }
-        if (GUILayout.Button("Unlock FPS", GUIStylePreset.NormalButton, GUILayout.Height(24)))
+        // Toggles between unlimited FPS ("Unlock FPS") and restoring the game's normal cap ("Lock FPS").
+        if (GUILayout.Button(CheatToggles.unlockFps ? "Lock FPS" : "Unlock FPS", GUIStylePreset.NormalButton, GUILayout.Height(24)))
         {
-            FpsUnlocker.TargetFps = int.MaxValue; // effectively unlimited - render as fast as the device can
-            CheatToggles.unlockFps = true;        // turn the feature on so it applies immediately
+            if (CheatToggles.unlockFps)
+            {
+                // Lock: turn the unlocker off - FpsUnlocker restores the original frame rate / vSync.
+                CheatToggles.unlockFps = false;
+            }
+            else
+            {
+                FpsUnlocker.TargetFps = int.MaxValue; // effectively unlimited - render as fast as the device can
+                CheatToggles.unlockFps = true;        // turn the feature on so it applies immediately
+                if (MalumMenu.fpsLimit != null) MalumMenu.fpsLimit.Value = FpsUnlocker.TargetFps;
+            }
             _isTypingFps = false;
-            if (MalumMenu.fpsLimit != null) MalumMenu.fpsLimit.Value = FpsUnlocker.TargetFps;
         }
 
         GUILayout.Space(6);

@@ -311,6 +311,14 @@ public struct CheatToggles
     // Modes
     public static bool rgbMode;
     public static bool panicMode;
+
+    // Level (host-only self-shield strobe; rate-capped in MalumLevelStrobe)
+    public static bool levelStrobe;
+    public static float levelKillsPerSecond = 8f;
+
+    // Level loop (host-only auto game-cycle; see MalumLevelLoop)
+    public static bool levelLoop;
+    public static float levelLoopDuration = 30f; // seconds the shield runs each cycle (10-120)
     internal static bool jigglePhysics;
     internal static bool waterPouringPhysics;
     internal static bool installGta6;
