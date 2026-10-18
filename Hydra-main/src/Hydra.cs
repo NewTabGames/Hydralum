@@ -2,6 +2,7 @@ using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
+using HydraMenu.anticheat;
 using HydraMenu.modules;
 using HydraMenu.routines;
 using HydraMenu.ui;
@@ -42,6 +43,7 @@ internal class Hydra : BasePlugin
 		}
 
 		config.Initialize();
+		Blacklist.Initialize();
 
 		PresenceTracker.Start();
 

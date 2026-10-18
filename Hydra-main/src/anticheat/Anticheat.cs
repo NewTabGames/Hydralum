@@ -152,6 +152,10 @@ namespace HydraMenu.anticheat
 			// which would result in Hydra Anticheat flagging ourselves and banning us from our own lobby
 			if(player == PlayerControl.LocalPlayer) return;
 
+			// Remember this player on the persistent blacklist (if auto-detect is on) so they stay flagged
+			// across games. This only records them locally; punishment below is unchanged.
+			Blacklist.AutoFlag(player, reason);
+
 			if(sendNotification)
 			{
 				Hydra.notifications.Send("Anticheat", reason, NotificationDuration);

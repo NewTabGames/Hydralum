@@ -165,10 +165,6 @@ public class RolesTab : ITab
 
         // "Reach" is KrushMenu's Infinite Message Range (SpiritGuideRole.FindClosestTarget bypass).
         CheatToggles.spiritGuideReach = GUILayout.Toggle(CheatToggles.spiritGuideReach, " Reach");
-        CheatToggles.noMessageCooldown = GUILayout.Toggle(CheatToggles.noMessageCooldown, " No Message Cooldown");
-        CheatToggles.noSelectionCooldown = GUILayout.Toggle(CheatToggles.noSelectionCooldown, " No Selection Cooldown");
-        CheatToggles.noPhotoLimit = GUILayout.Toggle(CheatToggles.noPhotoLimit, " No Photo Limit");
-        CheatToggles.noRefreshCooldown = GUILayout.Toggle(CheatToggles.noRefreshCooldown, " No Refresh Cooldown");
     }
 
     private void DrawGuardianAngel()

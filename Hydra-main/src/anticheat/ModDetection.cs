@@ -72,6 +72,10 @@ namespace HydraMenu.anticheat
 				return; // ordinary vanilla RPC - tells us nothing
 
 			Record(player.PlayerId, label);
+
+			// A non-vanilla / custom RPC is a modded client caught in the act - auto-blacklist them (no-op
+			// when auto-detect is off, or for ourselves / a menu dev).
+			Blacklist.AutoFlag(player, $"Sent modded RPC ({label})");
 		}
 
 		// Starlight is a third-party Android BepInEx loader that reports platform ID 112, so a
@@ -85,7 +89,10 @@ namespace HydraMenu.anticheat
 			{
 				var client = AmongUsClient.Instance != null ? AmongUsClient.Instance.GetClientFromCharacter(player) : null;
 				if(client != null && (int)client.PlatformData.Platform == StarlightPlatformId)
+				{
 					Record(player.PlayerId, "Starlight");
+					Blacklist.AutoFlag(player, "Starlight loader");
+				}
 			}
 			catch { }
 		}

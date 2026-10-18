@@ -32,7 +32,7 @@ namespace HydraMenu.ui
 		}
 
 		// UI Section Pane
-		private readonly Section[] sections = { new GeneralSection(), new SelfSection(), new TrollSection(), new HostSection(), new RolesSection(), new PlayersSection(), new VisualSection(), new ProtectionsSection(), new AnticheatSection(), new SpooferSection(), new ThemesSection(), new MenuSection(), new InfoSection() };
+		private readonly Section[] sections = { new GeneralSection(), new SelfSection(), new TrollSection(), new HostSection(), new RolesSection(), new PlayersSection(), new VisualSection(), new ProtectionsSection(), new AnticheatSection(), new BlacklistSection(), new SpooferSection(), new ThemesSection(), new MenuSection(), new InfoSection() };
 		public byte activeTab = 0;
 
 		public static Vector2 SectionListSize

@@ -57,10 +57,6 @@ public struct CheatToggles
 
     // Influencer (SpiritGuide)
     public static bool spiritGuideReach; // = KrushMenu's "Infinite Message Range"
-    public static bool noMessageCooldown;
-    public static bool noSelectionCooldown;
-    public static bool noPhotoLimit;
-    public static bool noRefreshCooldown;
 
     // Guardian Angel
     public static bool gaInfiniteRange;
