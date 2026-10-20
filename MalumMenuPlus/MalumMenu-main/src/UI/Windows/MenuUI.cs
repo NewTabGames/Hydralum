@@ -535,6 +535,16 @@ public class MenuUI : MonoBehaviour
     private static System.Reflection.PropertyInfo _cachedHydraSizeProp = null;
     private static bool _hydraReflectionCached = false;
     private static System.Reflection.FieldInfo _cachedHydraMainUIInstanceField = null;
+    private static System.Reflection.MethodInfo _cachedHydraSetTabMethod = null;
+
+    // Keybind "actions": names here run a method instead of flipping a CheatToggles bool (see
+    // KeybindListener). The matching bool fields in CheatToggles exist only so these can be bound and saved.
+    public static readonly System.Collections.Generic.Dictionary<string, System.Action> KeybindActions = new()
+    {
+        { "switchMenu", SwitchMenuKeybind },
+        { "openHydraPlayers", () => OpenHydraTab("Players") },
+        { "openHydraHost", () => OpenHydraTab("Host") },
+    };
 
     public static System.Type GetHydraUIType()
     {
@@ -556,6 +566,7 @@ public class MenuUI : MonoBehaviour
                 }
                 _cachedHydraPosField = _cachedHydraUIType.GetField("windowPosition", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 _cachedHydraSizeProp = _cachedHydraUIType.GetProperty("WindowSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                _cachedHydraSetTabMethod = _cachedHydraUIType.GetMethod("SetActiveTabByName", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 _hydraReflectionCached = true;
                 break;
             }
@@ -647,6 +658,61 @@ public class MenuUI : MonoBehaviour
         catch (System.Exception ex)
         {
             MalumMenu.Log?.LogError($"Error opening Hydra: {ex}");
+        }
+    }
+
+    // "Switch Menu" hotkey: swap between whichever menu is open. Malum open -> Hydra; Hydra open -> Malum;
+    // if neither is open, do nothing (so the key never pops a menu up unexpectedly).
+    private static void SwitchMenuKeybind()
+    {
+        if (isGUIActive) SwitchToHydra();
+        else if (IsHydraOpen()) SwitchHydraToMalum();
+    }
+
+    // Reverse of SwitchToHydra: close Hydra, open Malum in the same spot Hydra was sitting.
+    public static void SwitchHydraToMalum()
+    {
+        lastOpenedWasHydra = false;
+        try
+        {
+            Rect hr = GetHydraRect();
+            if (hr != Rect.zero) { _windowRect.x = hr.x; _windowRect.y = hr.y; }
+            CloseHydraMenu();
+            isGUIActive = true;
+        }
+        catch (System.Exception ex)
+        {
+            MalumMenu.Log?.LogError($"Error switching to Malum: {ex}");
+        }
+    }
+
+    // "Hydra: <Tab>" hotkeys: make sure Hydra is open (switching from Malum if needed) and jump to the named
+    // tab. If Hydra is already open it just changes the tab.
+    public static void OpenHydraTab(string tabName)
+    {
+        lastOpenedWasHydra = true;
+        isGUIActive = false; // close Malum if it was the one open
+        try
+        {
+            if (GetHydraUIType() != null && _hydraReflectionCached)
+            {
+                // Bring Hydra to Malum's last position when it wasn't already showing, so the switch is seamless.
+                if (!GetHydraVisible() && _cachedHydraPosField != null)
+                {
+                    _cachedHydraPosField.SetValue(null, new Vector2(_windowRect.x, _windowRect.y));
+                }
+
+                _cachedHydraSetTabMethod?.Invoke(null, new object[] { tabName });
+                SetHydraVisible(true);
+            }
+            else
+            {
+                Utils.ShowPopup("\nHydraMenu DLL is not loaded in game");
+            }
+        }
+        catch (System.Exception ex)
+        {
+            MalumMenu.Log?.LogError($"Error opening Hydra tab '{tabName}': {ex}");
         }
     }
 

@@ -287,6 +287,23 @@ namespace HydraMenu.ui
 			return _cachedMalumUIType;
 		}
 
+		// Called by MalumMenu (via reflection) when it switches over with a tab hotkey, so Hydra opens on the
+		// requested tab. Matches by the section's display name; no-op if the tab isn't found. Visibility is
+		// handled separately by the caller (via the `visible` field).
+		public static void SetActiveTabByName(string tabName)
+		{
+			var ui = Hydra.mainUI;
+			if (ui == null || string.IsNullOrEmpty(tabName)) return;
+			for (byte i = 0; i < ui.sections.Length; i++)
+			{
+				if (ui.sections[i] != null && ui.sections[i].name == tabName)
+				{
+					ui.activeTab = i;
+					return;
+				}
+			}
+		}
+
 		public static void SwitchToMalum()
 		{
 			Hydra.config.SaveConfig(Hydra.config.currentConfig);

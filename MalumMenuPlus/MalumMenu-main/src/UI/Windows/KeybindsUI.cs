@@ -7,7 +7,7 @@ namespace MalumMenu;
 // the profile alongside their toggles, so they persist with the config like everything else.
 public class KeybindsUI : MonoBehaviour
 {
-    public static int windowHeight = 380;
+    public static int windowHeight = 430;
     public static int windowWidth = 460;
     public static Rect windowRect;
 
@@ -28,7 +28,9 @@ public class KeybindsUI : MonoBehaviour
         ("fixSabotage", "Fix Sabotages"),
         ("autoCompleteTasks", "Auto Complete Tasks"),
         ("completeMyTasks", "Complete All Tasks"),
-        ("autoCompleteNoAlwaysUpdates", "Disable Auto Task on Taskbar Updates"),
+        ("switchMenu", "Switch Menu"),
+        ("openHydraPlayers", "Hydra: Players Tab"),
+        ("openHydraHost", "Hydra: Host Tab"),
     };
 
     private void Start()

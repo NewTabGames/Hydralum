@@ -33,6 +33,15 @@ public struct CheatToggles
     public static bool completeMyTasks;
     public static bool autoCompleteTasks;
     public static bool autoCompleteNoAlwaysUpdates;
+
+    // Momentary keybind "actions" (not real toggles). They auto-register into ToggleFields like every other
+    // bool, which is what lets them be bound in the Keybind menu and saved to the profile. KeybindListener
+    // runs an Action for these names instead of flipping the bool (see MenuUI.KeybindActions), so the value
+    // itself is never used.
+    public static bool switchMenu;        // swap between Malum and Hydra (like the Switch button)
+    public static bool openHydraPlayers;  // jump to Hydra's Players tab
+    public static bool openHydraHost;     // jump to Hydra's Host tab
+
     public static float autoCompleteDelay = 10f;
     public static float autoCompleteInterval = 10f;
     public static bool impostorTasks;

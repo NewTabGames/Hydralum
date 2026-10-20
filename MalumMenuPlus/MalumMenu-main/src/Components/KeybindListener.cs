@@ -37,6 +37,13 @@ public class KeybindListener : MonoBehaviour
             CheatToggles.KeybindMods.TryGetValue(name, out var mods);
             if (!ModifiersHeldExactly(key, mods)) continue;
 
+            // Some binds run an action (switch menus / jump to a Hydra tab) rather than flipping a toggle.
+            if (MenuUI.KeybindActions.TryGetValue(name, out var action))
+            {
+                try { action(); } catch { }
+                continue;
+            }
+
             if (!CheatToggles.ToggleFields.TryGetValue(name, out var field)) continue;
 
             var current = (bool)field.GetValue(null);
