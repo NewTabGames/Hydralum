@@ -63,19 +63,27 @@ namespace HydraMenu.anticheat
 		{
 			if(player == null || player.Data == null || player.AmOwner) return;
 
-			string label;
+			string label;   // short tag kept per player (shown as the "Client" label)
+			string reason;  // longer text stored on the blacklist entry - always includes the raw callId
 			if(KnownMods.TryGetValue(callId, out var mod))
+			{
 				label = mod;
+				reason = $"Sent modded RPC {callId} ({mod})";
+			}
 			else if(IsNonVanilla(callId))
+			{
 				label = $"Modded (RPC {callId})";
+				reason = $"Sent modded RPC {callId}";
+			}
 			else
 				return; // ordinary vanilla RPC - tells us nothing
 
 			Record(player.PlayerId, label);
 
 			// A non-vanilla / custom RPC is a modded client caught in the act - auto-blacklist them (no-op
-			// when auto-detect is off, or for ourselves / a menu dev).
-			Blacklist.AutoFlag(player, $"Sent modded RPC ({label})");
+			// when auto-detect is off, or for ourselves / a menu dev). The reason records the exact callId so
+			// a false positive (e.g. a new vanilla RPC mislabelled as a known menu) can be traced.
+			Blacklist.AutoFlag(player, reason);
 		}
 
 		// Starlight is a third-party Android BepInEx loader that reports platform ID 112, so a

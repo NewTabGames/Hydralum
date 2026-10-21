@@ -128,6 +128,7 @@ public struct CheatToggles
     public static bool tracersBodies;
     public static bool colorBasedTracers;
     public static bool distanceBasedTracers;
+    public static bool hideTracersInLobby;
 
     // Chat
     public static bool enableChat;

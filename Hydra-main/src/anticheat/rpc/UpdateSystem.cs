@@ -133,6 +133,14 @@ namespace HydraMenu.anticheat.rpc
 				return false;
 			}
 
+			// No sabotage can legitimately be called while a meeting is up. Uses the player-based Flag so the
+			// offender is blacklisted (and punished per settings), same as the non-impostor case. Toggleable.
+			if(Anticheat.FlagSabotageInMeeting && MeetingHud.Instance != null)
+			{
+				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to sabotage {system} during a meeting.");
+				return false;
+			}
+
 			if(GameManager.Instance.IsHideAndSeek())
 			{
 				Anticheat.Flag(player, $"{player.Data.PlayerName} attempted to sabotage {system} while in Hide and Seek.");

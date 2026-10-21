@@ -15,6 +15,8 @@ namespace HydraMenu.ui.sections
 			Anticheat.Enabled = GUILayout.Toggle(Anticheat.Enabled, "Enable Hydra Anticheat");
 
 			Anticheat.CheckSpoofedPlatforms = GUILayout.Toggle(Anticheat.CheckSpoofedPlatforms, "Flag Spoofed Platform Data");
+			Anticheat.FlagSabotageInMeeting = GUILayout.Toggle(Anticheat.FlagSabotageInMeeting, "Flag Sabotage During Meeting");
+			Anticheat.BlockDoorCloseInMeeting = GUILayout.Toggle(Anticheat.BlockDoorCloseInMeeting, "Block Door Close During Meeting");
 
 			GUILayout.Space(5);
 			GUILayout.Label("RPCs that should be checked by the anticheat:");

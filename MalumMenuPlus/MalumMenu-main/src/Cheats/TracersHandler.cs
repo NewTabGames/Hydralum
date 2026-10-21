@@ -11,6 +11,10 @@ public static class TracersHandler
         {
             var color = Color.clear; // All tracers are invisible by default
 
+            // Suppress tracers while in the lobby when the option is on - they still draw (as clear) so any
+            // existing line is cleared, but no color is assigned.
+            if (!(CheatToggles.hideTracersInLobby && Utils.isLobby))
+            {
             if (!playerPhysics.myPlayer.Data.IsDead)
             {
                 if (CheatToggles.tracersCrew && !playerPhysics.myPlayer.Data.Role.IsImpostor ||
@@ -48,6 +52,7 @@ public static class TracersHandler
                     }
                 }
             }
+            }
 
             // Draw tracer between the player and LocalPlayer using the right color
             Utils.DrawTracer(playerPhysics.myPlayer.gameObject, PlayerControl.LocalPlayer.gameObject, color);
@@ -63,7 +68,7 @@ public static class TracersHandler
 
             var color = Color.clear; // All tracers are invisible by default
 
-            if (CheatToggles.tracersBodies)
+            if (CheatToggles.tracersBodies && !(CheatToggles.hideTracersInLobby && Utils.isLobby))
             {
                 if (CheatToggles.distanceBasedTracers)
                 {

@@ -43,6 +43,14 @@ namespace HydraMenu.anticheat
 
 		public static bool CheckSpoofedPlatforms { get; set; } = true;
 
+		// Flag someone who calls a sabotage while a meeting is active (also blacklists them, like the
+		// non-impostor sabotage check). Toggleable - part of the UpdateSystem check.
+		public static bool FlagSabotageInMeeting { get; set; } = true;
+
+		// Block a door close while a meeting is active. The CloseDoorsOfType RPC has no sender, so this can
+		// only block + notify - it can't flag/blacklist anyone. Toggleable - part of the CloseDoorsOfType check.
+		public static bool BlockDoorCloseInMeeting { get; set; } = true;
+
 		public enum Punishments
 		{
 			None,
@@ -216,6 +224,9 @@ namespace HydraMenu.anticheat
 			public bool SendNotification { get; set; }
 			public bool DiscardRpc { get; set; }
 			public Punishments Punishment { get; set; }
+			// Default true so configs saved before these existed keep the checks on after an update.
+			public bool FlagSabotageInMeeting { get; set; } = true;
+			public bool BlockDoorCloseInMeeting { get; set; } = true;
 		}
 
 		public static AnticheatConfigData GetConfigData()
@@ -226,6 +237,8 @@ namespace HydraMenu.anticheat
 				SendNotification = sendNotification,
 				DiscardRpc =  discardRpc,
 				Punishment = punishment,
+				FlagSabotageInMeeting = FlagSabotageInMeeting,
+				BlockDoorCloseInMeeting = BlockDoorCloseInMeeting,
 			};
 		}
 
@@ -237,6 +250,8 @@ namespace HydraMenu.anticheat
 			sendNotification = configData.SendNotification;
 			discardRpc = configData.DiscardRpc;
 			punishment = configData.Punishment;
+			FlagSabotageInMeeting = configData.FlagSabotageInMeeting;
+			BlockDoorCloseInMeeting = configData.BlockDoorCloseInMeeting;
 		}
 	}
 }

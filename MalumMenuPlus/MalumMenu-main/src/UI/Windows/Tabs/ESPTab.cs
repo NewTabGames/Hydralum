@@ -129,6 +129,8 @@ public class ESPTab : ITab
         CheatToggles.colorBasedTracers = GUILayout.Toggle(CheatToggles.colorBasedTracers, " Color-based");
 
         CheatToggles.distanceBasedTracers = GUILayout.Toggle(CheatToggles.distanceBasedTracers, " Distance-based");
+
+        CheatToggles.hideTracersInLobby = GUILayout.Toggle(CheatToggles.hideTracersInLobby, " Hide Tracers in Lobby");
     }
 
     private void DrawMinimap()
