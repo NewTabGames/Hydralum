@@ -17,7 +17,7 @@ namespace MalumMenu
         private static CancellationTokenSource _cts;
         private static bool _started = false;
 
-        public const string CurrentHydralumVersion = "1.7.9";
+        public const string CurrentHydralumVersion = "1.8.0";
         // Hydra's version, reported in presence/info. Malum can't reference Hydra's assembly, so keep
         // this in sync with Hydra's csproj <Version> on each Hydra bump.
         public const string HydraVersion = "2.1.0";
