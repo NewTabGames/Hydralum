@@ -306,7 +306,8 @@ namespace HydraMenu.ui
 
 		public static void SwitchToMalum()
 		{
-			Hydra.config.SaveConfig(Hydra.config.currentConfig);
+			// Config is manual-save only: switching menus must NOT silently persist the current config.
+			// It's saved only via the Menu tab's "Save" button.
 			Hydra.mainUI.visible = false;
 			try
 			{

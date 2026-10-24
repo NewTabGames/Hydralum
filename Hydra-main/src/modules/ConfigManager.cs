@@ -163,10 +163,8 @@ namespace HydraMenu.modules
 
 		public void CreateNewConfig(string configName)
 		{
-			// First save our old config
-			SaveConfig(currentConfig);
-
-			// Then create our new config
+			// Manual-save only: don't silently persist the config we're leaving. Just materialize the
+			// new config file as a snapshot of the current live state and switch to it.
 			configList.Add(configName);
 			SaveConfig(configName);
 			currentConfig = configName;
@@ -190,8 +188,8 @@ namespace HydraMenu.modules
 			configName = SanitizeConfigName(configName);
 			if(configName == null || configList.Contains(configName)) return false;
 
-			// Save the config we're leaving, then create and switch to the new one
-			SaveConfig(currentConfig);
+			// Manual-save only: don't silently persist the config we're leaving. Just materialize the
+			// new config file as a snapshot of the current live state and switch to it.
 			configList.Add(configName);
 			SaveConfig(configName);
 			currentConfig = configName;
@@ -233,9 +231,8 @@ namespace HydraMenu.modules
 			newName = SanitizeConfigName(newName);
 			if(newName == null || !configList.Contains(oldName) || configList.Contains(newName)) return false;
 
-			// Persist the latest state into the old file first if it's the active config
-			if(currentConfig == oldName) SaveConfig(oldName);
-
+			// Manual-save only: don't silently persist current live state into the old file before moving.
+			// The rename just moves the existing config file (its last saved content) to the new name.
 			try
 			{
 				File.Move(GetConfigPath(oldName), GetConfigPath(newName));

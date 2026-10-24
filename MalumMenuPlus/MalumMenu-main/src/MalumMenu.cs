@@ -71,6 +71,12 @@ public partial class MalumMenu : BasePlugin
         // Force Stuff tab to be always disabled on launch
         CheatToggles.showStuffTab = false;
 
+        // Manual-save only: changing a setting updates it in memory but must NOT write the .cfg to disk
+        // on its own. BepInEx otherwise re-saves the whole file on every .Value change (SaveOnConfigSet),
+        // which is the auto-save we don't want. The .cfg is flushed explicitly instead, whenever the user
+        // saves their profile (Config tab -> Update / New / Save to Profile; see SaveTogglesToProfile).
+        Config.SaveOnConfigSet = false;
+
         // Loads config settings
         menuKeybind = Config.Bind("MalumMenu.GUI",
                                 "Keybind",
@@ -243,10 +249,23 @@ public partial class MalumMenu : BasePlugin
 
         SceneManager.add_sceneLoaded((Action<Scene, LoadSceneMode>) ((scene, _) =>
         {
-            if (scene.name == "MainMenu" && !isPanicked)
+            if (scene.name == "MainMenu")
             {
+                // Only when we've actually been in a lobby/game this session: we've now left it back to the
+                // menu, so auto-close the Match Replay overlay and both mod menus (don't let them linger on
+                // the menu or carry into the next game). This never runs at startup (the flag starts false),
+                // so a saved "Replay on" preference loaded from the profile is respected until you enter and
+                // then leave a game.
+                if (MenuUI.sawGameSinceMenu)
+                {
+                    CheatToggles.replay = false;
+                    MenuUI.isGUIActive = false;
+                    MenuUI.CloseHydraMenu();
+                    MenuUI.sawGameSinceMenu = false;
+                }
+
                 // Warns about unsupported AU versions if enabled
-                if (showVersionWarning != null && showVersionWarning.Value && !supportedAU.Contains(Application.version))
+                if (!isPanicked && showVersionWarning != null && showVersionWarning.Value && !supportedAU.Contains(Application.version))
                 {
                     Utils.ShowPopup("\nThis version of MalumMenu and this version of Among Us are incompatible\n\nInstall the right version to avoid problems");
                 }

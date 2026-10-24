@@ -13,6 +13,9 @@ public class MenuUI : MonoBehaviour
 
     public static bool isGUIActive = false;
     public static bool lastOpenedWasHydra = false;
+    // Set true whenever we're in a lobby/game; the MainMenu scene-load handler uses it to auto-close the
+    // Match Replay overlay and the menus only when we actually leave a game (never at startup).
+    public static bool sawGameSinceMenu = false;
     private List<ITab> _tabs = new();
     private int _selectedTab;
     private Vector2 _contentScroll = Vector2.zero; // vertical scroll for the active tab's body
@@ -119,6 +122,11 @@ public class MenuUI : MonoBehaviour
     private void Update()
     {
         FpsUnlocker.Apply();
+
+        // Remember we've been in a lobby/game this session. The MainMenu scene-load handler reads this so
+        // it only auto-closes the overlays when we actually leave a game (not at startup, where it's false).
+        if (LobbyBehaviour.Instance != null || ShipStatus.Instance != null)
+            sawGameSinceMenu = true;
 
         MalumColorSniper.Update();
 

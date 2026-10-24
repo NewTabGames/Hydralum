@@ -13,11 +13,17 @@ namespace HydraMenu
     {
         private const string FirebaseUrl = "https://hydralum-presence-default-rtdb.firebaseio.com/presence";
         private static readonly string SessionId = Guid.NewGuid().ToString("N");
+        // The presence DB node is keyed by the player's STABLE id (PUID, else friend code) rather than a
+        // random per-launch GUID. A GUID key made every relaunch / extra game instance of the SAME account
+        // create a brand-new node that lingered (pruned only after 10 min), so one person showed up several
+        // times in the presence list. A stable key means an account always overwrites its single node.
+        // SessionId stays only as a last-resort fallback for a client with neither a PUID nor a friend code.
+        private static volatile string _presenceKey;
         private static readonly HttpClient HttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
         private static CancellationTokenSource _cts;
         private static bool _started = false;
 
-        public const string CurrentHydralumVersion = "1.8.1";
+        public const string CurrentHydralumVersion = "1.8.2";
         // Malum's version, reported in presence/info. Hydra can't reference Malum's assembly, so keep
         // this in sync with MalumMenu.malumVersion on each Malum bump.
         public const string MalumVersion = "3.3.1";
@@ -439,11 +445,32 @@ namespace HydraMenu
             {
                 _cts?.Cancel();
                 _started = false;
-                // Fire-and-forget cleanup (non-blocking)
-                _ = Task.Run(async () => { try { using var r = await HttpClient.DeleteAsync($"{FirebaseUrl}/{SessionId}.json"); } catch { } });
+                // Fire-and-forget cleanup (non-blocking): remove the node under the key we last wrote.
+                string delKey = _presenceKey ?? SessionId;
+                _ = Task.Run(async () => { try { using var r = await HttpClient.DeleteAsync($"{FirebaseUrl}/{delKey}.json"); } catch { } });
                 AppDomain.CurrentDomain.SetData("HydralumPresenceActive", null);
             }
             catch { }
+        }
+
+        // Builds the stable presence-node key for this account. Prefers the EOS PUID (hex, always key-safe),
+        // then the friend code, and only falls back to the random SessionId if neither is known yet.
+        private static string BuildPresenceKey()
+        {
+            if (!string.IsNullOrWhiteSpace(LocalPuid)) return SanitizeKey(LocalPuid);
+            if (!string.IsNullOrWhiteSpace(LocalFriendCode)) return SanitizeKey(LocalFriendCode);
+            return SessionId;
+        }
+
+        // Firebase keys may not contain '.', '$', '#', '[', ']', '/', or control characters. PUIDs are hex
+        // (safe); friend codes contain '#', so sanitize any key to be safe.
+        private static string SanitizeKey(string s)
+        {
+            s = s.Trim();
+            var sb = new StringBuilder(s.Length);
+            foreach (char c in s)
+                sb.Append(c == '.' || c == '$' || c == '#' || c == '[' || c == ']' || c == '/' || char.IsControl(c) ? '_' : c);
+            return sb.Length > 0 ? sb.ToString() : SessionId;
         }
 
         private static async Task RunPresenceLoopAsync(CancellationToken token)
@@ -460,6 +487,10 @@ namespace HydraMenu
                     string pFriendCode = LocalFriendCode;
                     string pPuid = LocalPuid;
 
+                    // Stable node key for this account (PUID, else friend code), so relaunches and extra
+                    // game instances overwrite one node instead of piling up as duplicates.
+                    string key = BuildPresenceKey();
+
                     // 1. Send heartbeat - but only once we actually have a player name. At launch the loop
                     // can tick before LocalPlayer/the account name has loaded (pName is still ""); publishing
                     // then would create an empty-named "Nameless" node in the presence DB (visible only in the
@@ -467,6 +498,15 @@ namespace HydraMenu
                     // it - we still fall through to the fetch below, so the online count keeps working meanwhile.
                     if (!string.IsNullOrEmpty(pName))
                     {
+                        // If our key changed since the last heartbeat (e.g. the PUID loaded after an earlier
+                        // friend-code/GUID write), delete the node under the old key so it doesn't linger.
+                        string prevKey = _presenceKey;
+                        if (!string.IsNullOrEmpty(prevKey) && prevKey != key)
+                        {
+                            try { using var delOld = await HttpClient.DeleteAsync($"{FirebaseUrl}/{prevKey}.json", token); } catch { }
+                        }
+                        _presenceKey = key;
+
                         var payloadObj = new PresenceNode
                         {
                             name = pName,
@@ -488,7 +528,7 @@ namespace HydraMenu
                         string payload = JsonSerializer.Serialize(payloadObj);
                         using (var content = new StringContent(payload, Encoding.UTF8, "application/json"))
                         {
-                            using var putResp = await HttpClient.PutAsync($"{FirebaseUrl}/{SessionId}.json", content, token);
+                            using var putResp = await HttpClient.PutAsync($"{FirebaseUrl}/{key}.json", content, token);
                         }
                     }
 
@@ -515,7 +555,7 @@ namespace HydraMenu
                                         var el = prop.Value;
                                         if (el.ValueKind != JsonValueKind.Object)
                                         {
-                                            if (sessionIdKey != SessionId) staleSessionIds.Add(sessionIdKey);
+                                            if (sessionIdKey != key) staleSessionIds.Add(sessionIdKey);
                                             continue;
                                         }
 
@@ -539,7 +579,7 @@ namespace HydraMenu
                                             string room = el.TryGetProperty("room", out var rProp) ? rProp.GetString() ?? "" : "";
                                             if (!string.IsNullOrEmpty(roomCode) &&
                                                 string.Equals(room, roomCode, StringComparison.OrdinalIgnoreCase) &&
-                                                sessionIdKey != SessionId)
+                                                sessionIdKey != key)
                                             {
                                                 string peerName = el.TryGetProperty("name", out var nProp) ? nProp.GetString() ?? "" : "";
                                                 int peerId = el.TryGetProperty("p_id", out var idProp) && idProp.TryGetInt32(out var idVal) ? idVal : -1;
@@ -555,7 +595,7 @@ namespace HydraMenu
                                                 });
                                             }
                                         }
-                                        else if (sessionIdKey != SessionId && age >= 600)
+                                        else if (sessionIdKey != key && age >= 600)
                                         {
                                             // Only prune genuinely-dead nodes (10+ min with no heartbeat).
                                             // The old 60s window made every client delete each other's still-

@@ -41,6 +41,13 @@ public sealed class RadarUI : MonoBehaviour
     private static int _lastDoorRoom = -1;
     // Footer "Close" button click state (single vs double-click, same as the door dots but for all doors).
     private static float _lastCloseClickTime = -1f;
+    // Collapsed state: when true the map is hidden and only the title bar + action buttons show, so the
+    // radar doesn't cover player names/roles. Toggled by the header chevron.
+    private static bool _collapsed;
+    // Meeting auto-collapse: remember the pre-meeting collapse state and the last-seen meeting state, so a
+    // meeting auto-collapses the radar (the user can still expand it) and the state is restored afterwards.
+    private static bool _collapsedBeforeMeeting;
+    private static bool _prevMeeting;
 
     public static void DrawGui()
     {
@@ -58,7 +65,23 @@ public sealed class RadarUI : MonoBehaviour
         float userSc = Mathf.Clamp((CheatToggles.radarSize) / 100f, 0.6f, 1.8f);
         _sc = userSc * Mathf.Clamp(Screen.height / 1080f, 0.85f, 2.2f);
         _al = Mathf.Clamp((CheatToggles.radarOpacity) / 100f, 0.3f, 1f);
-        float w = W * _sc, h = (H + Foot) * _sc;
+        float w = W * _sc;
+
+        // Collapsible radar: the header chevron hides the map and leaves just the title bar + action buttons
+        // as a compact strip. A meeting AUTO-collapses the radar so the map doesn't cover the players'
+        // names/roles on the discussion screen - but it stays a normal collapse: the user can click the
+        // chevron to open it again during the meeting. The pre-meeting state is restored once it ends.
+        bool meeting = MeetingHud.Instance != null;
+        if (meeting != _prevMeeting)
+        {
+            if (meeting) { _collapsedBeforeMeeting = _collapsed; _collapsed = true; }
+            else { _collapsed = _collapsedBeforeMeeting; }
+            _prevMeeting = meeting;
+        }
+        bool collapsed = _collapsed;
+
+        float pad = Pad * _sc, head = Head * _sc, foot = Foot * _sc;
+        float h = collapsed ? head + 6f * _sc + foot : (H + Foot) * _sc;
 
         if (!_drag)
         {
@@ -69,12 +92,16 @@ public sealed class RadarUI : MonoBehaviour
         _ry = Mathf.Clamp(_ry, 0f, Mathf.Max(0f, Screen.height - h));
 
         var box = new Rect(_rx, _ry, w, h);
-        float pad = Pad * _sc, head = Head * _sc, foot = Foot * _sc;
         // Map area keeps its original size; the box just grew by `foot` to hold the button row beneath it.
-        var inner = new Rect(box.x + pad, box.y + head + 2f * _sc, box.width - 2f * pad, H * _sc - head - 2f * _sc - pad);
-        var footer = new Rect(inner.x, inner.yMax + pad, inner.width, foot - 2f * pad);
+        var inner = collapsed
+            ? new Rect(box.x + pad, box.y + head, box.width - 2f * pad, 0f)
+            : new Rect(box.x + pad, box.y + head + 2f * _sc, box.width - 2f * pad, H * _sc - head - 2f * _sc - pad);
+        var footer = collapsed
+            ? new Rect(box.x + pad, box.y + head + 4f * _sc, box.width - 2f * pad, foot - 2f * pad)
+            : new Rect(inner.x, inner.yMax + pad, inner.width, foot - 2f * pad);
         var footBtns = FooterButtons(footer);
         var lockRect = new Rect(box.xMax - head + 1f * _sc, box.y + 3f * _sc, head - 6f * _sc, head - 6f * _sc);
+        var chevRect = new Rect(box.x + 4f * _sc, box.y + 3f * _sc, head - 6f * _sc, head - 6f * _sc);
         bool locked = CheatToggles.radarLocked;
         WindowRect = box;
 
@@ -87,20 +114,28 @@ public sealed class RadarUI : MonoBehaviour
                 _drag = false;
                 e.Use();
             }
-            else if (e.type == EventType.MouseDown && e.button == 1 && inner.Contains(e.mousePosition))
+            else if (e.type == EventType.MouseDown && e.button == 0 && chevRect.Contains(e.mousePosition))
+            {
+                // Collapse / expand the radar (map shown vs hidden). Works during meetings too, so the user
+                // can re-open the auto-collapsed radar.
+                _collapsed = !_collapsed;
+                _drag = false;
+                e.Use();
+            }
+            else if (!collapsed && e.type == EventType.MouseDown && e.button == 1 && inner.Contains(e.mousePosition))
             {
                 // Right-click the map -> teleport to the nearest premade room location.
                 TeleportFromRadar(e.mousePosition, inner);
                 e.Use();
             }
-            else if (e.type == EventType.MouseDown && e.button == 0 && CheatToggles.radarDoors && HandleDoorClick(e.mousePosition, inner))
+            else if (!collapsed && e.type == EventType.MouseDown && e.button == 0 && CheatToggles.radarDoors && HandleDoorClick(e.mousePosition, inner))
             {
                 // Consumed a door button (close / pin / unpin) so it doesn't start a window drag.
                 e.Use();
             }
             else if (e.type == EventType.MouseDown && e.button == 0 && FooterClick(footBtns, e.mousePosition))
             {
-                // Consumed a footer action button (Sabo All / Fix / Open / Close) - don't start a drag.
+                // Consumed a footer action button (Sabo / Fix / Invis / Close) - don't start a drag.
                 e.Use();
             }
             else if (e.type == EventType.MouseDown && e.button == 0 && !locked && box.Contains(e.mousePosition))
@@ -150,30 +185,61 @@ public sealed class RadarUI : MonoBehaviour
         NocturneStyle.StrokeRounded(lockRect, A(lockCol, 0.85f), 4, 1);
         DrawLock(lockRect, lockCol);
 
-        NocturneStyle.FillRounded(inner, A(new Color(0.24f, 0.26f, 0.30f), 0.55f), 6);
-
-        RadarNav.Graph g = RadarNav.Current();
-        try
+        // Collapse/expand chevron (top-left): ▾ when collapsed (click to expand), ▴ when expanded. Always
+        // available (meetings included) so the user can re-open the auto-collapsed radar. Drawn
+        // geometrically from two Line strokes so it stays crisp at any radar scale.
         {
-            Skeleton(g, inner);
+            bool chevHover = chevRect.Contains(e.mousePosition);
+            Color chevCol = chevHover ? new Color(0.80f, 0.85f, 0.92f) : new Color(0.58f, 0.63f, 0.70f);
+            NocturneStyle.FillRounded(chevRect, A(new Color(0.10f, 0.10f, 0.13f), 0.55f), 4);
+            NocturneStyle.StrokeRounded(chevRect, A(chevCol, 0.85f), 4, 1);
+            float ccx = chevRect.center.x, ccy = chevRect.center.y;
+            float cww = chevRect.width * 0.24f, chh = chevRect.height * 0.15f;
+            Color gc = A(chevHover ? p.Accent : new Color(0.84f, 0.88f, 0.94f), 1f);
+            if (collapsed) // ▾  click to expand
+            {
+                Line(new Vector2(ccx - cww, ccy - chh), new Vector2(ccx, ccy + chh), gc, 1.6f * _sc);
+                Line(new Vector2(ccx, ccy + chh), new Vector2(ccx + cww, ccy - chh), gc, 1.6f * _sc);
+            }
+            else // ▴  click to collapse
+            {
+                Line(new Vector2(ccx - cww, ccy + chh), new Vector2(ccx, ccy - chh), gc, 1.6f * _sc);
+                Line(new Vector2(ccx, ccy - chh), new Vector2(ccx + cww, ccy + chh), gc, 1.6f * _sc);
+            }
         }
-        catch { }
 
-        Players(inner);
-        if (CheatToggles.radarBodies)
-            Bodies(inner);
-        if (CheatToggles.radarDoors)
-            Doors(inner);
+        // Map body is hidden while collapsed so it can't cover player names.
+        if (!collapsed)
+        {
+            NocturneStyle.FillRounded(inner, A(new Color(0.24f, 0.26f, 0.30f), 0.55f), 6);
 
-        // Bottom action-button row: random Sabotage / Fix Sabotage / Meeting (call or close) / Close All Doors.
+            RadarNav.Graph g = RadarNav.Current();
+            try
+            {
+                Skeleton(g, inner);
+            }
+            catch { }
+
+            Players(inner);
+            if (CheatToggles.radarBodies)
+                Bodies(inner);
+            if (CheatToggles.radarDoors)
+                Doors(inner);
+        }
+
+        // Bottom action-button row: random Sabotage / Fix Sabotage / Invisibility / Close All Doors.
         NocturneStyle.Fill(new Rect(box.x, footer.y - pad, box.width, 1f), A(p.Accent, 0.25f));
         _btn.fontSize = Mathf.Max(8, Mathf.RoundToInt(9.5f * _sc));
         for (int i = 0; i < footBtns.Length; i++)
         {
             bool hov = footBtns[i].Contains(e.mousePosition);
-            NocturneStyle.FillRounded(footBtns[i], A(hov ? p.Accent : new Color(0.24f, 0.26f, 0.30f), hov ? 0.35f : 0.55f), 4);
-            NocturneStyle.StrokeRounded(footBtns[i], A(p.Accent, hov ? 0.7f : 0.35f), 4, 1);
-            _btn.normal.textColor = A(hov ? p.Accent : new Color(0.86f, 0.89f, 0.93f), 1f);
+            // The Invis button (index 2) stays lit while invisibility is on, so its on/off state is visible.
+            bool active = i == 2 && CheatToggles.invisibility;
+            Color fillC = active || hov ? p.Accent : new Color(0.24f, 0.26f, 0.30f);
+            float fillA = active ? 0.5f : (hov ? 0.35f : 0.55f);
+            NocturneStyle.FillRounded(footBtns[i], A(fillC, fillA), 4);
+            NocturneStyle.StrokeRounded(footBtns[i], A(p.Accent, active ? 0.85f : (hov ? 0.7f : 0.35f)), 4, 1);
+            _btn.normal.textColor = A(active ? Color.white : (hov ? p.Accent : new Color(0.86f, 0.89f, 0.93f)), 1f);
             GUI.Label(footBtns[i], FootLabels[i], _btn);
         }
         }
@@ -210,8 +276,8 @@ public sealed class RadarUI : MonoBehaviour
         _btn = new GUIStyle(GUI.skin.label) { fontSize = 9, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, richText = true };
     }
 
-    // Bottom-row action buttons on the radar: random Sabotage / Fix Sabotage / Meeting (call or close) / Close All Doors.
-    private static readonly string[] FootLabels = { "Sabo", "Fix", "Meeting", "Close" };
+    // Bottom-row action buttons on the radar: random Sabotage / Fix Sabotage / Invisibility / Close All Doors.
+    private static readonly string[] FootLabels = { "Sabo", "Fix", "Invis", "Close" };
 
     private static Rect[] FooterButtons(Rect footer)
     {
@@ -237,20 +303,8 @@ public sealed class RadarUI : MonoBehaviour
                         CheatToggles.randomSabotage = true;
                         break;
                     case 1: CheatToggles.fixSabotage = true; break; // Fix Sabotage
-                    case 2: // Meeting - call one when none is up. In a meeting only a NON-HOST dismisses their
-                            // own view: as host, locally closing destroys the host's MeetingHud (which drives
-                            // the vote), leaving everyone stuck at "voting ends in 0s" - so the host button
-                            // does nothing during a meeting. (Closing for the whole lobby needs the CloseMeeting
-                            // RPC, which currently black-screens clients.)
-                        if (MeetingHud.Instance != null)
-                        {
-                            if (!Utils.isHost)
-                                CheatToggles.closeMeeting = true;
-                        }
-                        else
-                        {
-                            CheatToggles.callMeeting = true;
-                        }
+                    case 2: // Invis: toggle Malum's Self "Invisibility" (networked void-snap invis).
+                        CheatToggles.invisibility = !CheatToggles.invisibility;
                         break;
                     case 3: // Close: mirror the door dots - 1 click closes, double-click pins, click-while-pinned unpins
                     {

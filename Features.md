@@ -67,10 +67,16 @@
   - Bodies On Radar
   - Ghosts On Radar
   - Doors On Radar
+  - Collapsible — auto-collapses during meetings so it doesn't cover player names (re-openable via the chevron)
+  - Right-click the map to teleport
+  - Action buttons: Sabo / Fix / Invis / Close (doors)
 - **Replay Console**
   - Show Replay
   - Record
   - Clear After Meeting
+  - Event filters & per-player focus
+  - Markers: Kill / Vent / Report / Shift / GA / Teleport (TP) + movement paths
+  - Timeline seek & playback
 
 ### Roles
 
@@ -138,6 +144,8 @@
   - Mushroom Mixup
   - Trigger Spores
   - Doors Menu
+  - Show Sabotage Menu
+  - Custom Sabotage Timer (5–999s)
   - Open Sabotage Map
   - Disable Sabotage
   - Auto-Fix Reactor/O2 (last 3s)
@@ -192,6 +200,7 @@
 
 - Copy Name
 - Copy PUID
+- Copy Info
 - Teleport to Player
 - Copy Avatar
 - Restore Avatar
@@ -268,10 +277,18 @@
 
 ### Votekick
 
-- Votekick & Rejoin Method
-- Votekick Protection
-- Floating Notifications on Votekick
-- Auto-Rejoin on Disconnect
+- **Votekick & Rejoin System**
+  - Votekick & Rejoin loop (start / stop)
+  - Votekick All (1x)
+  - Rejoin Lobby
+  - Reset Counts
+- **Players (Pick & Votekick)**
+  - Per-player votekick with a live vote counter (0/3 → 1/3 → KICK NOW)
+- **Options & Protections**
+  - Votekick Protection
+  - Floating Notifications on Votekick
+  - Auto-Rejoin on Disconnect
+  - Force Host
 
 ### Config
 
@@ -387,6 +404,7 @@
   - Immortal
   - Teleport (to player / all to player)
   - Murder
+  - Telekill
   - Copy Avatar
   - Report Body
   - Kick Player

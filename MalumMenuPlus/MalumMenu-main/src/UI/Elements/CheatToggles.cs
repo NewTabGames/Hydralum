@@ -523,6 +523,10 @@ public struct CheatToggles
         writer.WriteLine("# Menu accent color / theme (empty = default, #RRGGBB = solid, grad:#AAAAAA,#BBBBBB = gradient)");
         writer.WriteLine("# RGB Mode is saved separately as the rgbMode toggle above and overrides this color while on");
         writer.WriteLine($"MenuColor = {MalumMenu.menuHtmlColor.Value}");
+
+        // Auto-save of the BepInEx .cfg is disabled (SaveOnConfigSet = false), so flush it to disk here:
+        // saving the profile is an explicit user action, so persist the .cfg-backed settings at the same time.
+        try { MalumMenu.Plugin?.Config?.Save(); } catch { }
     }
 
     // Loads cheat toggles and their keybinds from a profile file (defaults to the current profile).
