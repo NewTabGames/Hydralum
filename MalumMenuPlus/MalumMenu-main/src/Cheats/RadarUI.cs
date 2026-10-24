@@ -48,7 +48,9 @@ public sealed class RadarUI : MonoBehaviour
             return;
         if (ShipStatus.Instance == null || PlayerControl.LocalPlayer == null)
             return;
-        if (MeetingHud.Instance != null || ExileController.Instance != null)
+        // Keep the radar visible during meetings so the footer Meeting button can close/skip the active
+        // meeting; still hide it during the exile (ejection) cutscene.
+        if (ExileController.Instance != null)
             return;
         if (!Bounds())
             return;
@@ -124,6 +126,12 @@ public sealed class RadarUI : MonoBehaviour
         if (e == null || e.type != EventType.Repaint)
             return;
 
+        // Wrap all repaint drawing: the radar is drawn straight from OnGUI (no try/catch at the call
+        // site) and now also draws during meetings, so a transient null - e.g. a player/door/body going
+        // away mid-meeting as someone disconnects - must not throw out into OnGUI and flood the log every
+        // frame. The radar uses only absolute GUI.* draws (no BeginGroup), so catching here is safe.
+        try
+        {
         EnsureStyle();
         NocturnePalette p = NocturneStyle.Current;
 
@@ -157,7 +165,7 @@ public sealed class RadarUI : MonoBehaviour
         if (CheatToggles.radarDoors)
             Doors(inner);
 
-        // Bottom action-button row: Sabo All / Fix Sabotage / Open All Doors / Close All Doors.
+        // Bottom action-button row: random Sabotage / Fix Sabotage / Meeting (call or close) / Close All Doors.
         NocturneStyle.Fill(new Rect(box.x, footer.y - pad, box.width, 1f), A(p.Accent, 0.25f));
         _btn.fontSize = Mathf.Max(8, Mathf.RoundToInt(9.5f * _sc));
         for (int i = 0; i < footBtns.Length; i++)
@@ -168,6 +176,8 @@ public sealed class RadarUI : MonoBehaviour
             _btn.normal.textColor = A(hov ? p.Accent : new Color(0.86f, 0.89f, 0.93f), 1f);
             GUI.Label(footBtns[i], FootLabels[i], _btn);
         }
+        }
+        catch { }
     }
 
     private static void DrawLock(Rect r, Color col)
@@ -200,8 +210,8 @@ public sealed class RadarUI : MonoBehaviour
         _btn = new GUIStyle(GUI.skin.label) { fontSize = 9, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, richText = true };
     }
 
-    // Bottom-row action buttons on the radar: Sabo All / Fix Sabotage / Open All Doors / Close All Doors.
-    private static readonly string[] FootLabels = { "Sabo", "Fix", "Open", "Close" };
+    // Bottom-row action buttons on the radar: random Sabotage / Fix Sabotage / Meeting (call or close) / Close All Doors.
+    private static readonly string[] FootLabels = { "Sabo", "Fix", "Meeting", "Close" };
 
     private static Rect[] FooterButtons(Rect footer)
     {
@@ -223,14 +233,24 @@ public sealed class RadarUI : MonoBehaviour
             {
                 switch (i)
                 {
-                    case 0: // Sabo All - all sabotages, but close doors ONCE (never pin, unlike the main button)
-                        CheatToggles.sabotageAllNoDoors = true;
-                        CheatToggles.closeAllDoors = true;
+                    case 0: // Sabo - trigger ONE random (currently inactive) sabotage per click
+                        CheatToggles.randomSabotage = true;
                         break;
                     case 1: CheatToggles.fixSabotage = true; break; // Fix Sabotage
-                    case 2: // Open: clear any pins first so the doors actually stay open
-                        NocturneDoors.UnpinAll();
-                        CheatToggles.openAllDoors = true;
+                    case 2: // Meeting - call one when none is up. In a meeting only a NON-HOST dismisses their
+                            // own view: as host, locally closing destroys the host's MeetingHud (which drives
+                            // the vote), leaving everyone stuck at "voting ends in 0s" - so the host button
+                            // does nothing during a meeting. (Closing for the whole lobby needs the CloseMeeting
+                            // RPC, which currently black-screens clients.)
+                        if (MeetingHud.Instance != null)
+                        {
+                            if (!Utils.isHost)
+                                CheatToggles.closeMeeting = true;
+                        }
+                        else
+                        {
+                            CheatToggles.callMeeting = true;
+                        }
                         break;
                     case 3: // Close: mirror the door dots - 1 click closes, double-click pins, click-while-pinned unpins
                     {
@@ -831,7 +851,7 @@ public sealed class RadarUI : MonoBehaviour
 
         // Teleport straight to the exact point clicked (like SickoMenu) — hallways and other unnamed
         // spots included — instead of snapping to the nearest named room/location.
-        MalumTeleport.TeleportTo(world);
+        MalumTeleport.TeleportTo(world, quick: true);
     }
 
     private static Color PlayerColor(PlayerControl pc)

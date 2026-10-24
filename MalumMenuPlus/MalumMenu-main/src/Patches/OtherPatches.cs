@@ -879,6 +879,9 @@ public static class PassiveUiElement_Patches
             if (CheatToggles.showConsole && UIHelpers.ScaledWindowRect(ConsoleUI.windowRect, CheatToggles.GetWindowScale("Console")).Contains(mousePosition))
                 return false;
 
+            if (CheatToggles.showSabotageMenu && UIHelpers.ScaledWindowRect(SabotageUI.windowRect, CheatToggles.GetWindowScale("Sabotage")).Contains(mousePosition))
+                return false;
+
             if (CheatToggles.showDoorsMenu && Utils.isShip && UIHelpers.ScaledWindowRect(DoorsUI.windowRect, CheatToggles.GetWindowScale("Doors")).Contains(mousePosition))
                 return false;
 

@@ -176,6 +176,7 @@ public struct CheatToggles
     public static bool oxygenSab;
     public static bool mushSab;
     public static bool mushSpore;
+    public static bool showSabotageMenu;
     public static bool showDoorsMenu;
     public static bool openAllDoors;
     public static bool closeAllDoors;
@@ -186,6 +187,11 @@ public struct CheatToggles
     // Auto-Fix Critical Sabotages: while on, repairs Reactor/Oxygen only once their countdown drops
     // to the last few seconds (see MalumSabotageCheats), so the sabotage still plays out but never ends the game.
     public static bool autoFixCriticalSab;
+    // Host-only custom countdown for the critical sabotages (Reactor / Oxygen / Airship reactor): when a
+    // critical sabotage starts we overwrite its Countdown with customSabTimerSeconds and let the host sync
+    // it out, so everyone sees (and plays against) the custom timer. Float resets to default each session.
+    public static bool customSabTimer;
+    public static float customSabTimerSeconds = 30f;
     public static bool sabotageAll;
     public static bool randomSabotage;
     // Momentary: sabotages every system at once but never touches doors (used by the Sabotage All
@@ -202,7 +208,7 @@ public struct CheatToggles
     
     // Replay
     public static bool replay;
-    public static int replayMask = 255;
+    public static int replayMask = 511; // 9 filter columns (bits 0-8): Kill,Vent,Rep,Shift,GA,Sabo,Meet,TP,Paths
     public static bool replayClearAfterMeeting;
     public static bool replayRecording = true;
     public static int replaySize = 100;
@@ -358,6 +364,7 @@ public struct CheatToggles
     {
         { "Console", 1f },
         { "RPCConsole", 1f },
+        { "Sabotage", 1f },
         { "Doors", 1f },
         { "Tasks", 1f },
         { "Protect", 1f },

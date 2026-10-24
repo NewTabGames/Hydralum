@@ -10,5 +10,6 @@ public enum WindowId
     InventoryOutfitsUI = 7,
     ChatLogUI = 8,
     WindowScalesUI = 9,
-    KeybindsUI = 10
+    KeybindsUI = 10,
+    SabotageUI = 11
 }

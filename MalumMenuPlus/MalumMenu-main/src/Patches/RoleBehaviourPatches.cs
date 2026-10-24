@@ -97,6 +97,18 @@ public static class DetectiveRole_SetCooldown
     }
 }
 
+[HarmonyPatch(typeof(SpiritGuideRole), nameof(SpiritGuideRole.FixedUpdate))]
+public static class SpiritGuideRole_FixedUpdate
+{
+    // Vanilla SpiritGuideRole.FixedUpdate throws a NullReferenceException every FixedUpdate when a
+    // SpiritGuide (or its current target) disconnects during a meeting/exile - its target reference goes
+    // null and the per-frame logic dereferences it, flooding the console with hundreds of bare NREs.
+    // Swallow the exception so one bad frame can't spam the log; the role is only "broken" for the frames
+    // where that player is already gone, so nothing useful is lost. (A finalizer returning null suppresses
+    // the exception that the original method threw.)
+    public static System.Exception Finalizer(System.Exception __exception) => null;
+}
+
 [HarmonyPatch(typeof(SpiritGuideRole), nameof(SpiritGuideRole.FindClosestTarget))]
 public static class SpiritGuideRole_FindClosestTarget
 {

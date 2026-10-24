@@ -518,6 +518,7 @@ public static class MalumSabotageCheats
             HandleElectrical(shipStatus, currentMapID);
             HandleAutoMovingSwitches(shipStatus, currentMapID);
             HandleDoors(shipStatus);
+            HandleCustomSabTimer(shipStatus, currentMapID);
         }
         catch { }
     }
@@ -703,6 +704,71 @@ public static class MalumSabotageCheats
             options[UnityEngine.Random.Range(0, options.Count)]();
         }
         catch { }
+    }
+
+    // Host-only custom critical-sabotage timer. When Reactor / Oxygen / Airship reactor becomes active we
+    // overwrite its Countdown with the chosen value (once, on the frame it starts) and let the host's normal
+    // sync broadcast it, so everyone gets the custom timer. The sabotage then ticks down from there (and can
+    // still end the game, unless Auto-Fix is also on). Only the host is authoritative over these countdowns.
+    private static bool _reactorTimerWasActive;
+    private static bool _oxygenTimerWasActive;
+    private static bool _heliTimerWasActive;
+
+    private static void HandleCustomSabTimer(ShipStatus shipStatus, byte mapId)
+    {
+        if (!CheatToggles.customSabTimer || !Utils.isHost || shipStatus == null || shipStatus.Systems == null)
+        {
+            _reactorTimerWasActive = _oxygenTimerWasActive = _heliTimerWasActive = false;
+            return;
+        }
+
+        try
+        {
+            var systems = shipStatus.Systems;
+            float seconds = UnityEngine.Mathf.Clamp(CheatToggles.customSabTimerSeconds, 5f, 999f);
+
+            // Reactor / Laboratory (Polus) / HeliSabotage (Airship)
+            if (mapId == 2)
+            {
+                if (systems.ContainsKey(SystemTypes.Laboratory))
+                {
+                    var sys = systems[SystemTypes.Laboratory].Cast<ReactorSystemType>();
+                    SetOnStart(sys != null && sys.IsActive, ref _reactorTimerWasActive, () => sys.Countdown = seconds);
+                }
+            }
+            else if (mapId == 4)
+            {
+                if (systems.ContainsKey(SystemTypes.HeliSabotage))
+                {
+                    var sys = systems[SystemTypes.HeliSabotage].Cast<HeliSabotageSystem>();
+                    SetOnStart(sys != null && sys.IsActive, ref _heliTimerWasActive, () => sys.Countdown = seconds);
+                }
+            }
+            else if (systems.ContainsKey(SystemTypes.Reactor))
+            {
+                var sys = systems[SystemTypes.Reactor].Cast<ReactorSystemType>();
+                SetOnStart(sys != null && sys.IsActive, ref _reactorTimerWasActive, () => sys.Countdown = seconds);
+            }
+
+            // Oxygen (LifeSupp)
+            if (systems.ContainsKey(SystemTypes.LifeSupp))
+            {
+                var sys = systems[SystemTypes.LifeSupp].Cast<LifeSuppSystemType>();
+                SetOnStart(sys != null && sys.IsActive, ref _oxygenTimerWasActive, () => sys.Countdown = seconds);
+            }
+        }
+        catch { }
+    }
+
+    // Runs `apply` only on the frame a sabotage transitions inactive -> active, so we set the custom
+    // countdown once and then let it tick down normally instead of freezing it.
+    private static void SetOnStart(bool active, ref bool wasActive, System.Action apply)
+    {
+        if (active && !wasActive)
+        {
+            try { apply(); } catch { }
+        }
+        wasActive = active;
     }
 
     public static void ProcessFungle(FungleShipStatus shipStatus)

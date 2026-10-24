@@ -10,12 +10,15 @@ public sealed class ReplayUI : MonoBehaviour
 {
     internal enum Rt
     {
-        Kill, Vent, Report, Shift, Protect, Sabotage, Meeting
+        Kill, Vent, Report, Shift, Protect, Sabotage, Meeting, Teleport
     }
 
     private struct Ev
     {
         public float T; public byte Type; public byte Pid; public Vector2 A; public Vector2 B;
+        // Teleport only: 1 = a right-click "quick" teleport (drawn with a smaller T because it's
+        // used constantly), 0 = any other teleport (menu/location/player) drawn full-size.
+        public byte Flag;
     }
     private struct Pt
     {
@@ -56,7 +59,7 @@ public sealed class ReplayUI : MonoBehaviour
     internal static bool Open => CheatToggles.replay;
     private static int Mask => CheatToggles.replayMask;
 
-    internal static void Rec(Rt type, byte pid, Vector2 a, Vector2 b)
+    internal static void Rec(Rt type, byte pid, Vector2 a, Vector2 b, byte flag = 0)
     {
         if (!CheatToggles.replayRecording)
             return;
@@ -66,7 +69,7 @@ public sealed class ReplayUI : MonoBehaviour
             Stamp(t);
             while (_events.Count >= MaxEv)
                 _events.RemoveAt(0);
-            _events.Add(new Ev { T = t, Type = (byte)type, Pid = pid, A = a, B = b });
+            _events.Add(new Ev { T = t, Type = (byte)type, Pid = pid, A = a, B = b, Flag = flag });
         }
         catch { }
     }
@@ -266,8 +269,8 @@ public sealed class ReplayUI : MonoBehaviour
                 return;
             }
 
-            string[] cru = { "Килл", "Вент", "Реп", "Обор", "Щит", "Сабо", "Собр", "Пути" };
-            string[] cen = { "Kill", "Vent", "Rep", "Shift", "GA", "Sabo", "Meet", "Paths" };
+            string[] cru = { "Килл", "Вент", "Реп", "Обор", "Щит", "Сабо", "Собр", "ТП", "Пути" };
+            string[] cen = { "Kill", "Vent", "Rep", "Shift", "GA", "Sabo", "Meet", "TP", "Paths" };
             int cols = cru.Length;
             float gap = 4f;
             float cw = (w - 12f - (cols - 1) * gap) / cols;
@@ -287,7 +290,12 @@ public sealed class ReplayUI : MonoBehaviour
             NocturneStyle.FillRounded(body, A(new Color(0.20f, 0.22f, 0.26f), 0.55f), 6);
 
             Rect playBtn = new Rect(_win.x + 10f, _win.y + h - 26f, 22f, 20f);
-            Rect slider = new Rect(_win.x + 36f, _win.y + h - 24f, w - 46f, 16f);
+            // Reserve a fixed strip on the right for the time read-out so it no longer sits on top of
+            // the seek bar. The old layout drew the time label over the slider's last ~78px, which made
+            // the final seconds impossible to click precisely; now the slider ends before the read-out.
+            float timeW = 74f;
+            Rect slider = new Rect(_win.x + 36f, _win.y + h - 24f, Mathf.Max(40f, w - 46f - timeW - 6f), 16f);
+            Rect timeBox = new Rect(slider.xMax + 6f, _win.y + h - 24f, timeW, 16f);
             if (e != null && (e.type == EventType.MouseDown || e.type == EventType.MouseDrag) && e.button == 0 && slider.Contains(e.mousePosition))
             {
                 _scrub = Mathf.Clamp01((e.mousePosition.x - slider.x) / slider.width);
@@ -340,7 +348,7 @@ public sealed class ReplayUI : MonoBehaviour
                 }
             }
 
-            DrawSlider(slider, sc, mask, p, viewT);
+            DrawSlider(slider, timeBox, sc, mask, p, viewT);
 
             Drag(e, new Rect(_win.x, _win.y, w - 160f, 30f));
 
@@ -405,7 +413,7 @@ public sealed class ReplayUI : MonoBehaviour
     }
 
     
-    private void DrawSlider(Rect s, float sc, int mask, NocturnePalette p, float viewT)
+    private void DrawSlider(Rect s, Rect timeBox, float sc, int mask, NocturnePalette p, float viewT)
     {
         NocturneStyle.FillRounded(s, A(new Color(0.14f, 0.15f, 0.18f), 0.9f), 5);
         if (_hasT && _tMax > _tMin)
@@ -427,10 +435,10 @@ public sealed class ReplayUI : MonoBehaviour
 
         float total = Mathf.Max(0f, _tMax - _tMin);
         float cur = Mathf.Clamp(viewT - _tMin, 0f, total);
-        Rect tl = new Rect(s.xMax - 78f, s.y, 74f, s.height);
-        NocturneStyle.FillRounded(tl, A(new Color(0.07f, 0.08f, 0.10f), 0.92f), 4);
+        // Read-out lives in its own strip to the right of the seek bar, not on top of it.
+        NocturneStyle.FillRounded(timeBox, A(new Color(0.07f, 0.08f, 0.10f), 0.92f), 4);
         _chip.normal.textColor = _live ? new Color(0.35f, 0.85f, 0.5f) : p.Text;
-        GUI.Label(tl, _live ? "LIVE" : (Fmt(cur) + " / " + Fmt(total)), _chip);
+        GUI.Label(timeBox, _live ? "LIVE" : (Fmt(cur) + " / " + Fmt(total)), _chip);
     }
 
     private static string Fmt(float sec)
@@ -450,13 +458,16 @@ public sealed class ReplayUI : MonoBehaviour
             NocturneStyle.FillRounded(new Rect(Mathf.Min(a.x, d.x), Mathf.Min(a.y, d.y), Mathf.Abs(d.x - a.x), Mathf.Abs(d.y - a.y)), new Color(0.55f, 0.6f, 0.72f, 0.10f), 4);
         }
 
-        if ((mask & (1 << 7)) != 0)
+        // Paths moved to bit 8 when the Teleport ("TP") column was inserted at bit 7.
+        if ((mask & (1 << 8)) != 0)
             DrawPaths(r, sc, viewT, focus);
 
         for (int i = 0; i < _events.Count; i++)
         {
             Ev ev = _events[i];
-            if (ev.Type > (byte)Rt.Protect)
+            // Sabotage/Meeting are positionless (recorded at 0,0) and only appear on the slider.
+            // Everything else, teleports included, has a real map position and gets a marker.
+            if (ev.Type == (byte)Rt.Sabotage || ev.Type == (byte)Rt.Meeting)
                 continue;
             if ((mask & (1 << ev.Type)) == 0 || ev.T > viewT)
                 continue;
@@ -470,6 +481,18 @@ public sealed class ReplayUI : MonoBehaviour
                 if ((ev.B - ev.A).sqrMagnitude < 100f)
                     Line(pa, pb, new Color(0.95f, 0.25f, 0.25f, 0.8f), 2.4f * sc);
                 Marker(pb, sc, new Color(0.9f, 0.28f, 0.28f), "x");
+            }
+            else if (ev.Type == (byte)Rt.Teleport)
+            {
+                // Draw the jump: a line from origin (A) to destination (B) with a T at each end.
+                // Right-click teleports (Flag == 1) happen constantly, so their markers are drawn
+                // smaller to keep the map readable; menu/location/player teleports stay full-size.
+                Vector2 pb = Map(ev.B, r);
+                bool quick = ev.Flag == 1;
+                Line(pa, pb, A(col, 0.7f), 1.8f * sc);
+                TeleMarker(pb, sc, col, quick);
+                TeleMarker(pa, sc, col, quick);
+                continue; // skip the generic single-marker draw below
             }
             Marker(pa, sc, col, EvLetter(ev.Type));
         }
@@ -634,6 +657,21 @@ public sealed class ReplayUI : MonoBehaviour
         GUI.Label(new Rect(c.x - s / 2f, c.y - s / 2f - 1f, s, s), ch, _chip);
     }
 
+    // A teleport marker drawn as a geometric "T" (a crossbar + a stem, two filled rects) rather than a
+    // font glyph. A small font "T" rendered as a sub-pixel blob; rectangles stay a crisp T at any size.
+    // Right-click ("quick") teleports are drawn smaller because they're used constantly.
+    private void TeleMarker(Vector2 c, float sc, Color col, bool quick)
+    {
+        float s = (quick ? 11f : 15f) * sc;
+        Dot(c, s + 4f * sc, A(Color.black, 0.75f));
+        Dot(c, s, col);
+        float g = s * 0.56f;                 // side of the T's bounding square
+        float t = Mathf.Max(2f, g * 0.28f);  // stroke thickness
+        float left = c.x - g / 2f, top = c.y - g / 2f;
+        NocturneStyle.Fill(new Rect(left, top, g, t), Color.white);         // crossbar
+        NocturneStyle.Fill(new Rect(c.x - t / 2f, top, t, g), Color.white); // stem
+    }
+
     private static string EvLetter(byte t) => t switch
     {
         (byte)Rt.Kill => "K",
@@ -641,6 +679,7 @@ public sealed class ReplayUI : MonoBehaviour
         (byte)Rt.Report => "R",
         (byte)Rt.Shift => "S",
         (byte)Rt.Protect => "P",
+        (byte)Rt.Teleport => "T",
         _ => "",
     };
 
@@ -775,6 +814,7 @@ public sealed class ReplayUI : MonoBehaviour
         (byte)Rt.Protect => new Color(0.35f, 0.85f, 0.5f),
         (byte)Rt.Sabotage => new Color(1f, 0.5f, 0.12f),
         (byte)Rt.Meeting => new Color(1f, 0.85f, 0.25f),
+        (byte)Rt.Teleport => new Color(0.25f, 0.85f, 0.95f),
         _ => Color.white,
     };
 

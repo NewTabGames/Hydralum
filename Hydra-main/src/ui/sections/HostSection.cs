@@ -198,10 +198,11 @@ namespace HydraMenu.ui.sections
 				}
 				else
 				{
-					MeetingHud.VoterState[] votes = Array.Empty<MeetingHud.VoterState>();
-
+					// Close the meeting for everyone via the CloseMeeting RPC only (each client runs
+					// MeetingHud.Close() and returns to gameplay, nobody ejected). Forcing a VotingComplete
+					// first (empty votes / null exile) spawned the exile cutscene and left the host AND
+					// clients stuck on a black screen.
 					BatchedMessage batch = new BatchedMessage();
-					batch.QueueVotingComplete(votes, null, false, false, 0);
 					batch.QueueCloseMeeting();
 					batch.FinishBatch();
 				}

@@ -9,6 +9,12 @@ public static class TracersHandler
     {
         try
         {
+            // Guard against a disconnecting/half-torn-down player: without this the body below throws an
+            // NRE every frame (caught, but the constant throw/catch churn feeds GC and the frame stutter).
+            if (playerPhysics == null || playerPhysics.myPlayer == null || playerPhysics.myPlayer.Data == null
+                || playerPhysics.myPlayer.Data.Role == null || PlayerControl.LocalPlayer == null)
+                return;
+
             var color = Color.clear; // All tracers are invisible by default
 
             // Suppress tracers while in the lobby when the option is on - they still draw (as clear) so any

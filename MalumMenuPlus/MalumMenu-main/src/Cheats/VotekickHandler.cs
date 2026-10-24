@@ -26,7 +26,7 @@ public static class VotekickHandler
 			VotedThisSession.Clear();
 
 			// When rejoining a brand new lobby, reset cumulative vote tracking
-			if (!isSameLobby && !_isRejoining && !IsVotekickRejoinLoopRunning)
+			if (!isSameLobby && !_isRejoining && !IsVotekickRejoinLoopRunning && !ForceHost.ForceHostRunning)
 			{
 				VotekickRejoinStatus = "";
 				UniqueVoters.Clear();
@@ -47,7 +47,7 @@ public static class VotekickHandler
 	{
 		public static void Postfix()
 		{
-			if (!IsVotekickRejoinLoopRunning && !_isRejoining)
+			if (!IsVotekickRejoinLoopRunning && !_isRejoining && !ForceHost.ForceHostRunning)
 			{
 				VotekickRejoinStatus = "";
 				UniqueVoters.Clear();
@@ -66,8 +66,8 @@ public static class VotekickHandler
 		{
 			VotedThisSession.Clear();
 
-			// Do not interfere if the automated Votekick & Rejoin loop is running
-			if (IsVotekickRejoinLoopRunning)
+			// Do not interfere if the automated Votekick & Rejoin loop or Force Host is running
+			if (IsVotekickRejoinLoopRunning || ForceHost.ForceHostRunning)
 			{
 				return;
 			}
@@ -212,6 +212,11 @@ public static class VotekickHandler
 		{
 			StopVotekickRejoinLoop();
 			return;
+		}
+
+		if (ForceHost.ForceHostRunning)
+		{
+			ForceHost.StopForceHost();
 		}
 
 		if (MalumMenu.menuUI != null)

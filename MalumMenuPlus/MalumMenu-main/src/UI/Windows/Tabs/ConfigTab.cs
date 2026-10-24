@@ -377,7 +377,7 @@ public class ConfigTab : ITab
 
     private void DrawModes()
     {
-        GUILayout.Label("Modes", GUIStylePreset.TabSubtitle);
+        GUILayout.Label("Unload", GUIStylePreset.TabSubtitle);
 
         if (GUILayout.Button("Eject", GUIStylePreset.NormalButton, GUILayout.Width(200)))
         {

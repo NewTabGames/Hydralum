@@ -99,7 +99,9 @@ namespace HydraMenu.anticheat
 				if(client != null && (int)client.PlatformData.Platform == StarlightPlatformId)
 				{
 					Record(player.PlayerId, "Starlight");
-					Blacklist.AutoFlag(player, "Starlight loader");
+					// Platform-based signature, so there's no RPC callId - record the platform id instead
+					// (parallels how RPC detections record the callId in the reason).
+					Blacklist.AutoFlag(player, $"Starlight loader (platform {StarlightPlatformId})");
 				}
 			}
 			catch { }

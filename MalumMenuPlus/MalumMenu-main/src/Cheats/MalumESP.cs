@@ -50,6 +50,7 @@ public static class MalumESP
         {
             if (CheatToggles.showConsole && UIHelpers.ScaledWindowRect(ConsoleUI.windowRect, CheatToggles.GetWindowScale("Console")).Contains(guiMousePos)) return true;
             if (CheatToggles.showDebugConsole && UIHelpers.ScaledWindowRect(DebugUI.windowRect, CheatToggles.GetWindowScale("RPCConsole")).Contains(guiMousePos)) return true;
+            if (CheatToggles.showSabotageMenu && UIHelpers.ScaledWindowRect(SabotageUI.windowRect, CheatToggles.GetWindowScale("Sabotage")).Contains(guiMousePos)) return true;
             if (CheatToggles.showDoorsMenu && UIHelpers.ScaledWindowRect(DoorsUI.windowRect, CheatToggles.GetWindowScale("Doors")).Contains(guiMousePos)) return true;
             if (CheatToggles.showProtectMenu && UIHelpers.ScaledWindowRect(ProtectUI.windowRect, CheatToggles.GetWindowScale("Protect")).Contains(guiMousePos)) return true;
             if (CheatToggles.showRolesMenu && UIHelpers.ScaledWindowRect(RolesUI.windowRect, CheatToggles.GetWindowScale("Roles")).Contains(guiMousePos)) return true;

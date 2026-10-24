@@ -225,9 +225,10 @@ namespace HydraMenu.ui.sections
 
 			GUILayout.Label(playerInfo);
 
-			if(GUILayout.Button("Copy Name"))
+			if(GUILayout.Button("Copy Info"))
 			{
-				GUIUtility.systemCopyBuffer = System.Text.RegularExpressions.Regex.Replace(target.Data.PlayerName, "<.*?>", string.Empty);
+				// Copy the whole info block shown above, as a clean plain-text list (tags stripped).
+				GUIUtility.systemCopyBuffer = System.Text.RegularExpressions.Regex.Replace(playerInfo, "<.*?>", string.Empty);
 			}
 
 			ModuleManager.spectatePlayer.Enabled = Controls.PlayerSpecificToggle("Spectate", target, ref ModuleManager.spectatePlayer.target);
@@ -296,6 +297,18 @@ namespace HydraMenu.ui.sections
 				else
 				{
 					AttemptMurder(target);
+				}
+			}
+
+			if(GUILayout.Button("Telekill"))
+			{
+				if(IsDevTarget(target))
+				{
+					Hydra.notifications.Send("Error", "Cannot target Developer");
+				}
+				else
+				{
+					AttemptTelekill(target);
 				}
 			}
 
@@ -952,6 +965,42 @@ namespace HydraMenu.ui.sections
 
 			Hydra.notifications.Send("Murder Player", $"Attempted to kill {target.Data.PlayerName}.", 5);
 			PlayerControl.LocalPlayer.CmdCheckMurder(target);
+		}
+
+		// Telekill: save our spot, flash onto the target, kill, and flash back - all in one frame so it
+		// reads as a single instant movement. The SnapTo -> kill -> SnapTo RPCs go out in order on the
+		// reliable channel, so the host processes the kill while we're standing on the target (passing
+		// its distance check). RpcSnapTo is used directly (not Teleporter.TeleportTo) so the snap is
+		// always networked even if the "Use SnapTo RPC" teleport option is off - a local-only snap would
+		// never move us on the host, and the CheckMurder distance check would fail.
+		private static void AttemptTelekill(PlayerControl target)
+		{
+			if (AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
+			if (IsDevTarget(target))
+			{
+				Hydra.notifications.Send("Error", "Cannot target Developer");
+				return;
+			}
+			if (ShipStatus.Instance == null)
+			{
+				Hydra.notifications.Send("Telekill", "This feature can only be used inside of a game.");
+				return;
+			}
+			if (target.Data == null || target.Data.IsDead)
+			{
+				Hydra.notifications.Send("Telekill", "Target is not alive.");
+				return;
+			}
+
+			var netTransform = PlayerControl.LocalPlayer.NetTransform;
+			if (netTransform == null) return;
+
+			Vector2 origin = PlayerControl.LocalPlayer.transform.position;
+			Vector2 targetPos = target.transform.position;
+
+			netTransform.RpcSnapTo(targetPos);
+			AttemptMurder(target);
+			netTransform.RpcSnapTo(origin);
 		}
 
 		private static IEnumerator AttemptFrameForKillingAll(PlayerControl target)

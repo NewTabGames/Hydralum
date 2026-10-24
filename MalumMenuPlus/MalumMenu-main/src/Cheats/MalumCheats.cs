@@ -59,22 +59,15 @@ public static class MalumCheats
     {
         if (!CheatToggles.skipMeeting) return;
 
-        if (Utils.isMeeting && MeetingHud.Instance != null)
+        // Host-only: ending the meeting for everyone is a host action. A non-host sending this would just be
+        // an invalid host-only RPC (rejected, and a kick risk under anticheat), so we don't send it.
+        if (Utils.isHost && Utils.isMeeting && MeetingHud.Instance != null)
         {
-            var rpcMethod = typeof(MeetingHud).GetMethod(nameof(MeetingHud.RpcVotingComplete));
-            if (rpcMethod != null)
-            {
-                var states = new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<MeetingHud.VoterState>(0L);
-                var pars = rpcMethod.GetParameters();
-                if (pars.Length >= 5)
-                {
-                    rpcMethod.Invoke(MeetingHud.Instance, new object[] { states, null, true, false, (ushort)0 });
-                }
-                else
-                {
-                    rpcMethod.Invoke(MeetingHud.Instance, new object[] { states, null, true });
-                }
-            }
+            // End the meeting for EVERYONE with no ejection by firing the vanilla CloseMeeting RPC
+            // (MeetingHud.RpcClose), which runs each client's own MeetingHud.Close() and returns them to
+            // gameplay. We intentionally do NOT force RpcVotingComplete: resolving the vote spawned the
+            // exile / "no one ejected" cutscene, which was leaving clients stuck on a black screen.
+            try { MeetingHud.Instance.RpcClose(); } catch { }
         }
 
         CheatToggles.skipMeeting = false;
@@ -736,7 +729,7 @@ public static class MalumCheats
             Vector3 mousePos = Input.mousePosition;
             Vector2 worldPos = Camera.main.ScreenToWorldPoint(mousePos);
 
-            MalumTeleport.TeleportTo(worldPos);
+            MalumTeleport.TeleportTo(worldPos, quick: true);
         }
     }
 

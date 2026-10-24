@@ -17,6 +17,7 @@ public class WindowScalesUI : MonoBehaviour
     {
         ("Console", "Console"),
         ("RPCConsole", "RPC Console"),
+        ("Sabotage", "Sabotage"),
         ("Doors", "Doors"),
         ("Tasks", "Tasks"),
         ("Protect", "Protect Players"),

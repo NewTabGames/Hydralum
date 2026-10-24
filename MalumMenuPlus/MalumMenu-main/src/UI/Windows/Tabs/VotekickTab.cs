@@ -21,9 +21,6 @@ public class VotekickTab : ITab
 			VotekickHandler.VotekickRejoinStatus = "";
 		}
 
-		GUILayout.Label("<color=#aaaaaa><b>Note:</b> This acts as a way to kick people in the lobby, not get host. The host is decided by the person with the lowest game ID. AKA the 2nd person who joined the lobby and so on. Leaving and rejoining will make you the highest ID.</color>", GUIStylePreset.Hint);
-		GUILayout.Space(10f);
-
 		DrawAutomationSection();
 
 		GUILayout.Space(14f);
@@ -238,5 +235,26 @@ public class VotekickTab : ITab
 		CheatToggles.notifVotekick = VotekickHandler.NotifyVotekickInfo;
 
 		VotekickHandler.AutoRejoinEnabled = GUILayout.Toggle(VotekickHandler.AutoRejoinEnabled, " Auto-Rejoin on Disconnect");
+
+		GUILayout.Space(8f);
+
+		Color oldBg = GUI.backgroundColor;
+		if (ForceHost.ForceHostRunning)
+		{
+			GUI.backgroundColor = new Color(0.9f, 0.25f, 0.2f, 1f);
+			if (GUILayout.Button("STOP FORCE HOST", GUIStylePreset.NormalButton, GUILayout.Height(34f)))
+			{
+				ForceHost.StopForceHost();
+			}
+		}
+		else
+		{
+			GUI.backgroundColor = new Color(0.85f, 0.45f, 0.1f, 1f);
+			if (GUILayout.Button("FORCE HOST", GUIStylePreset.NormalButton, GUILayout.Height(34f)))
+			{
+				ForceHost.StartForceHost();
+			}
+		}
+		GUI.backgroundColor = oldBg;
 	}
 }

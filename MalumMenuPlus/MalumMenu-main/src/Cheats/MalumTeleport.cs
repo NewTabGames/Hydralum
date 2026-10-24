@@ -142,10 +142,26 @@ public static class MalumTeleport
         };
     }
 
-    public static void TeleportTo(Vector2 position)
+    // quick == true for right-click teleports (map/radar), which get a smaller marker on the replay
+    // map because they're used constantly. All other teleports (locations, players, vents) use false.
+    public static void TeleportTo(Vector2 position, bool quick = false)
     {
-        var netTransform = PlayerControl.LocalPlayer?.NetTransform;
+        var localPlayer = PlayerControl.LocalPlayer;
+        var netTransform = localPlayer?.NetTransform;
         if (netTransform == null) return;
+
+        // Record the jump for the Match Replay (origin -> destination) before we move, so the replay
+        // can draw T markers at both ends. Skip no-op nudges.
+        try
+        {
+            if (MalumMenu.replayUI != null)
+            {
+                Vector2 origin = localPlayer.GetTruePosition();
+                if ((position - origin).sqrMagnitude > 0.25f)
+                    ReplayUI.Rec(ReplayUI.Rt.Teleport, localPlayer.PlayerId, origin, position, quick ? (byte)1 : (byte)0);
+            }
+        }
+        catch { }
 
         if (UseSnapToRpc)
             netTransform.RpcSnapTo(position);

@@ -142,15 +142,9 @@ public class PlayersTab : ITab
             GUILayout.Label($"PUID: {GetPuid(data, player)}");
 
             GUILayout.Space(8);
-            if (GUILayout.Button("Copy Name", GUIStylePreset.NormalButton))
+            if (GUILayout.Button("Copy Info", GUIStylePreset.NormalButton))
             {
-                GUIUtility.systemCopyBuffer = System.Text.RegularExpressions.Regex.Replace(data.PlayerName, "<.*?>", string.Empty);
-            }
-
-            if (GUILayout.Button("Copy PUID", GUIStylePreset.NormalButton))
-            {
-                var puid = GetPuid(data, player);
-                GUIUtility.systemCopyBuffer = puid == "-" ? "" : puid;
+                GUIUtility.systemCopyBuffer = BuildInfo(player, data);
             }
 
             GUILayout.Space(8);
@@ -316,6 +310,38 @@ public class PlayersTab : ITab
             GUI.enabled = true;
         }
         catch { }
+    }
+
+    // Builds the full player info block as a clean, plain-text list for the Copy Info button (tags stripped).
+    private static string BuildInfo(PlayerControl player, NetworkedPlayerInfo data)
+    {
+        static string Strip(string s) => string.IsNullOrEmpty(s) ? s : System.Text.RegularExpressions.Regex.Replace(s, "<.*?>", string.Empty);
+
+        var flags = "";
+        if (player.AmOwner) flags += " (You)";
+        if (IsHost(data)) flags += " (Host)";
+        if (data.Disconnected) flags += " (Disconnected)";
+        else if (data.IsDead) flags += " (Dead)";
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"Name: {Strip(data.PlayerName)}{flags}");
+        sb.AppendLine($"Player ID: {data.PlayerId}");
+        sb.AppendLine($"Client ID: {data.ClientId}");
+        sb.AppendLine($"Color: {Blank(data.ColorName)}");
+        sb.AppendLine($"Level: {data.PlayerLevel + 1}");
+        sb.AppendLine($"Platform: {GetPlatform(data)}");
+        sb.AppendLine($"Client: {Strip(GetClientLabel(data.PlayerId))}");
+        if (Utils.isShip)
+        {
+            sb.AppendLine($"Role: {Strip(GetRole(data))}");
+            var pos = player.GetTruePosition();
+            var room = Utils.GetRoomFromPosition(pos);
+            var roomName = room != null ? room.RoomId.ToString() : "Unknown";
+            sb.AppendLine($"Location: {roomName} ({pos.x:F1}, {pos.y:F1})");
+        }
+        sb.AppendLine($"Friend Code: {Blank(data.FriendCode)}");
+        sb.Append($"PUID: {GetPuid(data, player)}");
+        return sb.ToString();
     }
 
     private static bool IsHost(NetworkedPlayerInfo data)
