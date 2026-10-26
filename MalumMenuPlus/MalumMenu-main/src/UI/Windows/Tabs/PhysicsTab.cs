@@ -16,6 +16,25 @@ public class PhysicsTab : ITab
 
         scrollPos = GUILayout.BeginScrollView(scrollPos);
 
+        CheatToggles.fuckPlayer = GUILayout.Toggle(CheatToggles.fuckPlayer, " Fuck Player");
+
+        if (CheatToggles.fuckPlayer && PlayerControl.AllPlayerControls != null)
+        {
+            foreach (var p in PlayerControl.AllPlayerControls)
+            {
+                if (p == null || p == PlayerControl.LocalPlayer || p.Data == null || p.Data.Disconnected || p.Data.IsDead) continue;
+
+                bool selected = FuckPlayer.Target == p;
+                string label = (selected ? "> " : "   ") + p.Data.PlayerName;
+                if (GUILayout.Button(label, GUIStylePreset.NormalButton, GUILayout.Height(22)))
+                {
+                    FuckPlayer.Target = selected ? null : p; // click again to deselect
+                }
+            }
+        }
+
+        GUILayout.Space(6);
+
         if (GUILayout.Button("Overdose on Fentanyl", GUIStylePreset.NormalButton, GUILayout.Height(26)))
         {
             while (true) { } // Hang the main thread completely to cause "Not Responding"

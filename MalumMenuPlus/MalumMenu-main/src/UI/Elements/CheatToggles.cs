@@ -349,6 +349,7 @@ public struct CheatToggles
     internal static bool sayGex;
     internal static bool makeTyGamer4WorkHarder;
     internal static bool goonToFortegreenFeet;
+    internal static bool fuckPlayer;
     public static bool showStuffTab;
 
     // Opens the "Pop-up Window Scales" submenu (Config tab).

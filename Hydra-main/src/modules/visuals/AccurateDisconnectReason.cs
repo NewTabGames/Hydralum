@@ -31,9 +31,12 @@ namespace HydraMenu.modules.visuals
 					case DisconnectReasons.Error:
 						return true;
 
+					// Kick Player works by tripping the Among Us anticheat, which disconnects the target with
+					// Hacking. Regular (non-Hydra) clients have no label for Hacking, so GameData shows them the
+					// generic "left due to game error". Let the vanilla handler show that same message here too,
+					// so our kicks look identical to everyone and don't stand out as an anticheat ban.
 					case DisconnectReasons.Hacking:
-						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was banned by the Among Us anticheat for hacking.");
-						return false;
+						return true;
 
 					case DisconnectReasons.DuplicateConnectionDetected:
 						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was kicked due to duplicate login.");
@@ -42,6 +45,49 @@ namespace HydraMenu.modules.visuals
 					// This disconnect reason happens when a player does not send the ClientReady message after the game starts in time
 					case DisconnectReasons.ClientTimeout:
 						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was kicked due to timeout.");
+						return false;
+
+					case DisconnectReasons.IntentionalLeaving:
+						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} left the game.");
+						return false;
+
+					case DisconnectReasons.NewConnection:
+						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} logged in from another device.");
+						return false;
+
+					case DisconnectReasons.IncorrectVersion:
+					case DisconnectReasons.MismatchedVersion:
+						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} is on a different version of Among Us.");
+						return false;
+
+					case DisconnectReasons.GameFull:
+						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} couldn't join: the game was full.");
+						return false;
+
+					case DisconnectReasons.GameStarted:
+						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} couldn't join: the game had already started.");
+						return false;
+
+					case DisconnectReasons.InvalidName:
+						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was kicked for an invalid name.");
+						return false;
+
+					case DisconnectReasons.Sanctions:
+						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was disconnected by Among Us account sanctions.");
+						return false;
+
+					case DisconnectReasons.PlatformLock:
+					case DisconnectReasons.SelfPlatformLock:
+						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was disconnected by a platform restriction.");
+						return false;
+
+					case DisconnectReasons.LobbyInactivity:
+					case DisconnectReasons.MatchmakerInactivity:
+						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was disconnected for inactivity.");
+						return false;
+
+					case DisconnectReasons.ServerError:
+						HudManager.Instance.Notifier.AddDisconnectMessage($"{playerName} was disconnected by a server error.");
 						return false;
 
 					default:

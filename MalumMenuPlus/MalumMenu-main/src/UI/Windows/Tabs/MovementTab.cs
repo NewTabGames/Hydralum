@@ -60,13 +60,22 @@ public class MovementTab : ITab
     {
         GUILayout.Label("Speed", GUIStylePreset.TabSubtitle);
 
+        // Null-check up front instead of letting the dereference throw. This method runs every frame the
+        // tab is open; in a pre-spawn lobby (e.g. while the horse event is matchmaking) LocalPlayer /
+        // MyPhysics / Data are null, and the old throw-into-catch fired an NRE every single frame, which
+        // spammed the first-chance exception machinery. Bail cleanly instead.
+        var local = PlayerControl.LocalPlayer;
+        var physics = local != null ? local.MyPhysics : null;
+        var data = local != null ? local.Data : null;
+        if (physics == null || data == null)
+        {
+            GUILayout.Label("Join a game to adjust your speed.");
+            return;
+        }
+
         try
         {
-            // Accessing these throws (and we fall to the catch) when there's no spawned
-            // player yet, e.g. in the main menu.
-            var local = PlayerControl.LocalPlayer;
-            var physics = local.MyPhysics;
-            var isGhost = local.Data.IsDead;
+            var isGhost = data.IsDead;
 
             if (isGhost)
                 physics.GhostSpeed = GUILayout.HorizontalSlider(physics.GhostSpeed, 0f, 20f, GUILayout.Width(250f));

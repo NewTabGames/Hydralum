@@ -967,12 +967,17 @@ namespace HydraMenu.ui.sections
 			PlayerControl.LocalPlayer.CmdCheckMurder(target);
 		}
 
-		// Telekill: save our spot, flash onto the target, kill, and flash back - all in one frame so it
-		// reads as a single instant movement. The SnapTo -> kill -> SnapTo RPCs go out in order on the
-		// reliable channel, so the host processes the kill while we're standing on the target (passing
-		// its distance check). RpcSnapTo is used directly (not Teleporter.TeleportTo) so the snap is
-		// always networked even if the "Use SnapTo RPC" teleport option is off - a local-only snap would
-		// never move us on the host, and the CheckMurder distance check would fail.
+		// Telekill: save our spot, flash onto the target, request the kill, then flash home. The SnapTo and
+		// kill RPCs go out in order on the same frame, so the host validates the kill while we're standing on
+		// the target (passing its distance check). RpcSnapTo is used directly (not Teleporter.TeleportTo) so
+		// the snap is always networked even if the "Use SnapTo RPC" teleport option is off - a local-only snap
+		// would never move us on the host and the CheckMurder distance check would fail.
+		//
+		// The flash-back is DEFERRED (see CoTelekillReturn): a same-frame snap-back is overridden by the
+		// vanilla kill animation, which snaps the killer onto the victim while it plays. When we're not the
+		// host the kill only resolves a few frames later (CmdCheckMurder -> host -> MurderPlayer), so the
+		// animation runs after our snap and left us stranded on the target. Returning after the kill lands
+		// makes it reliable (this mirrors Malum's DelayedSnapTo telekill).
 		private static void AttemptTelekill(PlayerControl target)
 		{
 			if (AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
@@ -1000,7 +1005,33 @@ namespace HydraMenu.ui.sections
 
 			netTransform.RpcSnapTo(targetPos);
 			AttemptMurder(target);
-			netTransform.RpcSnapTo(origin);
+
+			PlayerControl.LocalPlayer.StartCoroutine(CoTelekillReturn(target, origin).WrapToIl2Cpp());
+		}
+
+		private static IEnumerator CoTelekillReturn(PlayerControl target, Vector2 origin)
+		{
+			// Wait for the target to actually die (host-confirmed), capped so we never hang if the kill is
+			// refused.
+			float elapsed = 0f;
+			while (elapsed < 2f)
+			{
+				if (target == null || target.Data == null) yield break;
+				if (target.Data.IsDead) break;
+				elapsed += Time.deltaTime;
+				yield return null;
+			}
+
+			// Let the kill animation's one-shot reposition apply, then snap home - but only if the kill
+			// actually landed, so a refused kill never yanks a still-living player back across the map.
+			yield return new WaitForSeconds(0.5f);
+
+			PlayerControl local = PlayerControl.LocalPlayer;
+			if (target != null && target.Data != null && target.Data.IsDead
+				&& local != null && local.NetTransform != null && local.Data != null && !local.Data.IsDead)
+			{
+				local.NetTransform.RpcSnapTo(origin);
+			}
 		}
 
 		private static IEnumerator AttemptFrameForKillingAll(PlayerControl target)

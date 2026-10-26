@@ -130,6 +130,7 @@ public static class HudManager_Update
 			}
 
 			MalumCheats.UseVentCheat(__instance);
+			FuckPlayer.Tick(); // Stuff tab: sidle behind the nearest player and thrust (joke toggle)
 			MalumInvisibility.Tick(); // Self > Invisibility: snap back to real position when toggled off
 				ChatSender.Tick(); // Chat > Chat Sender: repeat the queued message while Spam is enabled
 			MalumDisco.Tick(); // Self > Disco: strobe the local player's color while enabled
@@ -150,5 +151,23 @@ public static class HudManager_Update
 			}
 		}
 		catch { }
+	}
+
+	// The game's own HudManager.Update throws a NullReferenceException on some frames - most prolifically
+	// during the horse (NormalFools) event around kills and sabotage, where the HUD draws cosmetics for a
+	// body type it then overrides ("Overriding body type Horse with Normal because killstabplayer still
+	// always draws normal player."). Our Postfix above is fully guarded, so this escapes the *original*
+	// vanilla body, not our code. It's non-fatal - the game keeps running - but it floods the log thousands
+	// of times a match (both as bare Unity NREs and as Il2CppInterop "HudManager.Update()" trampoline
+	// errors). Swallow just that NRE here, the same finalizer technique already used for other vanilla NRE
+	// floods, while letting any other genuinely new exception propagate so it stays visible.
+	public static Exception Finalizer(Exception __exception)
+	{
+		if (__exception == null) return null;
+
+		bool isNre = __exception is NullReferenceException
+			|| (__exception.Message != null && __exception.Message.Contains("NullReferenceException"));
+
+		return isNre ? null : __exception;
 	}
 }

@@ -1,6 +1,6 @@
 # Hydralum Features
 
-**Hydralum** is a combination of two Among Us mod menus — **Malum Menu** and **Hydra** — bundled together. Press your menu key in game and use **Switch** to jump between the two. Below is the full feature set of each, organized by tab.
+**Hydralum** is a combination of two Among Us mod menus, **Malum Menu** and **Hydra**, bundled together. Press your menu key in game and use **Switch** to jump between the two. Below is the full feature set of each, organized by tab.
 
 ---
 

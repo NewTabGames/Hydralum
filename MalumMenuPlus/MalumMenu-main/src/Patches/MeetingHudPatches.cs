@@ -310,3 +310,14 @@ public static class MeetingHud_CheckForEndVoting
         }
     }
 }
+
+// Vanilla MeetingHud.MarkPlayerAsHasVoted throws a NullReferenceException when a vote RPC arrives for a
+// player whose vote area / state is already gone (e.g. they disconnected mid-meeting). Routed through
+// PlayerControl.HandleRpc, this surfaces as a bare NRE on every such RPC and floods the console. Swallow it:
+// the vote for a now-absent player can't be marked anyway, so nothing useful is lost. (A finalizer returning
+// null suppresses the exception the original method threw.)
+[HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.MarkPlayerAsHasVoted))]
+public static class MeetingHud_MarkPlayerAsHasVoted
+{
+    public static Exception Finalizer(Exception __exception) => null;
+}

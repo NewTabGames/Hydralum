@@ -272,19 +272,26 @@ public static class MalumCheats
 
     public static void UseVentCheat(HudManager hudManager)
     {
-        // try-catch to prevent errors when role is null
-        try
+        // Guard every dereference instead of relying on a blanket try-catch. This runs every frame from
+        // HudManager.Update, and in several states - most notably the horse (NormalFools) event, and any
+        // time before the role is assigned - LocalPlayer.Data.Role is null. Walking the whole chain blindly
+        // threw a caught NRE *every frame*, which was harmless to gameplay but flooded the first-chance
+        // exception machinery (and the log, under diagnostics). Bail quietly when anything isn't ready.
+        var local = PlayerControl.LocalPlayer;
+        if (local == null) return;
+
+        var data = local.Data;
+        if (data == null || data.Role == null) return;
+
+        // Engineers & Impostors don't need this cheat so it is disabled for them.
+        // Ghost venting causes issues so it is also disabled.
+        if (!data.Role.CanVent && !data.IsDead
+            && hudManager != null
+            && hudManager.ImpostorVentButton != null
+            && hudManager.ImpostorVentButton.gameObject != null)
         {
-
-			// Engineers & Impostors don't need this cheat so it is disabled for them
-			// Ghost venting causes issues so it is also disabled
-
-			if (!PlayerControl.LocalPlayer.Data.Role.CanVent && !PlayerControl.LocalPlayer.Data.IsDead)
-            {
-				hudManager.ImpostorVentButton.gameObject.SetActive(CheatToggles.unlockVents);
-			}
-
-        } catch { }
+            hudManager.ImpostorVentButton.gameObject.SetActive(CheatToggles.unlockVents);
+        }
     }
 
     public static void KickVentsCheat()
