@@ -47,6 +47,7 @@ public partial class MalumMenu : BasePlugin
     public static ConfigEntry<bool> menuOpenOnMouse;
     public static ConfigEntry<bool> menuKeepSubwindowsOpen;
     public static ConfigEntry<bool> showVersionWarning;
+    public static ConfigEntry<bool> autoCloseMenuOnMainMenu;
     public static ConfigEntry<string> spoofLevel;
     public static ConfigEntry<string> spoofPlatform;
     public static ConfigEntry<bool> spoofDeviceId;
@@ -112,6 +113,11 @@ public partial class MalumMenu : BasePlugin
                                 "ShowVersionWarning",
                                 true,
                                 "When enabled, a warning popup will appear at main menu if your Among Us version is not in the supported list");
+
+        autoCloseMenuOnMainMenu = Config.Bind("MalumMenu.GUI",
+                                "AutoCloseMenuOnMainMenu",
+                                false,
+                                "When enabled, the MalumMenu and Hydra menus automatically close when you leave a game back to the main menu (off = they stay open)");
 
         autoLoadProfile = Config.Bind("MalumMenu.Profile",
                                 "AutoLoadProfile",
@@ -251,16 +257,18 @@ public partial class MalumMenu : BasePlugin
         {
             if (scene.name == "MainMenu")
             {
-                // Only when we've actually been in a lobby/game this session: we've now left it back to the
-                // menu, so auto-close the Match Replay overlay and both mod menus (don't let them linger on
-                // the menu or carry into the next game). This never runs at startup (the flag starts false),
-                // so a saved "Replay on" preference loaded from the profile is respected until you enter and
-                // then leave a game.
+                // We've now left a lobby/game back to the menu. Only auto-close the Match Replay overlay and
+                // both mod menus when the user has opted in (AutoCloseMenuOnMainMenu, default off - so by
+                // default the menus stay open when leaving). Gated by sawGameSinceMenu so it never runs at
+                // startup (the flag starts false), and the flag is always reset here regardless of the toggle.
                 if (MenuUI.sawGameSinceMenu)
                 {
-                    CheatToggles.replay = false;
-                    MenuUI.isGUIActive = false;
-                    MenuUI.CloseHydraMenu();
+                    if (autoCloseMenuOnMainMenu.Value)
+                    {
+                        CheatToggles.replay = false;
+                        MenuUI.isGUIActive = false;
+                        MenuUI.CloseHydraMenu();
+                    }
                     MenuUI.sawGameSinceMenu = false;
                 }
 

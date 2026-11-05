@@ -169,7 +169,10 @@ public class HostOnlyTab : ITab
             byte playerId = data.PlayerId;
             var chosen = MalumRoleAssign.GetChosen(playerId);
 
-            var colorHex = ColorUtility.ToHtmlStringRGB(data.Color);
+            // data.Color indexes Palette.PlayerColors[ColorId] with no bounds check, so a player with an
+            // out-of-range ColorId (mid-join, bot, or a color-spoofing modded client) throws
+            // IndexOutOfRangeException - which would crash the whole Host tab render. Resolve it safely.
+            var colorHex = Utils.GetPlayerColorHex(data) ?? "FFFFFF";
             string hostTag = player.OwnerId == hostId ? " <color=#ffcc00>(Host)</color>" : "";
             string youTag = player.AmOwner ? " <color=#00d0ff>(You)</color>" : "";
 
