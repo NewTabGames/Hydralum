@@ -354,6 +354,7 @@
 
 ### Troll
 
+- Blackout (Use In Lobby) — freeze everyone on a black screen at game start (modded lobbies)
 - Queue Lobby Crash
 - Auto Trigger Spores
 - Disable Security Cameras
@@ -363,18 +364,26 @@
 - Trigger All Spores (exclude yourself)
 - Door Troller
 - Auto Expose Impostors
+- **Host-Authoritative** *(modded lobbies only)*
+  - Disable Zipline
+  - Disable Spore Triggers
+  - Spam Influencer Cues
+  - Custom Lobby Expiration timer
 
 ### Host
 
 - Use Flipped Skeld Map
-- Fake Shapeshift Bubble
+- Fake Shapeshift Bubble (works as non-host in modded lobbies)
 - Force Start Game
+- Kill Everyone
+- Kill Everyone (In Lobby) *(clients can't see the body/ghost)*
 - Force Crewmate Victory
 - Force Impostor Victory
 - Boom 480
 - Boom 480 Buffed
 - Spam Report Bodies
 - Revert All Shapeshifts
+- Schizo Colors — each client sees a different set of colors
 - Clear All
 
 ### Roles
@@ -388,10 +397,12 @@
   - No Vanish Cooldown
   - Kill While Vanished
   - Disable Phantom End Animation
+  - No Phantom Animation — hide the vanish/appear animation from others
 - **No Kill Checks**
-  - Kill Ghosts (host-only)
+  - Kill Ghosts (Host)
   - Kill Other Impostors
-  - No Kill Cooldown (host-only)
+  - Kill Vented Players (Host)
+  - No Kill Cooldown (Host)
 
 ### Players
 
@@ -413,8 +424,8 @@
 - **Host-Only Features**
   - Auto Report Bodies As
   - Disco Mode
-  - Force Zipline
   - Force Meeting As
+  - Kill (In Lobby) *(clients can't see the body/ghost)*
   - Force All Votes To
   - Eject
   - Frame Shapeshift
@@ -426,6 +437,7 @@
   - Fullbright
   - Slow Speed
   - Super Speed
+  - Freeze (Host)
   - Reset to Defaults
   - Set Color
 - **Multi-Target Actions** — hold Ctrl to select multiple
@@ -476,6 +488,7 @@
 - **Version Spoofer**
   - Enable Version Spoofing
   - Use Modded Protocol
+  - Mod Registration Spoofer (None / EHR / Town of Next / Super New Roles)
 - **Level Spoofer**
   - Enabled
   - Type a level / Set
@@ -491,7 +504,7 @@
 - RGB Mode
 - Saved Themes *(shared with Malum)*
 
-### Menu
+### Config
 
 - Disable Notifications
 - Config File (New / Load / Save / Delete / Rename)
