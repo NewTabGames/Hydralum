@@ -6,7 +6,7 @@ namespace HydraMenu.ui.sections
 {
 	internal class MenuSection : Section
 	{
-		public MenuSection() : base("Menu") { }
+		public MenuSection() : base("Config") { }
 
 		private byte configIndex = 0;
 		private string configNameInput = "";

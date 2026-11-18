@@ -186,6 +186,39 @@ public static class VotekickHandler
 		return count;
 	}
 
+	// Authoritative count of votes currently against a client, read straight from the game's VoteBanSystem
+	// (counts non-zero voter entries in the Il2CppStructArray<int>, NOT its fixed length of 3).
+	public static int GetAuthoritativeVoteCount(int clientId)
+	{
+		try
+		{
+			var system = VoteBanSystem.Instance;
+			if (system == null) return 0;
+			if (!system.Votes.TryGetValue(clientId, out var votes) || votes == null) return 0;
+
+			int count = 0;
+			foreach (int voter in votes)
+			{
+				if (voter != 0) count++;
+			}
+			return count;
+		}
+		catch { }
+		return 0;
+	}
+
+	// How many votes are currently on the local player (how close you are to being kicked).
+	public static int GetVotesAgainstMe()
+	{
+		try
+		{
+			if (PlayerControl.LocalPlayer == null) return 0;
+			return GetAuthoritativeVoteCount(PlayerControl.LocalPlayer.OwnerId);
+		}
+		catch { }
+		return 0;
+	}
+
 	public static void RecordVoteSent(int clientId, int count)
 	{
 		VotedThisSession.Add(clientId);

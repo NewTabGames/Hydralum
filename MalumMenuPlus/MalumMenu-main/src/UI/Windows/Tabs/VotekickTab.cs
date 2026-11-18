@@ -25,6 +25,8 @@ public class VotekickTab : ITab
 
 		GUILayout.Space(14f);
 
+		DrawVotesAgainstYou();
+
 		DrawPlayerList();
 
 		GUILayout.Space(14f);
@@ -32,6 +34,21 @@ public class VotekickTab : ITab
 		DrawSettingsSection();
 
 		GUILayout.EndScrollView();
+	}
+
+	// Shows how many votekick votes are currently on YOU (the local player), read authoritatively from
+	// VoteBanSystem. The per-target list excludes yourself, so this is the only place your own count shows.
+	private void DrawVotesAgainstYou()
+	{
+		if (!Utils.isLobby && !Utils.isInGame) return;
+
+		int votes = VotekickHandler.GetVotesAgainstMe();
+
+		GUILayout.Label("Votes Against You", GUIStylePreset.TabSubtitle);
+		Color col = votes >= 2 ? new Color(0.95f, 0.3f, 0.25f) : (votes == 1 ? new Color(0.95f, 0.65f, 0.2f) : new Color(0.6f, 0.6f, 0.6f));
+		GUILayout.Label($"<b><color=#{ColorUtility.ToHtmlStringRGB(col)}>{votes}/3</color></b> votes to kick you");
+
+		GUILayout.Space(14f);
 	}
 
 	private void DrawAutomationSection()

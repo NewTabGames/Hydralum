@@ -316,8 +316,10 @@ namespace HydraMenu
 				AutoDoorsSystemType doorSystem = ShipStatus.Instance.Systems[SystemTypes.Doors].Cast<AutoDoorsSystemType>();
 				doorSystem.dirtyBits |= 1U << index;
 			}
-			else if(doorType == Il2CppType.From(typeof(PlainDoor)))
+			else if(doorType == Il2CppType.From(typeof(PlainDoor)) || doorType == Il2CppType.From(typeof(MushroomWallDoor)))
 			{
+				// The Fungle's doors are MushroomWallDoor but use the same DoorsSystemType as PlainDoor;
+				// without this branch they fell through to "unknown" and never unlocked (Door Troller broke on Fungle).
 				DoorsSystemType doorSystem = ShipStatus.Instance.Systems[SystemTypes.Doors].Cast<DoorsSystemType>();
 				doorSystem.IsDirty = true;
 			}
@@ -361,7 +363,7 @@ namespace HydraMenu
 
 		public static void UnlockAll()
 		{
-			for(byte i = 0; i < ShipStatus.Instance.AllDoors.Count; i++)
+			for(int i = 0; i < ShipStatus.Instance.AllDoors.Count; i++)
 			{
 				UnlockDoor(ShipStatus.Instance.AllDoors[i], i);
 			}

@@ -29,6 +29,18 @@ namespace HydraMenu.ui.sections
 
 		private int versionSelection = 0;
 
+		// Mod Registration Spoofer: advertise a known mod's GUID during the modded handshake so you can find/match
+		// modded lobbies (e.g. Endless Host Roles). Pairs with "Use Modded Protocol". Same index-slider style as
+		// the version spoofer. Writes CurrentModRegistration.ModRegistrationGuidString (empty = no mod registered).
+		private readonly Dictionary<string, string> modRegistrations = new Dictionary<string, string>()
+		{
+			{ "", "None" },
+			{ "446420cc-ce35-4c2f-8f5d-b14f84354421", "Endless Host Roles" },
+			{ "789bf6f3-41e4-439f-82d3-ed6d2d2fb710", "Town of Next" },
+			{ "9f21dfdc-1224-4322-af7b-63db54cea706", "Super New Roles" }
+		};
+		private int modRegistrationSelection = 0;
+
 		// Click-to-type state for the exact-level field. GUILayout.TextField is unstripped under IL2CPP and
 		// crashes ("Method unstripping failed"), so (like the config name field) this is a click-to-type
 		// button backed by manual key capture, restricted to digits.
@@ -45,6 +57,10 @@ namespace HydraMenu.ui.sections
 			ModuleManager.spoofVersion.spoofedVersion = versions.ElementAt(versionSelection).Value;
 
 			ModuleManager.spoofVersion.UseModdedProtocol = GUILayout.Toggle(ModuleManager.spoofVersion.UseModdedProtocol, "Use Modded Protocol");
+
+			GUILayout.Label($"Spoof Mod Registration: {modRegistrations.ElementAt(modRegistrationSelection).Value}");
+			modRegistrationSelection = Mathf.Clamp((int)GUILayout.HorizontalSlider(modRegistrationSelection, 0, modRegistrations.Count - 1), 0, modRegistrations.Count - 1);
+			CurrentModRegistration.ModRegistrationGuidString = modRegistrations.ElementAt(modRegistrationSelection).Key;
 
 			GUILayout.Space(5);
 			GUILayout.Label("Level Spoofer:");

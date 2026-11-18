@@ -16,6 +16,7 @@ namespace HydraMenu.modules.roles
 		public bool KillAsPhantom { get; set; } = false;
 		public bool NoKillCooldown { get; set; } = false;
 		public bool KillGhosts { get; set; } = false;
+		public bool KillVentedPlayers { get; set; } = false;
 
 		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.SetKillTimer))]
 		class KillTimer
@@ -58,7 +59,8 @@ namespace HydraMenu.modules.roles
 			       target != PlayerControl.LocalPlayer.Data &&
 			       !target.Disconnected &&
 			       (!target.IsDead || Instance.KillGhosts) &&
-			       (!RoleManager.IsImpostorRole(target.RoleType) || Instance.KillOtherImpostors);
+			       (!RoleManager.IsImpostorRole(target.RoleType) || Instance.KillOtherImpostors) &&
+			       (target.Object == null || !target.Object.inVent || Instance.KillVentedPlayers);
 		}
 
 		// The CheckMurder RPC handler has checks against killing ghosts

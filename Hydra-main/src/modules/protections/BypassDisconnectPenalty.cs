@@ -21,11 +21,16 @@ namespace HydraMenu.modules.protections
 		[HarmonyPatch(typeof(PlayerBanData), nameof(PlayerBanData.BanMinutesLeft), MethodType.Getter)]
 		class GetBanMinutes
 		{
-			static void Prefix(PlayerBanData __instance)
+			static bool Prefix(PlayerBanData __instance, ref int __result)
 			{
-				if(!Instance.Enabled) return;
-				if (__instance == null) return;
-			__instance.banPoints = 0.0f;
+				if(!Instance.Enabled) return true;
+				if(__instance == null) return true;
+
+				// Force BanMinutesLeft to 0 and skip the original getter, rather than relying on the game
+				// recomputing it from banPoints - more reliable (matches upstream 2.2.0).
+				__instance.banPoints = 0.0f;
+				__result = 0;
+				return false;
 			}
 		}
 	}

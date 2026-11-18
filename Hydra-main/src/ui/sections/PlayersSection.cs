@@ -219,7 +219,7 @@ namespace HydraMenu.ui.sections
 					$"\nFriendcode: " + (streamerMode ? "REDACTED" : friendCodeStr) +
 						$"\nPUID: " + (streamerMode ? "REDACTED" : puidStr) +
 					$"\nLevel: {target.Data.PlayerLevel + 1}" +
-					$"\nDevice: {platform?.Platform}" +
+					$"\nDevice: {(platform == null ? "-" : ((int)platform.Platform == 112 ? "Starlight" : platform.Platform.ToString()))}" +
 					(AmongUsClient.Instance != null && target.OwnerId == AmongUsClient.Instance.HostId ? "\nHost: true" : "");
 			}
 
@@ -232,6 +232,7 @@ namespace HydraMenu.ui.sections
 			}
 
 			ModuleManager.spectatePlayer.Enabled = Controls.PlayerSpecificToggle("Spectate", target, ref ModuleManager.spectatePlayer.target);
+			ModuleManager.whisper.Enabled = Controls.PlayerSpecificToggle("Whisper", target, ref ModuleManager.whisper.target);
 
 			if(IsDevTarget(target))
 			{
@@ -359,8 +360,6 @@ namespace HydraMenu.ui.sections
 				}
 			}
 
-			ModuleManager.whisper.Enabled = Controls.PlayerSpecificToggle("Whisper", target, ref ModuleManager.whisper.target);
-
 			GUILayout.Space(5);
 			GUILayout.Label("Host Only Features:" + (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost ? "" : "\n(Using these will get you kicked!)"));
 
@@ -381,21 +380,6 @@ namespace HydraMenu.ui.sections
 				Hydra.routines.discoHost.Enabled = Controls.PlayerSpecificToggle("Disco Mode", target, Hydra.routines.discoHost.targets);
 			}
 
-			if(Utilities.GetCurrentMap() == MapNames.Fungle)
-			{
-				if(IsDevTarget(target))
-				{
-					if(GUILayout.Button("Force Zipline"))
-					{
-						Hydra.notifications.Send("Error", "Cannot target Developer");
-					}
-				}
-				else
-				{
-					Hydra.routines.ziplineSpammer.Enabled = Controls.PlayerSpecificToggle("Force Zipline", target, Hydra.routines.ziplineSpammer.targets);
-				}
-			}
-
 			if(GUILayout.Button("Force Meeting As"))
 			{
 				if(IsDevTarget(target))
@@ -407,6 +391,28 @@ namespace HydraMenu.ui.sections
 					Utilities.AttemptStartMeeting(target, null);
 				}
 			}
+
+			if(GUILayout.Button("Kill (In Lobby)"))
+			{
+				if(IsDevTarget(target))
+				{
+					Hydra.notifications.Send("Error", "Cannot target Developer");
+				}
+				else if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
+				{
+					Hydra.notifications.Send("Kill In Lobby", "This feature can only be used if you are the host of the lobby.");
+				}
+				else
+				{
+					// Direct MurderPlayer (not the CheckMurder / murder-RPC path the anticheat blocks in the
+					// pre-game lobby). As host our state is authoritative, so the target's dead flag syncs to
+					// everyone, but the lobby has no body/ghost rendering, so clients just see them vanish.
+					PlayerControl.LocalPlayer.MurderPlayer(target, MurderResultFlags.Succeeded);
+					Hydra.notifications.Send("Kill In Lobby", $"Killed {target.Data.PlayerName} (lobby).", 5);
+				}
+			}
+
+			GUILayout.Label("<color=#9A9A9A>(Clients can not see the body/ghost)</color>");
 
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Force All Votes To"))
@@ -504,6 +510,10 @@ namespace HydraMenu.ui.sections
 				{
 					Hydra.notifications.Send("Error", "Cannot target Developer");
 				}
+				else if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
+				{
+					Hydra.notifications.Send("Assign Tasks", "You must be the host of the lobby in order to use this feature.");
+				}
 				else
 				{
 					byte[] taskIds = new byte[255];
@@ -522,6 +532,10 @@ namespace HydraMenu.ui.sections
 				if(IsDevTarget(target))
 				{
 					Hydra.notifications.Send("Error", "Cannot target Developer");
+				}
+				else if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
+				{
+					Hydra.notifications.Send("Assign Tasks", "You must be the host of the lobby in order to use this feature.");
 				}
 				else
 				{
@@ -600,6 +614,21 @@ namespace HydraMenu.ui.sections
 				}
 			}
 			GUILayout.EndHorizontal();
+
+			if(GUILayout.Button("Freeze (Host)"))
+			{
+				if(IsDevTarget(target))
+				{
+					Hydra.notifications.Send("Error", "Cannot target Developer");
+				}
+				else if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
+				{
+					IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+					gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, 0.1e-10f);
+
+					GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+				}
+			}
 
 			if(GUILayout.Button("Reset to Defaults"))
 			{
@@ -766,24 +795,6 @@ namespace HydraMenu.ui.sections
 				Hydra.routines.discoHost.Enabled = Hydra.routines.discoHost.targets.Count > 0;
 			}
 
-			if(Utilities.GetCurrentMap() == MapNames.Fungle)
-			{
-				bool allZiplining = validTargets.Count > 0 && validTargets.All(t => Hydra.routines.ziplineSpammer.targets.Contains(t.GetHashCode()));
-				if(GUILayout.Button(allZiplining ? "Release All from Zipline" : "Force All to Zipline"))
-				{
-					if (validTargets.Count < targets.Count) Hydra.notifications.Send("Error", "Cannot target Developer");
-					if(allZiplining)
-					{
-						foreach(var t in validTargets) Hydra.routines.ziplineSpammer.targets.Remove(t.GetHashCode());
-					}
-					else
-					{
-						foreach(var t in validTargets) Hydra.routines.ziplineSpammer.targets.Add(t.GetHashCode());
-					}
-					Hydra.routines.ziplineSpammer.Enabled = Hydra.routines.ziplineSpammer.targets.Count > 0;
-				}
-			}
-
 			if(GUILayout.Button("Eject Selected"))
 			{
 				if (validTargets.Count < targets.Count) Hydra.notifications.Send("Error", "Cannot target Developer");
@@ -805,21 +816,35 @@ namespace HydraMenu.ui.sections
 			if(GUILayout.Button("Flood Tasks"))
 			{
 				if (validTargets.Count < targets.Count) Hydra.notifications.Send("Error", "Cannot target Developer");
-				byte[] taskIds = new byte[255];
-				for(byte i = 0; i < 255; i++) taskIds[i] = i;
-
-				foreach(var target in validTargets)
+				if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
 				{
-					target.Data.RpcSetTasks(taskIds);
+					Hydra.notifications.Send("Assign Tasks", "You must be the host of the lobby in order to use this feature.");
+				}
+				else
+				{
+					byte[] taskIds = new byte[255];
+					for(byte i = 0; i < 255; i++) taskIds[i] = i;
+
+					foreach(var target in validTargets)
+					{
+						target.Data.RpcSetTasks(taskIds);
+					}
 				}
 			}
 
 			if(GUILayout.Button("Clear Tasks"))
 			{
 				if (validTargets.Count < targets.Count) Hydra.notifications.Send("Error", "Cannot target Developer");
-				foreach(var target in validTargets)
+				if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
 				{
-					target.Data.RpcSetTasks(Array.Empty<byte>());
+					Hydra.notifications.Send("Assign Tasks", "You must be the host of the lobby in order to use this feature.");
+				}
+				else
+				{
+					foreach(var target in validTargets)
+					{
+						target.Data.RpcSetTasks(Array.Empty<byte>());
+					}
 				}
 			}
 			GUILayout.EndHorizontal();
@@ -889,6 +914,20 @@ namespace HydraMenu.ui.sections
 				}
 			}
 			GUILayout.EndHorizontal();
+
+			if(GUILayout.Button("Freeze"))
+			{
+				if (validTargets.Count < targets.Count) Hydra.notifications.Send("Error", "Cannot target Developer");
+				if (GameManager.Instance?.LogicOptions?.currentGameOptions != null)
+				{
+					foreach(var target in validTargets)
+					{
+						IGameOptions gameOptions = GameOptions.CreateCloneOptions(GameManager.Instance.LogicOptions.currentGameOptions);
+						gameOptions.SetFloat(FloatOptionNames.PlayerSpeedMod, 0.1e-10f);
+						GameOptions.SendGameOptionsToClient(gameOptions, target.OwnerId);
+					}
+				}
+			}
 
 			if(GUILayout.Button("Reset Options to Defaults"))
 			{

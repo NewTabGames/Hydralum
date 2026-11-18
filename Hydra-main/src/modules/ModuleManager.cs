@@ -21,7 +21,9 @@ namespace HydraMenu.modules
 		public static BlockLowLevels blockLowLevels = new BlockLowLevels();
 		public static DisableGameEnd disableGameEnd = new DisableGameEnd();
 		public static DisableMeetings disableMeetings = new DisableMeetings();
+		public static DisableSporeTriggers disableSporeTriggers = new DisableSporeTriggers();
 		public static DisableVentClean disableVentClean = new DisableVentClean();
+		public static DisableZipline disableZipline = new DisableZipline();
 		public static FakeShapeshiftBubble fakeShapeshiftBubble = new FakeShapeshiftBubble();
 		public static FlipSkeld flipSkeld = new FlipSkeld();
 		public static VoteImmune voteImmune = new VoteImmune();
@@ -42,6 +44,7 @@ namespace HydraMenu.modules
 		// Roles
 		public static MoveInVents moveInVents = new MoveInVents();
 		public static NoKillChecks noKillChecks = new NoKillChecks();
+		public static NoPhantomAnimation noPhantomAnimation = new NoPhantomAnimation();
 		public static PhantomVanish phantomVanish = new PhantomVanish();
 		public static NoSabotageCooldown noSabotageCooldown = new NoSabotageCooldown();
 		public static UnlockSabotageButton unlockSabotageButton = new UnlockSabotageButton();
@@ -62,6 +65,7 @@ namespace HydraMenu.modules
 
 		// Troll
 		public static AutoExposeImpostors autoExposeImpostors = new AutoExposeImpostors();
+		public static Blackout blackout = new Blackout();
 		public static CrashLobby crashLobby = new CrashLobby();
 		public static DisableCameras disableCameras = new DisableCameras();
 		public static DisableCloseDoors disableCloseDoors = new DisableCloseDoors();
@@ -83,7 +87,9 @@ namespace HydraMenu.modules
 				blockLowLevels,
 				disableGameEnd,
 				disableMeetings,
+				disableSporeTriggers,
 				disableVentClean,
+				disableZipline,
 				fakeShapeshiftBubble,
 				flipSkeld,
 				voteImmune,
@@ -101,6 +107,7 @@ namespace HydraMenu.modules
 
 				moveInVents,
 				noKillChecks,
+				noPhantomAnimation,
 				phantomVanish,
 				noSabotageCooldown,
 				unlockSabotageButton,
@@ -118,6 +125,7 @@ namespace HydraMenu.modules
 				spoofVersion,
 
 				autoExposeImpostors,
+				blackout,
 				crashLobby,
 				disableCameras,
 				disableCloseDoors,

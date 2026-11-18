@@ -30,6 +30,10 @@ namespace HydraMenu.anticheat
 			if (_flagCache.TryGetValue(id, out var c) && now - c.at < FlagCacheTtl) return c.flagged;
 			bool f = Blacklist.IsBlacklisted(p);
 			_flagCache[id] = (f, now);
+			// On (re)encountering a flagged player, keep the stored name current if they've renamed since we
+			// last saw them. Runs only on a cache refresh (~every FlagCacheTtl seconds per player), and only
+			// writes to disk when the name actually differs, so it is not per-frame churn.
+			if (f) Blacklist.SyncName(p);
 			return f;
 		}
 

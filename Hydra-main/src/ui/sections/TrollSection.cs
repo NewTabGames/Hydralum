@@ -15,6 +15,8 @@ namespace HydraMenu.ui.sections
 		public TrollSection() : base("Troll") { }
 
 		private int selectedVent = 0;
+		private string expirationInput = "";
+		private bool typingExpiration = false;
 		private readonly System.Random rnd = new System.Random();
 
 		public override void Render()
@@ -24,6 +26,7 @@ namespace HydraMenu.ui.sections
 				GUILayout.Label("You are not currently in a game, these options will not work.");
 			}
 
+			ModuleManager.blackout.Enabled = GUILayout.Toggle(ModuleManager.blackout.Enabled, "Blackout (Use In Lobby)");
 			ModuleManager.crashLobby.Enabled = GUILayout.Toggle(ModuleManager.crashLobby.Enabled, "Queue Lobby Crash");
 			Hydra.routines.autoTriggerSpores.Enabled = GUILayout.Toggle(Hydra.routines.autoTriggerSpores.Enabled, "Auto Trigger Spores");
 			ModuleManager.disableCameras.Enabled = GUILayout.Toggle(ModuleManager.disableCameras.Enabled, "Disable Security Cameras");
@@ -139,6 +142,79 @@ namespace HydraMenu.ui.sections
 			ModuleManager.autoExposeImpostors.ExposeOnMurder = GUILayout.Toggle(ModuleManager.autoExposeImpostors.ExposeOnMurder, "Expose On Murder");
 			ModuleManager.autoExposeImpostors.ExposeOnShapeshift = GUILayout.Toggle(ModuleManager.autoExposeImpostors.ExposeOnShapeshift, "Expose On Shapeshift");
 			ModuleManager.autoExposeImpostors.ExposeOnPhantom = GUILayout.Toggle(ModuleManager.autoExposeImpostors.ExposeOnPhantom, "Expose On Phantom");
+
+			// Host-authoritative features: these only take effect in modded / host-authoritative lobbies
+			// (a vanilla Innersloth host rejects them), so they are grouped here under their own heading.
+			GUILayout.Space(8);
+			GUILayout.Label("Host-Authoritative (modded lobbies only):");
+			ModuleManager.disableZipline.Enabled = GUILayout.Toggle(ModuleManager.disableZipline.Enabled, "Disable Zipline");
+			ModuleManager.disableSporeTriggers.Enabled = GUILayout.Toggle(ModuleManager.disableSporeTriggers.Enabled, "Disable Spore Triggers");
+			Hydra.routines.spamInfluencerCues.Enabled = GUILayout.Toggle(Hydra.routines.spamInfluencerCues.Enabled, "Spam Influencer Cues");
+
+			// Custom lobby expiration timer. GUILayout.TextField is stripped under IL2CPP (crashes the layout),
+			// so this is a click-to-type field backed by manual key capture, like the Spoofer's exact-level field.
+			GUILayout.BeginHorizontal();
+			string expLabel = typingExpiration
+				? (string.IsNullOrEmpty(expirationInput) ? "Type a timer, then Enter..." : expirationInput + "_")
+				: "Lobby Expiration: " + (string.IsNullOrEmpty(expirationInput) ? "(click to type)" : expirationInput);
+			if(GUILayout.Button(expLabel)) typingExpiration = !typingExpiration;
+			if(GUILayout.Button("Set", GUILayout.ExpandWidth(false)))
+			{
+				ApplyExpirationTimer();
+				typingExpiration = false;
+			}
+			GUILayout.EndHorizontal();
+			if(typingExpiration) CaptureExpirationInput();
+		}
+
+		// Builds the typed expiration timer from raw GUI key events (digits only). Enter/Set applies it; Escape cancels.
+		private void CaptureExpirationInput()
+		{
+			var e = Event.current;
+			if(e == null || e.type != EventType.KeyDown) return;
+
+			if(e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter)
+			{
+				ApplyExpirationTimer();
+				typingExpiration = false;
+				e.Use();
+				return;
+			}
+
+			if(e.keyCode == KeyCode.Escape)
+			{
+				typingExpiration = false;
+				e.Use();
+				return;
+			}
+
+			if(e.keyCode == KeyCode.Backspace)
+			{
+				if(!string.IsNullOrEmpty(expirationInput))
+					expirationInput = expirationInput.Substring(0, expirationInput.Length - 1);
+				e.Use();
+				return;
+			}
+
+			char c = e.character;
+			// Digits only, capped at 9 so the parsed value stays inside int.
+			if(char.IsDigit(c) && expirationInput.Length < 9)
+			{
+				expirationInput += c;
+				e.Use();
+			}
+		}
+
+		private void ApplyExpirationTimer()
+		{
+			if(string.IsNullOrEmpty(expirationInput) || LobbyBehaviour.Instance == null) return;
+
+			if(int.TryParse(expirationInput, out int timer))
+			{
+				BatchedMessage batch = new BatchedMessage();
+				batch.QueueLobbyTimeExpiring(timer);
+				batch.FinishBatch();
+			}
 		}
 
 		// In Hide and Seek, completing a task will reduce the HnS hide timer depending on the length of the task (short, common, or long)
@@ -161,23 +237,32 @@ namespace HydraMenu.ui.sections
 				yield break;
 			}
 
-			PlayerTask task = PlayerControl.LocalPlayer.myTasks[0];
-			if(task == null)
-			{
-				Hydra.notifications.Send("Deplete HnS Timer", "This feature requires you to have at least one task.");
-				yield break;
-			}
-
-			// If the HnS hide timer is up, all our tasks are replaced with a task of ImportantTextTask
-			NormalPlayerTask normalTask = task.TryCast<NormalPlayerTask>();
-			if(normalTask == null)
+			if(gameFlow.IsFinalCountdown)
 			{
 				Hydra.notifications.Send("Deplete HnS Timer", "This feature cannot be used during the final hide time.");
 				yield break;
 			}
 
+			NormalPlayerTask applicableTask = null;
+			foreach(PlayerTask task in PlayerControl.LocalPlayer.myTasks)
+			{
+				NormalPlayerTask normalTask = task.TryCast<NormalPlayerTask>();
+				if(normalTask == null) continue;
+
+				applicableTask = normalTask;
+
+				// Prefer a Long task: a longer task deducts more time per completion, so fewer CompleteTask RPCs are needed.
+				if(normalTask.Length == NormalPlayerTask.TaskLength.Long) break;
+			}
+
+			if(applicableTask == null)
+			{
+				Hydra.notifications.Send("Deplete HnS Timer", "This feature requires you to have at least one task.");
+				yield break;
+			}
+
 			float completeDeduction;
-			switch(normalTask.Length)
+			switch(applicableTask.Length)
 			{
 				case NormalPlayerTask.TaskLength.None:
 				case NormalPlayerTask.TaskLength.Common:
@@ -194,28 +279,27 @@ namespace HydraMenu.ui.sections
 					break;
 			}
 
-			int totalCompletions = 0;
 			int requiredCompletions = (int)Math.Ceiling(gameFlow.currentHideTime / completeDeduction);
 
 			Hydra.Log.LogInfo($"Current escape time is {gameFlow.currentHideTime} and each task completion reduces the timer by {completeDeduction}s. We need to send the CompleteTask RPC {requiredCompletions} times to deplete the HnS timer.");
 
-			while(totalCompletions < requiredCompletions)
-			{
-				BatchedMessage batch = new BatchedMessage();
+			BatchedMessage batch = new BatchedMessage();
 
+			for(int i = 0; i <= requiredCompletions; i++)
+			{
 				// The message packing limit for non-hosts should be ten, but the Among Us anticheat disconnects us if we have more than six CompleteTask RPCs in a single batch
-				for(byte i = 0; i < 6; i++)
+				if(batch.msgCount >= 6)
 				{
-					batch.QueueCompleteTask(PlayerControl.LocalPlayer, (uint)task.Index);
+					batch.FinishBatch();
+					batch = new BatchedMessage();
+
+					yield return Effects.Wait(0.05f);
 				}
 
-				batch.FinishBatch();
-
-				// Each batch will contain exactly six CompleteTask RPCs, which may be more than the required task completions, but that is fine
-				totalCompletions += 6;
-
-				yield return Effects.Wait(0.05f);
+				batch.QueueCompleteTask(PlayerControl.LocalPlayer, applicableTask.Id);
 			}
+
+			batch.FinishBatch();
 		}
 	}
 }

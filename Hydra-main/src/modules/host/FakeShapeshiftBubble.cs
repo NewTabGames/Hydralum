@@ -7,6 +7,10 @@ namespace HydraMenu.modules.host
 	{
 		public FakeShapeshiftBubble() : base("FakeShapeshiftBubble") { }
 
+		private bool awaitingResponse = false;
+		private PlayerControl _shapeshiftTarget;
+		private byte _originalColor = 0;
+
 		private static FakeShapeshiftBubble Instance
 		{
 			get { return ModuleManager.fakeShapeshiftBubble; }
@@ -17,7 +21,7 @@ namespace HydraMenu.modules.host
 		{
 			static bool Prefix(PlayerControl __instance, PlayerControl target, bool shouldAnimate)
 			{
-				if(!Instance.Enabled || !shouldAnimate || __instance != PlayerControl.LocalPlayer || (!AmongUsClient.Instance.AmHost && Utilities.IsAnticheatPresent())) return true;
+				if(!Instance.Enabled || !shouldAnimate || __instance != PlayerControl.LocalPlayer) return true;
 
 				SendSpoofedShapeshift(__instance, target);
 				return false;
@@ -29,7 +33,7 @@ namespace HydraMenu.modules.host
 		{
 			static bool Prefix(PlayerControl __instance, bool shouldAnimate)
 			{
-				if(!Instance.Enabled || !shouldAnimate || __instance != PlayerControl.LocalPlayer || (!AmongUsClient.Instance.AmHost && Utilities.IsAnticheatPresent())) return true;
+				if(!Instance.Enabled || !shouldAnimate || __instance != PlayerControl.LocalPlayer) return true;
 
 				SendSpoofedShapeshift(__instance, __instance);
 				return false;
@@ -41,11 +45,42 @@ namespace HydraMenu.modules.host
 			int originalColor = shapeshifter.Data.DefaultOutfit.ColorId;
 			int newColor = Utilities.GetRandomUnusedColor();
 
-			BatchedMessage batch = new BatchedMessage();
-			batch.QueueSetColor(shapeshifter, (byte)newColor);
-			batch.QueueShapeshift(shapeshifter, target, true);
-			batch.QueueSetColor(shapeshifter, (byte)originalColor);
-			batch.FinishBatch();
+			if(!Utilities.IsAnticheatPresent() || AmongUsClient.Instance.AmHost)
+			{
+				// Host / no-anticheat: we can batch-forge the whole thing directly.
+				Instance.awaitingResponse = false;
+
+				BatchedMessage batch = new BatchedMessage();
+				batch.QueueSetColor(shapeshifter, (byte)newColor);
+				batch.QueueShapeshift(shapeshifter, target, true);
+				batch.QueueSetColor(shapeshifter, (byte)originalColor);
+				batch.FinishBatch();
+			}
+			else
+			{
+				// Non-host on an anticheat lobby: we can't batch-forge a SetColor, but we CAN change our OWN
+				// colour via CmdCheckColor (the server accepts it for our own player). Once the colour change
+				// comes back (SetColor postfix below), fire the raw Shapeshift and revert. All self-targeted,
+				// so no host authority is needed - this is what makes it work as a non-host.
+				Instance.awaitingResponse = true;
+				Instance._shapeshiftTarget = target;
+				Instance._originalColor = (byte)originalColor;
+
+				PlayerControl.LocalPlayer.CmdCheckColor((byte)newColor);
+			}
+		}
+
+		[HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.SetColor))]
+		class PlayerUpdateColor
+		{
+			static void Postfix(PlayerControl __instance)
+			{
+				if(!Instance.awaitingResponse || __instance != PlayerControl.LocalPlayer) return;
+				Instance.awaitingResponse = false;
+
+				PlayerControl.LocalPlayer.RpcShapeshift(Instance._shapeshiftTarget, true);
+				PlayerControl.LocalPlayer.CmdCheckColor(Instance._originalColor);
+			}
 		}
 	}
 }

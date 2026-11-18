@@ -37,8 +37,8 @@ namespace HydraMenu.ui.sections
 			GUILayout.Label("2. Open <b>player.amogus</b> with Notepad.");
 			GUILayout.Label("3. Change your name to one of these, then Save:");
 
-			DrawInvisibleNameRow("\\u00AD", "soft hyphen");
-			DrawInvisibleNameRow("\\u2060", "word joiner");
+			DrawInvisibleNameRow("\\u00AD");
+			DrawInvisibleNameRow("\\u2060");
 
 			GUILayout.Space(2);
 			GUILayout.Label("<color=#9A9A9A>4. Save the file, then launch Among Us.</color>");
@@ -58,10 +58,10 @@ namespace HydraMenu.ui.sections
 
 		// "escape" is the literal escape text (e.g. \u00AD) shown in the label and copied to the clipboard.
 		// Pasted into player.amogus, Among Us parses it into the invisible character.
-		private static void DrawInvisibleNameRow(string escape, string label)
+		private static void DrawInvisibleNameRow(string escape)
 		{
 			GUILayout.BeginHorizontal();
-			GUILayout.Label($"<color=#00FFAA><b>{escape}</b></color>  <color=#9A9A9A>({label})</color>", GUILayout.Width(220));
+			GUILayout.Label($"<color=#00FFAA><b>{escape}</b></color>", GUILayout.Width(220));
 			if (GUILayout.Button("Copy", GUILayout.Width(90)))
 			{
 				GUIUtility.systemCopyBuffer = escape;

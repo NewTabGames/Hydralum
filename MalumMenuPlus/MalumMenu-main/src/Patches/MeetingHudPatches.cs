@@ -29,87 +29,49 @@ public static class MeetingHud_Update
 {
     public static List<int> votedPlayers = new List<int>();
 
-    // Prefix patch of MeetingHud.Update to constantly bloop new vote icons for each new vote being cast during the meeting
-    public static void Prefix(MeetingHud __instance)
+    // Event-driven realtime votes (replaces the old per-frame Update prefix that rescanned every player and
+    // re-enabled every vote sprite each frame). Called only when vote state actually changes - MeetingHud.CastVote
+    // (host) and MeetingHud.Deserialize (non-host) - and bloops each NEWLY-voted player exactly once (votedPlayers
+    // dedupes). A single BloopAVoteIcon persists for the rest of the meeting, so no per-frame re-enable is needed.
+    public static void ScanAndBloopVotes(MeetingHud __instance)
     {
         if (!CheatToggles.revealVotes) return; // Only process when revealVotes is active
 
         try
         {
-            if (__instance == null || __instance.playerStates == null) return;
+            if (__instance == null || __instance.playerStates == null || __instance.resultsStartedAt > 0f) return;
 
-            if (__instance.resultsStartedAt <= 0f)
+            foreach (var playerVoteArea in __instance.playerStates)
             {
-                foreach (var playerVoteArea in __instance.playerStates)
+                if (!playerVoteArea) continue;
+
+                byte targetId = PlayerVoteAreaHelper.GetPlayerId(playerVoteArea);
+                int votedFor = PlayerVoteAreaHelper.GetVotedFor(playerVoteArea);
+
+                var playerData = GameData.Instance?.GetPlayerById(targetId);
+
+                if (playerData != null && !playerData.Disconnected && votedFor != PlayerVoteAreaHelper.HasNotVoted && votedFor != PlayerVoteAreaHelper.MissedVote && votedFor != PlayerVoteAreaHelper.DeadVote && !votedPlayers.Contains(targetId))
                 {
-                    if (!playerVoteArea) continue;
+                    votedPlayers.Add(targetId);
 
-                    byte targetId = PlayerVoteAreaHelper.GetPlayerId(playerVoteArea);
-                    int votedFor = PlayerVoteAreaHelper.GetVotedFor(playerVoteArea);
-
-                    var playerData = GameData.Instance?.GetPlayerById(targetId);
-
-                    if (playerData != null && !playerData.Disconnected && votedFor != PlayerVoteAreaHelper.HasNotVoted && votedFor != PlayerVoteAreaHelper.MissedVote && votedFor != PlayerVoteAreaHelper.DeadVote && !votedPlayers.Contains(targetId))
+                    bool bloopedOnPlayer = false;
+                    if (votedFor != PlayerVoteAreaHelper.SkippedVote && votedFor != 253)
                     {
-                        votedPlayers.Add(targetId);
-
-                        bool bloopedOnPlayer = false;
-                        if (votedFor != PlayerVoteAreaHelper.SkippedVote && votedFor != 253)
+                        foreach (var votedForArea in __instance.playerStates)
                         {
-                            foreach (var votedForArea in __instance.playerStates)
+                            if (votedForArea != null && PlayerVoteAreaHelper.GetPlayerId(votedForArea) == votedFor)
                             {
-                                if (votedForArea != null && PlayerVoteAreaHelper.GetPlayerId(votedForArea) == votedFor)
-                                {
-                                    __instance.BloopAVoteIcon(playerData, 0, votedForArea.transform);
-                                    bloopedOnPlayer = true;
-                                    break;
-                                }
+                                __instance.BloopAVoteIcon(playerData, 0, votedForArea.transform);
+                                bloopedOnPlayer = true;
+                                break;
                             }
                         }
-
-                        if (!bloopedOnPlayer && __instance.SkippedVoting != null)
-                        {
-                            __instance.SkippedVoting.SetActive(true);
-                            __instance.BloopAVoteIcon(playerData, 0, __instance.SkippedVoting.transform);
-                        }
                     }
-                }
 
-                foreach (var votedForArea in __instance.playerStates)
-                {
-                    if (!votedForArea) continue;
-
-                    var voteSpreader = votedForArea.transform.GetComponent<VoteSpreader>();
-                    if (!voteSpreader || voteSpreader.Votes == null) continue;
-
-                    foreach (var spriteRenderer in voteSpreader.Votes)
+                    if (!bloopedOnPlayer && __instance.SkippedVoting != null)
                     {
-                        if (spriteRenderer != null)
-                        {
-                            if (spriteRenderer.gameObject != null) spriteRenderer.gameObject.SetActive(true);
-                            spriteRenderer.enabled = true;
-                        }
-                    }
-                }
-
-                if (__instance.SkippedVoting != null)
-                {
-                    var voteSpreader = __instance.SkippedVoting.transform.GetComponent<VoteSpreader>();
-                    if (voteSpreader != null && voteSpreader.Votes != null)
-                    {
-                        if (voteSpreader.Votes.Count > 0)
-                        {
-                            __instance.SkippedVoting.SetActive(true);
-                        }
-
-                        foreach (var spriteRenderer in voteSpreader.Votes)
-                        {
-                            if (spriteRenderer != null)
-                            {
-                                if (spriteRenderer.gameObject != null) spriteRenderer.gameObject.SetActive(true);
-                                spriteRenderer.enabled = true;
-                            }
-                        }
+                        __instance.SkippedVoting.SetActive(true);
+                        __instance.BloopAVoteIcon(playerData, 0, __instance.SkippedVoting.transform);
                     }
                 }
             }
@@ -130,6 +92,27 @@ public static class MeetingHud_Update
             }
         }
         catch { }
+    }
+}
+
+// Event-driven realtime votes: bloop a voter's icon the moment their vote registers, instead of the old
+// per-frame rescan. The host applies votes via MeetingHud.CastVote; non-hosts receive them via the serialized
+// MeetingHud state (Deserialize). Both just re-run the deduped scan, which only bloops what's new.
+[HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.CastVote))]
+public static class MeetingHud_CastVote
+{
+    public static void Postfix(MeetingHud __instance)
+    {
+        MeetingHud_Update.ScanAndBloopVotes(__instance);
+    }
+}
+
+[HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Deserialize))]
+public static class MeetingHud_Deserialize
+{
+    public static void Postfix(MeetingHud __instance)
+    {
+        MeetingHud_Update.ScanAndBloopVotes(__instance);
     }
 }
 

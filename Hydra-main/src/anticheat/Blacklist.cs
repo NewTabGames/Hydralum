@@ -178,8 +178,8 @@ namespace HydraMenu.anticheat
 
 			if (IsBlacklistedIdentity(puid, fc))
 			{
-				// Already flagged - just refresh the last-known name so the list stays readable.
-				UpdateName(puid, fc, name);
+				// Already flagged - refresh the last-known name (and persist it) so the list stays readable.
+				if (UpdateName(puid, fc, name)) Save();
 				return false;
 			}
 
@@ -194,14 +194,36 @@ namespace HydraMenu.anticheat
 			return true;
 		}
 
-		private static void UpdateName(string puid, string fc, string name)
+		// Updates the stored (display) name of every entry matching this identity to `name`. Returns true if
+		// anything actually changed, so the caller persists only when needed. Keyed on PUID / friend code,
+		// never on the name itself, so it correctly follows a cheater across any number of name changes.
+		private static bool UpdateName(string puid, string fc, string name)
 		{
-			if (string.IsNullOrEmpty(name)) return;
+			if (string.IsNullOrEmpty(name)) return false;
+			bool changed = false;
 			foreach (var e in _entries)
 			{
 				bool match = (!string.IsNullOrEmpty(puid) && e.Puid == puid) || (!string.IsNullOrEmpty(fc) && e.FriendCode == fc);
-				if (match) e.Name = name;
+				if (match && e.Name != name)
+				{
+					e.Name = name;
+					changed = true;
+				}
 			}
+			return changed;
+		}
+
+		// Called when a blacklisted player is encountered in a lobby/game (driven from BlacklistEsp). If the
+		// player is on the list but is now using a different name than we have stored, update the stored name
+		// to the one they are using now and persist it. Because matching is on PUID / friend code, this keeps
+		// working no matter how many times they rename, and only writes to disk when the name actually changes.
+		public static void SyncName(PlayerControl p)
+		{
+			if (p == null) return;
+			var (puid, fc, name) = GetIdentity(p);
+			if (string.IsNullOrEmpty(name)) return;
+			if (!IsBlacklistedIdentity(puid, fc)) return;
+			if (UpdateName(puid, fc, name)) Save();
 		}
 
 		// Unflag a currently-online player (matches by PUID or friend code).

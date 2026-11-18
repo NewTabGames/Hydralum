@@ -11,6 +11,9 @@ namespace HydraMenu.network
 		public readonly MessageWriter writer;
 		public readonly int targetClientId;
 		public int msgCount = 0;
+		// When true, queued ops send over the network but are NOT applied to our own client (used by
+		// No Phantom Animation to move our avatar to the void on remote screens while we stay put locally).
+		public bool skipLocalHandling = false;
 
 		public BatchedMessage(int targetClientId = (int)Constants.OwnerIds.Everyone)
 		{
@@ -194,7 +197,8 @@ namespace HydraMenu.network
 		{
 			if(IsGlobal || AmTarget)
 			{
-				source.NetTransform.SnapTo(position, (ushort)(source.NetTransform.lastSequenceId + 1));
+				if(!skipLocalHandling)
+					source.NetTransform.SnapTo(position, (ushort)(source.NetTransform.lastSequenceId + 1));
 				if(AmTarget) return;
 			}
 
@@ -205,6 +209,45 @@ namespace HydraMenu.network
 			writer.Write((byte)RpcCalls.SnapTo);
 			NetHelpers.WriteVector2(position, writer);
 			writer.Write(seqId);
+			writer.EndMessage();
+
+			msgCount++;
+		}
+
+		public void QueueLobbyTimeExpiring(int timer)
+		{
+			if(IsGlobal || AmTarget)
+			{
+				LobbyBehaviour.Instance.HandleLobbyTimerExtensionRequest(timer, false, 255, 0, 0);
+				if(AmTarget) return;
+			}
+
+			writer.StartMessage((byte)GameDataTypes.RpcFlag);
+			writer.WritePacked(LobbyBehaviour.Instance.NetId);
+			writer.Write((byte)RpcCalls.LobbyTimeExpiring);
+			writer.WritePacked(timer);
+			writer.Write(false);
+			writer.EndMessage();
+
+			msgCount++;
+		}
+
+		public void QueueSpiritGuideMessage(byte[] sprites)
+		{
+			if(IsGlobal || AmTarget)
+			{
+				MessageWriter spritesWriter = MessageWriter.Get(SendOption.None);
+				spritesWriter.WriteBytesAndSize(sprites);
+
+				ShipStatus.Instance.socialMediumFeedSystem.HandleSpiritGuideMessage(MessageReader.Get(spritesWriter.ToByteArray(false)));
+
+				if(AmTarget) return;
+			}
+
+			writer.StartMessage((byte)GameDataTypes.RpcFlag);
+			writer.WritePacked(ShipStatus.Instance.NetId);
+			writer.Write((byte)RpcCalls.SpiritGuideMessage);
+			writer.WriteBytesAndSize(sprites);
 			writer.EndMessage();
 
 			msgCount++;
@@ -451,23 +494,6 @@ namespace HydraMenu.network
 			writer.Write((byte)RpcCalls.Shapeshift);
 			writer.WriteNetObject(target);
 			writer.Write(shouldAnimate);
-			writer.EndMessage();
-
-			msgCount++;
-		}
-
-		public void QueueUseZipline(PlayerControl source, ZiplineBehaviour zipline, bool fromTop)
-		{
-			if(IsGlobal || AmTarget)
-			{
-				zipline.Use(source, fromTop);
-				if(AmTarget) return;
-			}
-
-			writer.StartMessage((byte)GameDataTypes.RpcFlag);
-			writer.WritePacked(source.NetId);
-			writer.Write((byte)RpcCalls.UseZipline);
-			writer.Write(fromTop);
 			writer.EndMessage();
 
 			msgCount++;
