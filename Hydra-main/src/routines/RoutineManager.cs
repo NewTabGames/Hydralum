@@ -15,6 +15,7 @@ namespace HydraMenu.routines
 		public PetPlayerRoutine petPlayer = new PetPlayerRoutine();
 		public PlayerFollowerRoutine playerFollower = new PlayerFollowerRoutine();
 		public ReportBodySpam reportBodySpam = new ReportBodySpam();
+		public SchizoColorsRoutine schizoColors = new SchizoColorsRoutine();
 		public SpamInfluencerCues spamInfluencerCues = new SpamInfluencerCues();
 		public TeleportSpammer teleportSpammer = new TeleportSpammer();
 		public VoteSpammer voteSpammer = new VoteSpammer();
@@ -23,7 +24,7 @@ namespace HydraMenu.routines
 
 		public RoutineManager()
 		{
-			routineList = [ autoTriggerSpores, discoHost, doorTroller, glitterBomb, jailPlayer, petPlayer, playerFollower, reportBodySpam, spamInfluencerCues, teleportSpammer, voteSpammer ];
+			routineList = [ autoTriggerSpores, discoHost, doorTroller, glitterBomb, jailPlayer, petPlayer, playerFollower, reportBodySpam, schizoColors, spamInfluencerCues, teleportSpammer, voteSpammer ];
 		}
 
 		public void Update()

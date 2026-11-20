@@ -23,7 +23,11 @@ namespace MalumMenu
         private static CancellationTokenSource _cts;
         private static bool _started = false;
 
-        public const string CurrentHydralumVersion = "1.9.4";
+        // IMPORTANT: the Hydralum version is duplicated in BOTH plugins - here AND Hydra's PresenceTracker
+        // (separate assemblies, so neither can share the constant). Bump BOTH on every Hydralum release. If they
+        // drift, the lower one fails the required-version check and sets the shared "HydralumOutdated" AppDomain
+        // flag, which makes the OTHER (correct) plugin pop a bogus "UPDATE REQUIRED" dialog showing equal versions.
+        public const string CurrentHydralumVersion = "1.9.5";
         // Hydra's version, reported in presence/info. Malum can't reference Hydra's assembly, so keep
         // this in sync with Hydra's csproj <Version> on each Hydra bump.
         public const string HydraVersion = "2.2.0";

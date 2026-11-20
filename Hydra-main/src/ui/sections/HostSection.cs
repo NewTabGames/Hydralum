@@ -1,7 +1,6 @@
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using HydraMenu.modules;
 using HydraMenu.network;
-using Hazel;
 using InnerNet;
 using System;
 using System.Collections;
@@ -18,7 +17,6 @@ namespace HydraMenu.ui.sections
 
 		private byte selectedMap = 0;
 		private Controls.PlayerColors selectedColor = 0;
-		private static readonly System.Random rnd = new System.Random();
 
 		public static readonly Queue<InnerNetObject> lobbyList = new Queue<InnerNetObject>();
 		public static readonly Queue<InnerNetObject> shipList = new Queue<InnerNetObject>();
@@ -252,10 +250,7 @@ namespace HydraMenu.ui.sections
 				batch.FinishBatch();
 			}
 
-			if(GUILayout.Button("Schizo Colors"))
-			{
-				AmongUsClient.Instance.StartCoroutine(SchizoColors().WrapToIl2Cpp());
-			}
+			Hydra.routines.schizoColors.Enabled = GUILayout.Toggle(Hydra.routines.schizoColors.Enabled, "Schizo Colors");
 
 			Hydra.routines.discoHost.Enabled = Controls.GlobalPlayerSpecificToggle("Disco Party", Hydra.routines.discoHost.targets);
 
@@ -322,66 +317,6 @@ namespace HydraMenu.ui.sections
 			}
 
 			Hydra.notifications.Send("Kill In Lobby", "Sent lobby kills. Clients won't see a body/ghost.", 5);
-		}
-
-		// Schizo Colors (host): first broadcasts a normal baseline, then for EACH receiving client sends a SetColor
-		// RPC addressed to only that client for every player, with an independently re-rolled color. Each client
-		// ends up with a different color table, so everyone sees a different set of colors. We never call SetColor
-		// locally, so the host's authoritative GameData is left alone - the divergence lives only in each client's
-		// received RPCs. Host-authoritative: vanilla clients obey, no mod needed on them; does nothing as non-host.
-		private static IEnumerator SchizoColors()
-		{
-			if(Utilities.IsAnticheatPresent() && !AmongUsClient.Instance.AmHost)
-			{
-				Hydra.notifications.Send("Schizo Colors", "This feature can only be used if you are the host of the lobby.");
-				yield break;
-			}
-
-			// Phase 1: give everyone a normal, consistent baseline color (host-authoritative broadcast).
-			byte baseColor = 0;
-			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
-			{
-				if(player == null) continue;
-
-				player.RpcSetColor(baseColor);
-				baseColor++;
-				if(baseColor > 17) baseColor = 0;
-			}
-
-			yield return Effects.Wait(1f);
-
-			// Phase 2: per-client divergent SetColor RPCs. Same wire format as BatchedMessage.QueueSetColor
-			// (Data.NetId + color), but addressed to a single receiver at a time via StartRpcImmediately.
-			List<byte> pool = new List<byte>();
-
-			foreach(PlayerControl receiver in PlayerControl.AllPlayerControls)
-			{
-				if(receiver == null || receiver.Data == null) continue;
-
-				int receiverClientId = AmongUsClient.Instance.GetClientIdFromCharacter(receiver);
-
-				foreach(PlayerControl pc in PlayerControl.AllPlayerControls)
-				{
-					if(pc == null || pc.Data == null) continue;
-
-					if(pool.Count == 0)
-					{
-						for(byte c = 0; c <= 17; c++) pool.Add(c);
-					}
-
-					byte color = pool[rnd.Next(pool.Count)];
-					pool.Remove(color);
-
-					MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(pc.NetId, (byte)RpcCalls.SetColor, SendOption.Reliable, receiverClientId);
-					writer.Write(pc.Data.NetId);
-					writer.Write(color);
-					AmongUsClient.Instance.FinishRpcImmediately(writer);
-				}
-
-				yield return Effects.Wait(0.05f);
-			}
-
-			Hydra.notifications.Send("Schizo Colors", "Each player now sees a different set of colors.", 5);
 		}
 
 		private static void SpawnLobby()
