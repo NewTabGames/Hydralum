@@ -62,20 +62,31 @@ public static class AdvancedRoleCooldownEsp
     // matches the game giving a fresh kill cooldown when play resumes. Called every frame from HudManager.
     public static void Update()
     {
-        bool busy = MeetingHud.Instance != null || ExileController.Instance != null;
-        if (!busy) return;
+        if (PlayerControl.AllPlayerControls == null) return;
 
+        bool globalBusy = MeetingHud.Instance != null || ExileController.Instance != null;
         float dt = Time.deltaTime;
-        Freeze(_shapeshiftReady, dt);
-        Freeze(_vanishReady, dt);
-        Freeze(_ventReady, dt);
+
+        // Freeze a player's ability-cooldown estimates whenever that player can't act - globally during a
+        // meeting / ejection, and per-player while they're venting, in a task minigame or have the map open
+        // (CanMove is false then and the real cooldowns stop ticking). Previously this only froze globally
+        // during meetings, so a shapeshifter venting mid-cooldown would run their estimate down too fast.
+        foreach (var pc in PlayerControl.AllPlayerControls)
+        {
+            if (pc == null) continue;
+            if (!globalBusy && CooldownTimer.CanAct(pc)) continue;
+
+            byte id = pc.PlayerId;
+            FreezeOne(_shapeshiftReady, id, dt);
+            FreezeOne(_vanishReady, id, dt);
+            FreezeOne(_ventReady, id, dt);
+        }
     }
 
-    private static void Freeze(Dictionary<byte, float> d, float dt)
+    // Push one player's still-running timer forward by dt so its remaining time holds steady while paused.
+    private static void FreezeOne(Dictionary<byte, float> d, byte id, float dt)
     {
-        // Push still-running timers forward by dt so their remaining time holds steady during the meeting.
-        var keys = new List<byte>(d.Keys);
-        foreach (var k in keys) if (d[k] > Time.time) d[k] += dt;
+        if (d.TryGetValue(id, out var t) && t > Time.time) d[id] = t + dt;
     }
 
     private static float Rem(Dictionary<byte, float> d, byte id) => d.TryGetValue(id, out var t) ? t - Time.time : 0f;

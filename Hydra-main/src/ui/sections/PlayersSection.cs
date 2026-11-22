@@ -1063,7 +1063,10 @@ namespace HydraMenu.ui.sections
 
 			// Let the kill animation's one-shot reposition apply, then snap home - but only if the kill
 			// actually landed, so a refused kill never yanks a still-living player back across the map.
-			yield return new WaitForSeconds(0.5f);
+			// Kept short so the telekill snaps back quickly; the wait-for-IsDead above already overlaps the
+			// animation, so this only needs to outlast the one-shot reposition. Raise it if the snap-back
+			// ever lands too early and strands the killer on the victim.
+			yield return new WaitForSeconds(0.2f);
 
 			PlayerControl local = PlayerControl.LocalPlayer;
 			if (target != null && target.Data != null && target.Data.IsDead

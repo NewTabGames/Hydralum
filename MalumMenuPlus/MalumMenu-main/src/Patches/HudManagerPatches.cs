@@ -140,7 +140,8 @@ public static class HudManager_Update
 			MalumESP.FreecamCheat();
 			MinimapHandler.TrackPositions(); // record positions so the map can freeze them during meetings
 			KillCooldownEsp.Update(); // reset impostor cooldowns when gameplay resumes after a meeting/exile
-			AdvancedRoleCooldownEsp.Update(); // freeze role-ability cooldown estimates during meetings/exile
+			AdvancedRoleCooldownEsp.Update(); // freeze role-ability cooldown estimates while a player can't act
+				GuardianAngelEsp.Update(); // freeze GA protect-cooldown estimate while the guardian can't act
 			NocturneDoors.Tick(); // keep pinned doors (from the radar) shut
 			VotekickHandler.Tick(); // Auto votekick cycle & condition checks
 

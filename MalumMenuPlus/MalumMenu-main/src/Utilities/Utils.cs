@@ -225,8 +225,17 @@ public static class Utils
             catch { }
         }
 
+        // The murder was already applied on OUR client above (LocalPlayer.MurderPlayer). A MurderPlayer RPC
+        // addressed to our OWN client id loops back through the server and applies the kill a SECOND time -
+        // that is the "double kill": two kill animations fire, and the second one re-snaps us onto the victim
+        // AFTER DelayedSnapTo has already run, which is why the killer never returns to its previous spot.
+        // Only notify the OTHER clients; skip any character owned by us.
+        int localClientId = AmongUsClient.Instance.GetClientIdFromCharacter(PlayerControl.LocalPlayer);
+
         foreach (var item in PlayerControl.AllPlayerControls)
         {
+            if (item == null || AmongUsClient.Instance.GetClientIdFromCharacter(item) == localClientId) continue;
+
             MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(PlayerControl.LocalPlayer.NetId, (byte)RpcCalls.MurderPlayer, SendOption.Reliable, AmongUsClient.Instance.GetClientIdFromCharacter(item));
             writer.WriteNetObject(target);
             writer.Write((int)result);

@@ -27,7 +27,7 @@ namespace HydraMenu
         // (separate assemblies, so neither can share the constant). Bump BOTH on every Hydralum release. If they
         // drift, the lower one fails the required-version check and sets the shared "HydralumOutdated" AppDomain
         // flag, which makes the OTHER (correct) plugin pop a bogus "UPDATE REQUIRED" dialog showing equal versions.
-        public const string CurrentHydralumVersion = "1.9.5";
+        public const string CurrentHydralumVersion = "1.9.6";
         // Malum's version, reported in presence/info. Hydra can't reference Malum's assembly, so keep
         // this in sync with MalumMenu.malumVersion on each Malum bump.
         public const string MalumVersion = "3.3.1";

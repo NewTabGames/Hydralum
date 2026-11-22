@@ -7,6 +7,8 @@ public class MovementTab : ITab
 {
     public string name => "Self";
 
+    private bool _isTypingFriendCode;
+
     public void Draw()
     {
         GUILayout.BeginHorizontal();
@@ -26,6 +28,10 @@ public class MovementTab : ITab
         GUILayout.Space(15);
 
         DrawHandAnimations();
+
+        GUILayout.Space(15);
+
+        DrawAccount();
 
         GUILayout.EndVertical();
 
@@ -197,6 +203,66 @@ public class MovementTab : ITab
 
         GUILayout.Space(6);
         GUILayout.Label("Note: Visible to all players (serversided), but network latency causes faster speeds to look choppy/unrecognizable on other screens. Recommended speed: 0.8x - 1.3x.", GUIStylePreset.Hint);
+    }
+
+    private void DrawAccount()
+    {
+        GUILayout.Label("Account", GUIStylePreset.TabSubtitle);
+
+        if (GUILayout.Button("Unlock All Achievements", GUIStylePreset.NormalButton, GUILayout.Width(200f)))
+        {
+            AchievementUnlocker.UnlockAll();
+        }
+
+        GUILayout.Space(8);
+
+        CheatToggles.useCustomFriendCode = GUILayout.Toggle(CheatToggles.useCustomFriendCode, " Use Custom Friend Code (new account only)");
+
+        // Click-to-type field. GUILayout.TextField throws "Method unstripping failed" under IL2CPP, so - like
+        // every other text input in this menu - we capture typed characters from the GUI event stream
+        // ourselves. The control is always a Button (constant control count), so toggling never jumps the
+        // scroll view.
+        string code = CheatToggles.customFriendCode ?? "";
+        string fcLabel = _isTypingFriendCode
+            ? $"<color=yellow>{(code.Length == 0 ? "Type a code..." : code)}_</color>"
+            : (code.Length == 0 ? "Friend Code: <i>click to type</i>" : $"Friend Code: <b>{code}</b>");
+        if (GUILayout.Button(fcLabel, GUIStylePreset.NormalButton, GUILayout.Width(220f), GUILayout.Height(24)))
+            _isTypingFriendCode = !_isTypingFriendCode;
+
+        if (_isTypingFriendCode) CaptureFriendCodeInput();
+
+        GUILayout.Label("<color=#9A9A9A>Turn this on, click the field to type a code, then create a new account.</color>",
+            GUIStylePreset.Hint, GUILayout.Width(MenuUI.windowWidth * 0.40f));
+    }
+
+    // Builds the friend code from raw GUI key events (GUILayout.TextField crashes under IL2CPP). Friend codes
+    // are lower-case, <= 10 chars, letters/digits only (no spaces). Enter/Escape stop editing, Backspace deletes.
+    private void CaptureFriendCodeInput()
+    {
+        var e = Event.current;
+        if (e == null || e.type != EventType.KeyDown) return;
+
+        if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyCode.Escape)
+        {
+            _isTypingFriendCode = false;
+            e.Use();
+            return;
+        }
+
+        if (e.keyCode == KeyCode.Backspace)
+        {
+            string cur = CheatToggles.customFriendCode ?? "";
+            if (cur.Length > 0) CheatToggles.customFriendCode = cur.Substring(0, cur.Length - 1);
+            e.Use();
+            return;
+        }
+
+        char c = e.character;
+        if (c != '\0' && char.IsLetterOrDigit(c) && (CheatToggles.customFriendCode?.Length ?? 0) < 10)
+        {
+            CheatToggles.customFriendCode = (CheatToggles.customFriendCode ?? "") + char.ToLowerInvariant(c);
+            e.Use();
+        }
     }
 
     private void DrawTeleportLocations()

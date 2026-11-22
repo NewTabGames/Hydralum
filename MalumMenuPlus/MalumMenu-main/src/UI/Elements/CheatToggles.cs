@@ -91,6 +91,8 @@ public struct CheatToggles
     public static bool gaProtectCooldownEsp;
     public static bool advancedRoleCooldownEsp;
     public static bool showFriendCode;
+    public static bool useCustomFriendCode;
+    public static string customFriendCode = "";
     public static bool nameTagColors;
     public static bool hideMyGem;
     public static bool hideAllGems;

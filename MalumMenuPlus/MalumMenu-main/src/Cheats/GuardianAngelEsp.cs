@@ -53,6 +53,25 @@ public static class GuardianAngelEsp
 
         return "<color=#55ff55><size=70%>Ready</size></color>";
     }
+
+    // Freeze the protect-cooldown estimate whenever the guardian can't act - globally during a meeting /
+    // ejection, and per-player while they otherwise can't move. The real protect cooldown pauses then, so
+    // without this the estimate would keep ticking during meetings and show "Ready" too early. Called every
+    // frame from HudManager.Update.
+    public static void Update()
+    {
+        if (PlayerControl.AllPlayerControls == null) return;
+
+        bool globalBusy = MeetingHud.Instance != null || ExileController.Instance != null;
+        float dt = Time.deltaTime;
+
+        foreach (var pc in PlayerControl.AllPlayerControls)
+        {
+            if (pc == null) continue;
+            if (!_readyAt.TryGetValue(pc.PlayerId, out var t) || t <= Time.time) continue;
+            if (globalBusy || !CooldownTimer.CanAct(pc)) _readyAt[pc.PlayerId] = t + dt;
+        }
+    }
 }
 
 [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.ProtectPlayer))]

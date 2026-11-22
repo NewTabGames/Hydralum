@@ -53,6 +53,20 @@ public static class KillCooldownEsp
         bool busy = MeetingHud.Instance != null || ExileController.Instance != null;
         if (_wasBusy && !busy) ResetAllImpostors();
         _wasBusy = busy;
+        if (busy) return;
+
+        // Outside meetings, freeze a player's countdown whenever they can't currently act (venting, a task
+        // minigame, or the map open) - the real kill timer stops ticking then, so a plain real-time estimate
+        // would otherwise run down too early and show "Ready" before the impostor can actually kill again.
+        // This mirrors SickoMenu, which only decrements killTimer while IsKillTimerEnabled.
+        if (PlayerControl.AllPlayerControls == null) return;
+        float dt = Time.deltaTime;
+        foreach (var pc in PlayerControl.AllPlayerControls)
+        {
+            if (pc == null) continue;
+            if (!_readyAt.TryGetValue(pc.PlayerId, out var t) || t <= Time.time) continue;
+            if (!CooldownTimer.CanAct(pc)) _readyAt[pc.PlayerId] = t + dt;
+        }
     }
 
     // Remaining kill-cooldown estimate for a player (0 if ready / unknown). Exposed so Advanced Role
