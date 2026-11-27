@@ -4,7 +4,7 @@ using InnerNet;
 
 namespace MalumMenu;
 
-// Passive client fingerprinting, adapted from KrushMenu's ModDetection.
+// Passive client fingerprinting.
 //
 // Vanilla Among Us only sends PlayerControl RPCs whose callId is in the game's RpcCalls enum (plus a
 // few newer ones we track, like SpiritGuide). A menu that adds custom network features sends RPCs
@@ -18,7 +18,7 @@ namespace MalumMenu;
 //  - "Unmodded" means "no mod RPC seen", not a proof of innocence - a careful client stays vanilla.
 public static class MalumModDetection
 {
-    // callId -> menu name. Only the signatures with confirmed names from KrushMenu's list; anything
+    // callId -> menu name. Only the signatures with confirmed names; anything
     // else non-vanilla is reported generically as "Modded (RPC N)". Add entries here as you fingerprint
     // more menus (enable the Console tab's incoming-RPC logger to capture their callIds).
     private static readonly Dictionary<byte, string> KnownMods = new()
@@ -51,9 +51,9 @@ public static class MalumModDetection
         { 133, "Lunar / NjordMenu" },
         { 210, "Lunar / NjordMenu" },
         { 89,  "NjordMenu (Old)" },
-        { 202, "ModMenuCrew" },        // from Krush's spoof list (sends an "MMC_v5" handshake)
-        { 162, "Unknown (RPC 162)" },  // real menu in Krush's list; name obfuscated there
-        { 255, "Unknown (RPC 255)" },  // real menu in Krush's list; name obfuscated there
+        { 202, "ModMenuCrew" },        // sends an "MMC_v5" handshake
+        { 162, "Unknown (RPC 162)" },
+        { 255, "Unknown (RPC 255)" },
     };
 
     // playerId -> detected client label(s). Cleared on joining a new lobby.

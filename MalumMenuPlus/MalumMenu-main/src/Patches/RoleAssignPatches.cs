@@ -17,7 +17,8 @@ public static class LogicRoleSelectionNormal_AssignRolesFromList_RoleAssign
         Il2CppSystem.Collections.Generic.List<RoleTypes> roleList,
         ref int rolesAssigned)
     {
-        if (!CheatToggles.roleAssignerEnabled) return;
+        // On by default for the host (no manual toggle). It only does anything when the host has actually
+        // picked roles below; with no picks, ApplyPreChosen is a no-op and vanilla assignment runs as normal.
         if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
 
         try

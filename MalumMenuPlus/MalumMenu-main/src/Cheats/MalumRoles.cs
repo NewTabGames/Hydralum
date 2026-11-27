@@ -2,7 +2,7 @@ using AmongUs.GameOptions;
 
 namespace MalumMenu;
 
-// Role features adapted from Hydra (https://github.com/MrDiamond64/Hydra), GPL-3.0.
+// Role features.
 public static class MalumRoles
 {
     // Change your own role. Client-side by default (only you see it); as host we also send the

@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace MalumMenu;
 
-// --- Ported from NocturneRadar.cs ---
+// --- Radar ---
 // On-screen radar/minimap. The map itself is drawn procedurally from the live
 // ShipStatus room colliders (plus the embedded navigation graph for corridors),
 // NOT from baked map images. This keeps the map and the player dots in the exact
@@ -168,12 +168,12 @@ public sealed class RadarUI : MonoBehaviour
         try
         {
         EnsureStyle();
-        NocturnePalette p = NocturneStyle.Current;
+        GuiPalette p = GuiDraw.Current;
 
-        NocturneStyle.FillRounded(box, A(p.Window, 0.93f), 12);
-        NocturneStyle.FillRounded(new Rect(box.x, box.y, box.width, head + 6f * _sc), A(p.Accent, 0.10f), 12);
-        NocturneStyle.StrokeRounded(box, A(p.Accent, 0.55f), 12, 1);
-        NocturneStyle.Fill(new Rect(box.x, box.y + head + 3f * _sc, box.width, 1f), A(p.Accent, 0.35f));
+        GuiDraw.FillRounded(box, A(p.Window, 0.93f), 12);
+        GuiDraw.FillRounded(new Rect(box.x, box.y, box.width, head + 6f * _sc), A(p.Accent, 0.10f), 12);
+        GuiDraw.StrokeRounded(box, A(p.Accent, 0.55f), 12, 1);
+        GuiDraw.Fill(new Rect(box.x, box.y + head + 3f * _sc, box.width, 1f), A(p.Accent, 0.35f));
         _title.fontSize = Mathf.Max(9, Mathf.RoundToInt(11f * _sc));
         _title.normal.textColor = A(p.Accent, 1f);
         GUI.Label(new Rect(box.x, box.y + 3f * _sc, box.width, head), "◎  " + MapName(), _title);
@@ -181,8 +181,8 @@ public sealed class RadarUI : MonoBehaviour
         bool lockHover = lockRect.Contains(e.mousePosition);
         Color lockCol = locked ? new Color(0.96f, 0.32f, 0.32f, 1f)
             : (lockHover ? new Color(0.75f, 0.80f, 0.86f, 1f) : new Color(0.5f, 0.55f, 0.62f, 1f));
-        NocturneStyle.FillRounded(lockRect, A(new Color(0.10f, 0.10f, 0.13f), locked ? 0.9f : 0.55f), 4);
-        NocturneStyle.StrokeRounded(lockRect, A(lockCol, 0.85f), 4, 1);
+        GuiDraw.FillRounded(lockRect, A(new Color(0.10f, 0.10f, 0.13f), locked ? 0.9f : 0.55f), 4);
+        GuiDraw.StrokeRounded(lockRect, A(lockCol, 0.85f), 4, 1);
         DrawLock(lockRect, lockCol);
 
         // Collapse/expand chevron (top-left): ▾ when collapsed (click to expand), ▴ when expanded. Always
@@ -191,8 +191,8 @@ public sealed class RadarUI : MonoBehaviour
         {
             bool chevHover = chevRect.Contains(e.mousePosition);
             Color chevCol = chevHover ? new Color(0.80f, 0.85f, 0.92f) : new Color(0.58f, 0.63f, 0.70f);
-            NocturneStyle.FillRounded(chevRect, A(new Color(0.10f, 0.10f, 0.13f), 0.55f), 4);
-            NocturneStyle.StrokeRounded(chevRect, A(chevCol, 0.85f), 4, 1);
+            GuiDraw.FillRounded(chevRect, A(new Color(0.10f, 0.10f, 0.13f), 0.55f), 4);
+            GuiDraw.StrokeRounded(chevRect, A(chevCol, 0.85f), 4, 1);
             float ccx = chevRect.center.x, ccy = chevRect.center.y;
             float cww = chevRect.width * 0.24f, chh = chevRect.height * 0.15f;
             Color gc = A(chevHover ? p.Accent : new Color(0.84f, 0.88f, 0.94f), 1f);
@@ -211,7 +211,7 @@ public sealed class RadarUI : MonoBehaviour
         // Map body is hidden while collapsed so it can't cover player names.
         if (!collapsed)
         {
-            NocturneStyle.FillRounded(inner, A(new Color(0.24f, 0.26f, 0.30f), 0.55f), 6);
+            GuiDraw.FillRounded(inner, A(new Color(0.24f, 0.26f, 0.30f), 0.55f), 6);
 
             RadarNav.Graph g = RadarNav.Current();
             try
@@ -228,7 +228,7 @@ public sealed class RadarUI : MonoBehaviour
         }
 
         // Bottom action-button row: random Sabotage / Fix Sabotage / Invisibility / Close All Doors.
-        NocturneStyle.Fill(new Rect(box.x, footer.y - pad, box.width, 1f), A(p.Accent, 0.25f));
+        GuiDraw.Fill(new Rect(box.x, footer.y - pad, box.width, 1f), A(p.Accent, 0.25f));
         _btn.fontSize = Mathf.Max(8, Mathf.RoundToInt(9.5f * _sc));
         for (int i = 0; i < footBtns.Length; i++)
         {
@@ -237,8 +237,8 @@ public sealed class RadarUI : MonoBehaviour
             bool active = i == 2 && CheatToggles.invisibility;
             Color fillC = active || hov ? p.Accent : new Color(0.24f, 0.26f, 0.30f);
             float fillA = active ? 0.5f : (hov ? 0.35f : 0.55f);
-            NocturneStyle.FillRounded(footBtns[i], A(fillC, fillA), 4);
-            NocturneStyle.StrokeRounded(footBtns[i], A(p.Accent, active ? 0.85f : (hov ? 0.7f : 0.35f)), 4, 1);
+            GuiDraw.FillRounded(footBtns[i], A(fillC, fillA), 4);
+            GuiDraw.StrokeRounded(footBtns[i], A(p.Accent, active ? 0.85f : (hov ? 0.7f : 0.35f)), 4, 1);
             _btn.normal.textColor = A(active ? Color.white : (hov ? p.Accent : new Color(0.86f, 0.89f, 0.93f)), 1f);
             GUI.Label(footBtns[i], FootLabels[i], _btn);
         }
@@ -254,7 +254,7 @@ public sealed class RadarUI : MonoBehaviour
         float bodyH = r.yMax - 2f * _sc - bodyTop;
         if (bodyH < 1f)
             return;
-        NocturneStyle.FillRounded(new Rect(bx, bodyTop, bw, bodyH), A(col, 1f), 2);
+        GuiDraw.FillRounded(new Rect(bx, bodyTop, bw, bodyH), A(col, 1f), 2);
 
         float shW = bw * 0.72f;
         float shX = r.center.x - shW * 0.5f;
@@ -263,9 +263,9 @@ public sealed class RadarUI : MonoBehaviour
         float shH = bodyTop - shTop;
         if (shH < 1f)
             return;
-        NocturneStyle.Fill(new Rect(shX, shTop, th, shH), A(col, 1f));
-        NocturneStyle.Fill(new Rect(shX + shW - th, shTop, th, shH), A(col, 1f));
-        NocturneStyle.Fill(new Rect(shX, shTop, shW, th), A(col, 1f));
+        GuiDraw.Fill(new Rect(shX, shTop, th, shH), A(col, 1f));
+        GuiDraw.Fill(new Rect(shX + shW - th, shTop, th, shH), A(col, 1f));
+        GuiDraw.Fill(new Rect(shX, shTop, shW, th), A(col, 1f));
     }
 
     private static void EnsureStyle()
@@ -309,12 +309,12 @@ public sealed class RadarUI : MonoBehaviour
                     case 3: // Close: mirror the door dots - 1 click closes, double-click pins, click-while-pinned unpins
                     {
                         float now = Time.unscaledTime;
-                        if (NocturneDoors.HasPins)
-                            NocturneDoors.UnpinAll();                       // click while pinned -> unpin all
+                        if (DoorControl.HasPins)
+                            DoorControl.UnpinAll();                       // click while pinned -> unpin all
                         else if (now - _lastCloseClickTime < 0.35f)
-                            NocturneDoors.PinAll();                         // double click -> pin all shut
+                            DoorControl.PinAll();                         // double click -> pin all shut
                         else
-                            NocturneDoors.CloseAll();                       // single click -> close all once
+                            DoorControl.CloseAll();                       // single click -> close all once
                         _lastCloseClickTime = now;
                         break;
                     }
@@ -739,7 +739,7 @@ public sealed class RadarUI : MonoBehaviour
                     col.a = 0.4f;
 
                 if (pc == me)
-                    DrawDot(sp, (15f + pulse * 5f) * _sc, A(NocturneStyle.Current.Accent, 0.22f));
+                    DrawDot(sp, (15f + pulse * 5f) * _sc, A(GuiDraw.Current.Accent, 0.22f));
                 float d = (pc == me ? 11f : 8.5f) * _sc;
                 DrawDot(sp, d + 3f * _sc, A(Color.black, 0.6f));
                 DrawDot(sp, d, A(col, col.a));
@@ -849,12 +849,12 @@ public sealed class RadarUI : MonoBehaviour
             if (d == null) continue;
             Vector2 sp = Map(d.transform.position, r);
 
-            bool pinned = NocturneDoors.IsPinned((int)d.Room);
+            bool pinned = DoorControl.IsPinned((int)d.Room);
             Color col = pinned ? DoorPinned : (d.IsOpen ? DoorOpen : DoorClosed);
             float half = (pinned ? 4.5f : 4f) * _sc;
 
-            NocturneStyle.Fill(new Rect(sp.x - half - 1f, sp.y - half - 1f, half * 2f + 2f, half * 2f + 2f), A(Color.black, 0.75f));
-            NocturneStyle.Fill(new Rect(sp.x - half, sp.y - half, half * 2f, half * 2f), A(col, 1f));
+            GuiDraw.Fill(new Rect(sp.x - half - 1f, sp.y - half - 1f, half * 2f + 2f, half * 2f + 2f), A(Color.black, 0.75f));
+            GuiDraw.Fill(new Rect(sp.x - half, sp.y - half, half * 2f, half * 2f), A(col, 1f));
         }
     }
 
@@ -881,12 +881,12 @@ public sealed class RadarUI : MonoBehaviour
         int room = (int)hit.Room;
         float now = Time.unscaledTime;
 
-        if (NocturneDoors.IsPinned(room))
-            NocturneDoors.TogglePin(room); // click while pinned -> unpin
+        if (DoorControl.IsPinned(room))
+            DoorControl.TogglePin(room); // click while pinned -> unpin
         else if (now - _lastDoorClickTime < 0.35f && _lastDoorRoom == room)
-            NocturneDoors.TogglePin(room); // double click -> pin
+            DoorControl.TogglePin(room); // double click -> pin
         else
-            NocturneDoors.CloseOne(room);  // single click -> shut once
+            DoorControl.CloseOne(room);  // single click -> shut once
 
         _lastDoorClickTime = now;
         _lastDoorRoom = room;
@@ -903,7 +903,7 @@ public sealed class RadarUI : MonoBehaviour
         float ty = Mathf.Clamp01((mouse.y - r.y) / Mathf.Max(1f, r.height));
         Vector2 world = new Vector2(_min.x + tx * (_max.x - _min.x), _min.y + (1f - ty) * (_max.y - _min.y));
 
-        // Teleport straight to the exact point clicked (like SickoMenu) — hallways and other unnamed
+        // Teleport straight to the exact point clicked — hallways and other unnamed
         // spots included — instead of snapping to the nearest named room/location.
         MalumTeleport.TeleportTo(world, quick: true);
     }
@@ -933,12 +933,12 @@ public sealed class RadarUI : MonoBehaviour
             return;
         Matrix4x4 m = GUI.matrix;
         GUIUtility.RotateAroundPivot(Mathf.Atan2(dy, dx) * Mathf.Rad2Deg, a);
-        NocturneStyle.Fill(new Rect(a.x, a.y - w * 0.5f, len, w), col);
+        GuiDraw.Fill(new Rect(a.x, a.y - w * 0.5f, len, w), col);
         GUI.matrix = m;
     }
 }
 
-// --- Ported from NocturneNav.cs (graph loading only, no pathfinding) ---
+// --- Nav graph loading (no pathfinding) ---
 // Loads the embedded room-adjacency graph used to draw corridors on the radar.
 // Pure managed string parsing of the "*_onx.json" resources; no IL2CPP interop.
 
@@ -1149,12 +1149,12 @@ internal static class RadarNav
     }
 }
 
-// --- Ported from NocturneStyle.cs ---
+// --- Style ---
 
 
-internal sealed class NocturnePalette
+internal sealed class GuiPalette
 {
-    internal NocturnePalette(string id, string name, Color window, Color panel, Color accent, Color accentSoft,
+    internal GuiPalette(string id, string name, Color window, Color panel, Color accent, Color accentSoft,
         Color button, Color buttonHover, Color text, Color muted)
     {
         Id = id;
@@ -1181,16 +1181,16 @@ internal sealed class NocturnePalette
     internal Color Muted { get; }
 }
 
-internal static class NocturneStyle
+internal static class GuiDraw
 {
 
     private static Color Soft(Color a) => new Color(a.r * 0.34f, a.g * 0.34f, a.b * 0.34f, 1f);
 
-    private static NocturnePalette Theme(string name, Color accent) =>
-        new NocturnePalette(name.ToLowerInvariant(), name, Rgb(13, 13, 13), Rgb(21, 21, 21), accent, Soft(accent),
+    private static GuiPalette Theme(string name, Color accent) =>
+        new GuiPalette(name.ToLowerInvariant(), name, Rgb(13, 13, 13), Rgb(21, 21, 21), accent, Soft(accent),
             Rgb(31, 31, 31), Rgb(46, 46, 46), Rgb(237, 237, 236), Rgb(143, 143, 141));
 
-    private static readonly NocturnePalette[] Themes =
+    private static readonly GuiPalette[] Themes =
     {
         Theme("Orange", Rgb(255, 143, 36)),
         Theme("Amber", Rgb(255, 176, 40)),
@@ -1226,12 +1226,12 @@ internal static class NocturneStyle
     private static readonly Dictionary<int, GUIStyle> StrokeStyles = new Dictionary<int, GUIStyle>();
 
     internal static int ThemeCount => Themes.Length;
-    internal static NocturnePalette ThemeAt(int i) => Themes[Mathf.Clamp(i, 0, Themes.Length - 1)];
+    internal static GuiPalette ThemeAt(int i) => Themes[Mathf.Clamp(i, 0, Themes.Length - 1)];
 
-    private static NocturnePalette _resolved;
+    private static GuiPalette _resolved;
     private static int _resolvedFrame = -1;
 
-    internal static NocturnePalette Current
+    internal static GuiPalette Current
     {
         get
         {
@@ -1245,7 +1245,7 @@ internal static class NocturneStyle
         }
     }
 
-    private static NocturnePalette Resolve()
+    private static GuiPalette Resolve()
     {
         return Theme("Custom", Color.HSVToRGB(0.5f, 0.5f, 0.5f));
     }
@@ -1587,10 +1587,10 @@ internal static class NocturneStyle
     private static Color Rgb(byte r, byte g, byte b) => new Color(r / 255f, g / 255f, b / 255f, 1f);
 }
 
-// --- Ported from NocturneDoors.cs ---
+// --- Doors ---
 
 
-internal static class NocturneDoors
+internal static class DoorControl
 {
     private static readonly HashSet<int> _pinned = new HashSet<int>();
     private static readonly HashSet<int> _seen = new HashSet<int>();

@@ -44,6 +44,23 @@ namespace HydraMenu.ui.sections
 			}
 			GUILayout.EndHorizontal();
 
+			// What the anticheat auto-flags (blacklists) players for.
+			Anticheat.CheckSpoofedPlatforms = GUILayout.Toggle(Anticheat.CheckSpoofedPlatforms, "Flag Spoofed Platform Data");
+			Anticheat.CheckIllegalCosmetics = GUILayout.Toggle(Anticheat.CheckIllegalCosmetics, "Flag Illegal Cosmetics");
+			Anticheat.FlagSabotageInMeeting = GUILayout.Toggle(Anticheat.FlagSabotageInMeeting, "Flag Sabotage During Meeting");
+
+			// Auto-remove flagged players. As host this bans them from the lobby on sight; as a non-host it uses
+			// the server-authoritative kick (same as Players > Kick Player), which kicks in once the round has
+			// started. Persisted; always available.
+			bool ak = GUILayout.Toggle(Blacklist.AutoKick, "Auto-Kick Flagged");
+			if (ak != Blacklist.AutoKick)
+			{
+				Blacklist.AutoKick = ak;
+				Blacklist.Save();
+			}
+
+			GUILayout.Space(3);
+
 			// Segmented switch: pick a list instead of showing both at once.
 			GUILayout.BeginHorizontal();
 			bool pickOnline = GUILayout.Toggle(!showFlaggedView, $"Online ({onlineCount})", GUI.skin.button);
@@ -105,7 +122,11 @@ namespace HydraMenu.ui.sections
 							: "<color=#7FB0E8>Manual</color>";
 
 						GUILayout.BeginHorizontal();
+						GUILayout.BeginVertical();
 						GUILayout.Label(shownName);
+						if (!string.IsNullOrEmpty(e.Reason))
+							GUILayout.Label($"<size=10><color=#888888>{StripTags(e.Reason)}</color></size>");
+						GUILayout.EndVertical();
 						GUILayout.FlexibleSpace();
 						GUILayout.Label(badge, _badgeStyle, GUILayout.Width(58));
 						if (GUILayout.Button("Remove", GUILayout.Width(70)))

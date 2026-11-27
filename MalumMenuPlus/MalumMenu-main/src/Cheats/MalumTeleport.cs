@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace MalumMenu;
 
-// Teleport locations and logic adapted from Hydra (https://github.com/MrDiamond64/Hydra), GPL-3.0.
+// Teleport locations and logic.
 // The per-map coordinates are Hydra's map data, used verbatim.
 public static class MalumTeleport
 {

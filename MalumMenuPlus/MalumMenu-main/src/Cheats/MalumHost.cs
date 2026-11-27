@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace MalumMenu;
 
-// Host-authoritative one-shot actions adapted from Hydra (https://github.com/MrDiamond64/Hydra), GPL-3.0.
+// Host-authoritative one-shot actions.
 // Called directly from HostOnlyTab buttons (no persisted toggle needed).
 public static class MalumHost
 {
@@ -309,7 +309,7 @@ public static class MalumHost
     private static float _reportTimer;
 
     // Polled every frame from MenuUI.Update. While enabled and hosting, forces a meeting reporting a
-    // random player on an interval (adapted from Hydra's ReportBodySpam). We only fire when no meeting
+    // random player on an interval. We only fire when no meeting
     // is active so meetings don't stack - it re-triggers once the current one closes and the gap
     // elapses. Uses the same host meeting-open path as Call Meeting.
     public static void ReportBodySpam()
@@ -343,10 +343,10 @@ public static class MalumHost
 
     // ---- Disable security cameras ---------------------------------------------------------------
 
-    // Sends a Comms-sabotage state update to a single client (adapted from Hydra's DisableCameras).
+    // Sends a Comms-sabotage state update to a single client.
     // Being on cameras while comms are sabotaged is impossible, so blinding just the watcher's comms
     // kicks them off the cameras without visibly sabotaging comms for the rest of the lobby.
-    // This is a raw GameDataTo message - MalumMenu's StartRpcImmediately only builds RPC (not data)
+    // This is a raw GameDataTo message - our StartRpcImmediately only builds RPC (not data)
     // messages, so we construct the DataFlag system update by hand as Hydra does.
     public static void SendCommsStateTo(int targetClientId, bool active)
     {

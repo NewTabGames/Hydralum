@@ -222,7 +222,7 @@ public static class MalumSabotageCheats
 
     // Disable Lights (Auto Moving Switches): while on, randomly flips the electrical switches every
     // fraction of a second so they keep "moving" on their own and crew can't hold lights fixed.
-    // Ported from SickoMenu's DisableLightSwitches. Electrical only (Fungle has no lights).
+    // Electrical only (Fungle has no lights).
     public static void HandleAutoMovingSwitches(ShipStatus shipStatus, byte mapId)
     {
         if (!CheatToggles.autoMovingSwitches) return;
@@ -641,10 +641,10 @@ public static class MalumSabotageCheats
 
         if (!includeDoors) return;
 
-        // Pin Doors: hold every door shut (NocturneDoors.Tick re-closes pinned rooms every 0.7s, running
+        // Pin Doors: hold every door shut (DoorControl.Tick re-closes pinned rooms every 0.7s, running
         // from HudManager.Update, so they stay shut without the radar being open). Otherwise just close once.
         if (CheatToggles.sabotageAllDoors)
-            NocturneDoors.PinAll();
+            DoorControl.PinAll();
         else
             CheatToggles.closeAllDoors = true;
     }

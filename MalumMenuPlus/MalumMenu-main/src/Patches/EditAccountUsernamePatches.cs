@@ -2,9 +2,9 @@ using HarmonyLib;
 
 namespace MalumMenu;
 
-// Ported from SickoMenu (g0aty, GPL-3.0). When you create a NEW / guest account, the username you choose
-// becomes your friend code. SickoMenu hooks EditAccountUsername.SaveUsername and overwrites the username
-// text with a custom value right before it is saved; we do the same with a Harmony prefix.
+// When you create a NEW / guest account, the username you choose becomes your friend code. We hook
+// EditAccountUsername.SaveUsername with a Harmony prefix and overwrite the username text with a custom value
+// right before it is saved.
 //
 // Limitations (shown to the user in the UI): this only fires on the new-account username screen, so it does
 // nothing on an established Steam/Epic account, and other players can't see a guest account's friend code in
@@ -21,7 +21,7 @@ public static class EditAccountUsername_SaveUsername
             // SAFETY: only ever touch a brand-new / guest account that is choosing its code for the first
             // time. An account that already has a friend code is established (real Steam/Epic account), and
             // overwriting its username there would rename the player's own account - never do that. This
-            // mirrors MalumMenu's original guard (bail when EOSManager already reports a friend code).
+            // guard: bail when EOSManager already reports a friend code (i.e. an established account).
             if (EOSManager.Instance == null || !string.IsNullOrWhiteSpace(EOSManager.Instance.FriendCode)) return;
 
             // Friend codes are lower-case, <= 10 chars, no spaces. Ignore an invalid entry rather than

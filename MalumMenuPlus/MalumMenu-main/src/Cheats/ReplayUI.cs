@@ -224,36 +224,36 @@ public sealed class ReplayUI : MonoBehaviour
         Matrix4x4 mtx = GUI.matrix;
         Color prevCol = GUI.color;
         GUI.matrix = Matrix4x4.Scale(new Vector3(sc, sc, 1f));
-        // Global opacity: NocturneStyle draws and GUI.Label both multiply by GUI.color.a,
+        // Global opacity: GuiDraw draws and GUI.Label both multiply by GUI.color.a,
         // so tinting the ambient alpha fades the whole window uniformly.
         GUI.color = new Color(prevCol.r, prevCol.g, prevCol.b, prevCol.a * op);
         try
         {
             float sw = Screen.width / sc, sh = Screen.height / sc;
             Event e = Event.current;
-            NocturneStyle.ClampWindow(ref _win, sw, sh, 360f, 260f);
+            GuiDraw.ClampWindow(ref _win, sw, sh, 360f, 260f);
 
-            NocturnePalette p = NocturneStyle.Current;
+            GuiPalette p = GuiDraw.Current;
             float w = _win.width, h = _win.height;
 
-            NocturneStyle.FillRounded(_win, A(p.Window, 0.95f), 12);
-            NocturneStyle.StrokeRounded(_win, A(p.Accent, 0.28f), 12, 1);
-            NocturneStyle.Fill(new Rect(_win.x + 10f, _win.y + 30f - 1f, w - 20f, 1f), A(p.Accent, 0.35f));
+            GuiDraw.FillRounded(_win, A(p.Window, 0.95f), 12);
+            GuiDraw.StrokeRounded(_win, A(p.Accent, 0.28f), 12, 1);
+            GuiDraw.Fill(new Rect(_win.x + 10f, _win.y + 30f - 1f, w - 20f, 1f), A(p.Accent, 0.35f));
 
-            NocturneStyle.FillRounded(new Rect(_win.x + 12f, _win.y + 9f, 3f, 12f), p.Accent, 1);
+            GuiDraw.FillRounded(new Rect(_win.x + 12f, _win.y + 9f, 3f, 12f), p.Accent, 1);
             _title.normal.textColor = p.Text;
             GUI.Label(new Rect(_win.x + 20f, _win.y + 5f, w - 200f, 20f), "MATCH REPLAY", _title);
 
             Rect clr = new Rect(_win.x + w - 178f, _win.y + 6f, 20f, 18f);
             if (Hover(clr))
-                NocturneStyle.FillRounded(clr, A(Color.white, 0.08f), 6);
+                GuiDraw.FillRounded(clr, A(Color.white, 0.08f), 6);
             GUI.Label(new Rect(clr.x + clr.width / 2f - 7f, clr.y + 2f, 14f, 14f), "C", _chip);
             if (GUI.Button(clr, GUIContent.none, GUIStyle.none))
                 Clear();
 
             Rect foc = new Rect(_win.x + w - 154f, _win.y + 6f, 118f, 18f);
             _focRect = foc;
-            NocturneStyle.FillRounded(foc, _focusOpen || _focus != 255 ? A(p.Accent, 0.22f) : A(Color.white, 0.06f), 5);
+            GuiDraw.FillRounded(foc, _focusOpen || _focus != 255 ? A(p.Accent, 0.22f) : A(Color.white, 0.06f), 5);
             _chip.normal.textColor = _focus == 255 ? A(p.Muted, 0.9f) : p.Accent;
             GUI.Label(foc, (_focus == 255 ? "Player: all" : Trunc(NameById(_focus), 12)) + "  " + (_focusOpen ? "▴" : "▾"), _chip);
             if (GUI.Button(foc, GUIContent.none, GUIStyle.none))
@@ -261,7 +261,7 @@ public sealed class ReplayUI : MonoBehaviour
 
             Rect cls = new Rect(_win.x + w - 26f, _win.y + 6f, 20f, 18f);
             if (Hover(cls))
-                NocturneStyle.FillRounded(cls, A(new Color(0.9f, 0.3f, 0.3f), 0.25f), 6);
+                GuiDraw.FillRounded(cls, A(new Color(0.9f, 0.3f, 0.3f), 0.25f), 6);
             GUI.Label(new Rect(cls.x + cls.width / 2f - 7f, cls.y + 2f, 14f, 14f), "X", _chip);
             if (GUI.Button(cls, GUIContent.none, GUIStyle.none))
             {
@@ -279,7 +279,7 @@ public sealed class ReplayUI : MonoBehaviour
             {
                 Rect fr = new Rect(_win.x + 6f + i * (cw + gap), _win.y + 34f, cw, 18f);
                 bool on = (mask & (1 << i)) != 0;
-                NocturneStyle.FillRounded(fr, on ? A(p.Accent, 0.22f) : A(Color.white, 0.05f), 5);
+                GuiDraw.FillRounded(fr, on ? A(p.Accent, 0.22f) : A(Color.white, 0.05f), 5);
                 _chip.normal.textColor = on ? p.Accent : A(p.Muted, 0.8f);
                 GUI.Label(fr, cen[i], _chip);
                 if (GUI.Button(fr, GUIContent.none, GUIStyle.none))
@@ -287,7 +287,7 @@ public sealed class ReplayUI : MonoBehaviour
             }
 
             Rect body = new Rect(_win.x + 8f, _win.y + 58f, w - 16f, h - 58f - 30f);
-            NocturneStyle.FillRounded(body, A(new Color(0.20f, 0.22f, 0.26f), 0.55f), 6);
+            GuiDraw.FillRounded(body, A(new Color(0.20f, 0.22f, 0.26f), 0.55f), 6);
 
             Rect playBtn = new Rect(_win.x + 10f, _win.y + h - 26f, 22f, 20f);
             // Reserve a fixed strip on the right for the time read-out so it no longer sits on top of
@@ -304,7 +304,7 @@ public sealed class ReplayUI : MonoBehaviour
                 e.Use();
             }
 
-            NocturneStyle.FillRounded(playBtn, Hover(playBtn) ? A(p.Accent, 0.22f) : A(Color.white, 0.06f), 5);
+            GuiDraw.FillRounded(playBtn, Hover(playBtn) ? A(p.Accent, 0.22f) : A(Color.white, 0.06f), 5);
             _chip.normal.textColor = _playing ? p.Accent : p.Text;
             GUI.Label(playBtn, _playing ? "II" : "▶", _chip);
             if (e != null && e.type == EventType.MouseDown && e.button == 0 && playBtn.Contains(e.mousePosition))
@@ -359,7 +359,7 @@ public sealed class ReplayUI : MonoBehaviour
     }
 
     // Player-filter dropdown: pick a player (or All) directly instead of clicking through them.
-    private void DrawFocusDropdown(NocturnePalette p)
+    private void DrawFocusDropdown(GuiPalette p)
     {
         if (!_focusOpen)
             return;
@@ -372,8 +372,8 @@ public sealed class ReplayUI : MonoBehaviour
         float listH = (ids.Count + 1) * rowH + 4f;
         Rect list = new Rect(_focRect.x, _focRect.yMax + 2f, listW, listH);
 
-        NocturneStyle.FillRounded(list, A(new Color(0.10f, 0.11f, 0.13f), 0.98f), 6);
-        NocturneStyle.StrokeRounded(list, A(p.Accent, 0.5f), 6, 1);
+        GuiDraw.FillRounded(list, A(new Color(0.10f, 0.11f, 0.13f), 0.98f), 6);
+        GuiDraw.StrokeRounded(list, A(p.Accent, 0.5f), 6, 1);
 
         Event e = Event.current;
         // Click anywhere outside the list or the button closes the dropdown.
@@ -401,21 +401,21 @@ public sealed class ReplayUI : MonoBehaviour
         }
     }
 
-    private bool DrawFocusRow(Rect r, string label, bool selected, NocturnePalette p)
+    private bool DrawFocusRow(Rect r, string label, bool selected, GuiPalette p)
     {
         if (selected)
-            NocturneStyle.FillRounded(r, A(p.Accent, 0.22f), 4);
+            GuiDraw.FillRounded(r, A(p.Accent, 0.22f), 4);
         else if (Hover(r))
-            NocturneStyle.FillRounded(r, A(Color.white, 0.06f), 4);
+            GuiDraw.FillRounded(r, A(Color.white, 0.06f), 4);
         _chip.normal.textColor = selected ? p.Accent : p.Text;
         GUI.Label(r, label, _chip);
         return GUI.Button(r, GUIContent.none, GUIStyle.none);
     }
 
     
-    private void DrawSlider(Rect s, Rect timeBox, float sc, int mask, NocturnePalette p, float viewT)
+    private void DrawSlider(Rect s, Rect timeBox, float sc, int mask, GuiPalette p, float viewT)
     {
-        NocturneStyle.FillRounded(s, A(new Color(0.14f, 0.15f, 0.18f), 0.9f), 5);
+        GuiDraw.FillRounded(s, A(new Color(0.14f, 0.15f, 0.18f), 0.9f), 5);
         if (_hasT && _tMax > _tMin)
         {
             for (int i = 0; i < _events.Count; i++)
@@ -427,16 +427,16 @@ public sealed class ReplayUI : MonoBehaviour
                     continue;
                 float n = (ev.T - _tMin) / (_tMax - _tMin);
                 float x = s.x + 3f + n * (s.width - 6f);
-                NocturneStyle.Fill(new Rect(x - 1.2f * sc, s.y + 1f, 2.4f * sc, s.height - 2f), EvColor(ev.Type));
+                GuiDraw.Fill(new Rect(x - 1.2f * sc, s.y + 1f, 2.4f * sc, s.height - 2f), EvColor(ev.Type));
             }
         }
         float hx = _live ? s.xMax - 4f : s.x + 3f + _scrub * (s.width - 6f);
-        NocturneStyle.FillRounded(new Rect(hx - 2f * sc, s.y - 1f, 4f * sc, s.height + 2f), _live ? new Color(0.35f, 0.85f, 0.5f) : p.Accent, 2);
+        GuiDraw.FillRounded(new Rect(hx - 2f * sc, s.y - 1f, 4f * sc, s.height + 2f), _live ? new Color(0.35f, 0.85f, 0.5f) : p.Accent, 2);
 
         float total = Mathf.Max(0f, _tMax - _tMin);
         float cur = Mathf.Clamp(viewT - _tMin, 0f, total);
         // Read-out lives in its own strip to the right of the seek bar, not on top of it.
-        NocturneStyle.FillRounded(timeBox, A(new Color(0.07f, 0.08f, 0.10f), 0.92f), 4);
+        GuiDraw.FillRounded(timeBox, A(new Color(0.07f, 0.08f, 0.10f), 0.92f), 4);
         _chip.normal.textColor = _live ? new Color(0.35f, 0.85f, 0.5f) : p.Text;
         GUI.Label(timeBox, _live ? "LIVE" : (Fmt(cur) + " / " + Fmt(total)), _chip);
     }
@@ -455,7 +455,7 @@ public sealed class ReplayUI : MonoBehaviour
         {
             Vector2 a = Map(_rooms[i].mn, r);
             Vector2 d = Map(_rooms[i].mx, r);
-            NocturneStyle.FillRounded(new Rect(Mathf.Min(a.x, d.x), Mathf.Min(a.y, d.y), Mathf.Abs(d.x - a.x), Mathf.Abs(d.y - a.y)), new Color(0.55f, 0.6f, 0.72f, 0.10f), 4);
+            GuiDraw.FillRounded(new Rect(Mathf.Min(a.x, d.x), Mathf.Min(a.y, d.y), Mathf.Abs(d.x - a.x), Mathf.Abs(d.y - a.y)), new Color(0.55f, 0.6f, 0.72f, 0.10f), 4);
         }
 
         // Paths moved to bit 8 when the Teleport ("TP") column was inserted at bit 7.
@@ -668,8 +668,8 @@ public sealed class ReplayUI : MonoBehaviour
         float g = s * 0.56f;                 // side of the T's bounding square
         float t = Mathf.Max(2f, g * 0.28f);  // stroke thickness
         float left = c.x - g / 2f, top = c.y - g / 2f;
-        NocturneStyle.Fill(new Rect(left, top, g, t), Color.white);         // crossbar
-        NocturneStyle.Fill(new Rect(c.x - t / 2f, top, t, g), Color.white); // stem
+        GuiDraw.Fill(new Rect(left, top, g, t), Color.white);         // crossbar
+        GuiDraw.Fill(new Rect(c.x - t / 2f, top, t, g), Color.white); // stem
     }
 
     private static string EvLetter(byte t) => t switch
@@ -819,7 +819,7 @@ public sealed class ReplayUI : MonoBehaviour
     };
 
     private static void Dot(Vector2 c, float s, Color col)
-        => NocturneStyle.FillRounded(new Rect(c.x - s / 2f, c.y - s / 2f, s, s), col, Mathf.Max(1, (int)(s / 2f)));
+        => GuiDraw.FillRounded(new Rect(c.x - s / 2f, c.y - s / 2f, s, s), col, Mathf.Max(1, (int)(s / 2f)));
 
     private static Vector2 Catmull(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t)
     {
@@ -838,7 +838,7 @@ public sealed class ReplayUI : MonoBehaviour
         float len = Mathf.Sqrt(dx * dx + dy * dy);
         if (len < 0.5f)
         {
-            NocturneStyle.Fill(new Rect(a.x - half, a.y - half, w, w), col);
+            GuiDraw.Fill(new Rect(a.x - half, a.y - half, w, w), col);
             return;
         }
         float spacing = Mathf.Max(1f, w * 0.5f);
@@ -847,7 +847,7 @@ public sealed class ReplayUI : MonoBehaviour
         {
             float u = (float)i / steps;
             float cx = a.x + dx * u, cy = a.y + dy * u;
-            NocturneStyle.Fill(new Rect(cx - half, cy - half, w, w), col);
+            GuiDraw.Fill(new Rect(cx - half, cy - half, w, w), col);
         }
     }
 

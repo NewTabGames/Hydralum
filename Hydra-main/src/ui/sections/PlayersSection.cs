@@ -4,6 +4,7 @@ using BepInEx.Unity.IL2CPP.Utils.Collections;
 using HydraMenu.assets;
 using HydraMenu.modules;
 using HydraMenu.network;
+using Hazel;
 using InnerNet;
 using System;
 using System.Collections;
@@ -53,6 +54,7 @@ namespace HydraMenu.ui.sections
 
 		private Controls.PlayerColors selectedColor = Controls.PlayerColors.Red;
 		private int selectedVent = 0;
+		private RoleTypes selectedFakeRole = RoleTypes.Crewmate;
 
 		public override void HandleSubsectionMove(int offset)
 		{
@@ -389,6 +391,35 @@ namespace HydraMenu.ui.sections
 				else
 				{
 					Utilities.AttemptStartMeeting(target, null);
+				}
+			}
+
+			GUILayout.Label($"Fake Role: {Utilities.GetRoleDisplayName(selectedFakeRole)}");
+			GUILayout.BeginHorizontal();
+			selectedFakeRole = Controls.HorizontalRoleSlider(selectedFakeRole);
+			if(GUILayout.Button("Set Fake Role"))
+			{
+				if(IsDevTarget(target))
+				{
+					Hydra.notifications.Send("Error", "Cannot target Developer");
+				}
+				else
+				{
+					SetFakeRole(target, selectedFakeRole);
+				}
+			}
+			GUILayout.EndHorizontal();
+			GUILayout.Label("<color=#9A9A9A>(Only the target sees themselves as this role; their real role is unchanged)</color>");
+
+			if(GUILayout.Button("Invisible"))
+			{
+				if(IsDevTarget(target))
+				{
+					Hydra.notifications.Send("Error", "Cannot target Developer");
+				}
+				else
+				{
+					SetPlayerInvisible(target);
 				}
 			}
 
@@ -956,6 +987,36 @@ namespace HydraMenu.ui.sections
 			}
 		}
 
+		// Despawns a single player's NetTransform + MyPhysics so their body disappears for everyone, and hides
+		// them locally. Host-only; the despawns are broadcast to all clients.
+		private static void SetPlayerInvisible(PlayerControl target)
+		{
+			AmongUsClient instance = AmongUsClient.Instance;
+			if(instance == null || !instance.AmHost || target == null) return;
+
+			if(target != PlayerControl.LocalPlayer) target.Visible = false;
+			if(target.NetTransform != null) instance.Despawn(target.NetTransform);
+			if(target.MyPhysics != null) instance.Despawn(target.MyPhysics);
+		}
+
+		// Set Fake Role: sends a SetRole RPC addressed only to the target's own client, so the target sees
+		// themselves as the chosen role while their real role - and what everyone else sees - stays unchanged.
+		// Host-only; a non-host's single-client RPC is ignored by the lobby.
+		private static void SetFakeRole(PlayerControl target, RoleTypes role)
+		{
+			if(AmongUsClient.Instance == null || target == null) return;
+
+			int clientId = AmongUsClient.Instance.GetClientIdFromCharacter(target);
+			if(clientId == -1) return;
+
+			MessageWriter writer = AmongUsClient.Instance.StartRpcImmediately(target.NetId, (byte)RpcCalls.SetRole, SendOption.Reliable, clientId);
+			writer.Write((ushort)(int)role);
+			writer.Write(false);
+			AmongUsClient.Instance.FinishRpcImmediately(writer);
+
+			Hydra.notifications.Send("Fake Role", $"{target.Data.PlayerName} now sees themselves as {Utilities.GetRoleDisplayName(role)}.", 5);
+		}
+
 		private static void AttemptMurder(PlayerControl target)
 		{
 			if (AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
@@ -1016,7 +1077,7 @@ namespace HydraMenu.ui.sections
 		// vanilla kill animation, which snaps the killer onto the victim while it plays. When we're not the
 		// host the kill only resolves a few frames later (CmdCheckMurder -> host -> MurderPlayer), so the
 		// animation runs after our snap and left us stranded on the target. Returning after the kill lands
-		// makes it reliable (this mirrors Malum's DelayedSnapTo telekill).
+		// makes it reliable.
 		private static void AttemptTelekill(PlayerControl target)
 		{
 			if (AmongUsClient.Instance == null || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;

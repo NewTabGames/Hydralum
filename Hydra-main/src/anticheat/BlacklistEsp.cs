@@ -63,6 +63,9 @@ namespace HydraMenu.anticheat
 					return;
 				}
 
+				// This player is flagged: if Auto-Kick is on and we're host, remove them (throttled inside).
+				Blacklist.EnforceAutoKick(player);
+
 				var nameText = player.cosmetics.nameText;
 				if (nameText == null) return;
 

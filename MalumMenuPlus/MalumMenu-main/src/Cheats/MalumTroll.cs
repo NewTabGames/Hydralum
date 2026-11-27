@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace MalumMenu;
 
-// Troll features adapted from Hydra (https://github.com/MrDiamond64/Hydra), GPL-3.0.
+// Troll features.
 public static class MalumTroll
 {
     // Picks a random player in the lobby (excluding yourself by default), mirroring Hydra's helper.

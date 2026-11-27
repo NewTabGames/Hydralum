@@ -53,7 +53,7 @@ public static class Vent_CanUse
 // on-vent directional arrows can walk you to any vent on the map instead of just the map's default 1-3
 // connections. The game only supports three arrow targets per vent, so Left/Right traverse the chain and
 // Center jumps to the nearest other vent. Chain is Malum's shared nearest-vent tour; the original
-// connections are cached and restored whenever Vent Network is off. (Approach adapted from Nocturne.)
+// connections are cached and restored whenever Vent Network is off.
 [HarmonyPatch(typeof(Vent), nameof(Vent.SetButtons))]
 public static class Vent_SetButtons_Network
 {

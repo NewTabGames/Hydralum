@@ -3,10 +3,10 @@ using AmongUs.GameOptions;
 
 namespace MalumMenu;
 
-// Ported from SickoMenu (g0aty, GPL-3.0). AchievementManager keeps a static map of achievement-key ->
-// the game modes that achievement counts in. We walk every entry, make sure it counts for both Normal and
-// Hide-n-Seek (mirrors SickoMenu, so mode-gated achievements still unlock), then call UnlockAchievement,
-// which writes the unlock up to the EOS stats backend. Requires being logged in (AchievementManager exists).
+// AchievementManager keeps a static map of achievement-key -> the game modes that achievement counts in.
+// We walk every entry, make sure it counts for both Normal and Hide-n-Seek (so mode-gated achievements still
+// unlock), then call UnlockAchievement, which writes the unlock up to the EOS stats backend. Requires being
+// logged in (AchievementManager exists).
 public static class AchievementUnlocker
 {
     public static void UnlockAll()

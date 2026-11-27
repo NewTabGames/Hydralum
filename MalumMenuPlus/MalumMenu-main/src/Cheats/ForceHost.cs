@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 namespace MalumMenu;
 
 /// <summary>
-/// Force Host exploit ported from ViperMenu (Tuff feature set).
+/// Force Host exploit.
 /// Repeatedly votekicks the current lobby host via VoteBanSystem.CmdAddVote and re-joins
 /// the room code until host migration designates the local player as the new host.
 /// </summary>

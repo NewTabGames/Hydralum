@@ -90,8 +90,6 @@ namespace HydraMenu
 
     public static class AnnouncementManager
     {
-        private const string FirebaseUrl = "https://hydralum-presence-default-rtdb.firebaseio.com/announcement.json";
-        private static readonly HttpClient HttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
         private static string _lastSyncedJson = null;
         private static readonly object _syncLock = new object();
 
@@ -258,23 +256,11 @@ namespace HydraMenu
             catch { }
         }
 
-        public static async Task RefreshAsync(CancellationToken token = default)
+        // The announcement now arrives inside the presence sync bundle (PresenceTracker stashes the raw JSON
+        // in the AppDomain, which SyncFromAppDomain reads). Kept as a no-op so existing callers still compile.
+        public static Task RefreshAsync(CancellationToken token = default)
         {
-            try
-            {
-                string url = $"{FirebaseUrl}?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-                using var response = await HttpClient.GetAsync(url, token);
-                if (response.IsSuccessStatusCode)
-                {
-                    var json = await response.Content.ReadAsStringAsync(token);
-                    AppDomain.CurrentDomain.SetData("HydralumAnnouncementJson", json);
-                    SyncFromAppDomain();
-                }
-            }
-            catch
-            {
-                // Ignore network errors
-            }
+            return Task.CompletedTask;
         }
     }
 }

@@ -394,7 +394,7 @@ public class MenuUI : MonoBehaviour
             }
         }
 
-        // Clock overlay (Sicko/Nocturne style): live date + time pinned to the bottom-left corner, shown
+        // Clock overlay: live date + time pinned to the bottom-left corner, shown
         // everywhere (menu, lobby, in-game). Respects the 24hr/12hr setting used elsewhere.
         if (CheatToggles.showClock && !MalumMenu.isPanicked)
         {

@@ -4,7 +4,7 @@ using InnerNet;
 
 namespace MalumMenu;
 
-// Game-options plumbing adapted from Hydra (https://github.com/MrDiamond64/Hydra), GPL-3.0.
+// Game-options plumbing.
 // Lets the host push a modified copy of the game options to a single client (used for the per-player
 // grief buttons and the shapeshift-ratelimit bypass) without touching the real lobby settings.
 public static class MalumGameOptions

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace MalumMenu;
 
-// Serverside/networked invisibility, ported from KrushMenu (KrushMenu.features.Invisibility).
+// Serverside/networked invisibility.
 //
 // This is NOT a client-side effect: while enabled we suppress the local player's own position
 // broadcast (CustomNetworkTransform.FixedUpdate) and instead repeatedly send a real SnapTo RPC
@@ -32,7 +32,7 @@ public static class MalumInvisibility
     private static bool _wasEnabled;
 
     // Only meaningful inside an actual game - there is nowhere to hide in the lobby, and broadcasting
-    // the void teleport there would just desync us. Matches KrushMenu's OnlyInGame default.
+    // the void teleport there would just desync us.
     private static bool ShouldRun() => Enabled && ShipStatus.Instance != null;
 
     // Called from HudManager.Update: when invisibility is switched off, snap our avatar back to our

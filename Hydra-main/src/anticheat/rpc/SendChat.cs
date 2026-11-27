@@ -15,8 +15,16 @@ namespace HydraMenu.anticheat.rpc
 				return true;
 			}
 
+			// Dead players (ghosts) can legitimately use chat during the round to talk to other ghosts, so a
+			// chat from a ghost mid-game is normal - only LIVING players chatting outside a meeting is the
+			// modified-client signal. (Skipping this check for ghosts avoids flagging them.)
+			if(player.Data.IsDead)
+			{
+				return true;
+			}
+
 			// In the lobby ShipStatus is null, so lobby chat passes. During a meeting MeetingHud is present,
-			// so meeting chat (including ghost chat) passes. Everything else is active gameplay.
+			// so meeting chat passes. Everything else is active gameplay, where a living player cannot chat.
 			if(ShipStatus.Instance != null && MeetingHud.Instance == null)
 			{
 				Anticheat.Flag(player, $"{player.Data.PlayerName} sent a chat message outside of a meeting.");

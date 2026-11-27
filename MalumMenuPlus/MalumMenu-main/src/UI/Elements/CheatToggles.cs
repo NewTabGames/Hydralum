@@ -65,7 +65,7 @@ public struct CheatToggles
     public static bool noShapeshiftCooldown;
 
     // Influencer (SpiritGuide)
-    public static bool spiritGuideReach; // = KrushMenu's "Infinite Message Range"
+    public static bool spiritGuideReach; // Infinite Message Range
 
     // Guardian Angel
     public static bool gaInfiniteRange;
@@ -94,8 +94,7 @@ public struct CheatToggles
     public static bool useCustomFriendCode;
     public static string customFriendCode = "";
     public static bool nameTagColors;
-    public static bool hideMyGem;
-    public static bool hideAllGems;
+    public static bool hideMyDevTag; // Local-only: dev hides their own [DEV] tag on this client (recording).
     public static bool showPing = true;
     public static bool showFps;
     public static bool showClock;
@@ -273,7 +272,7 @@ public struct CheatToggles
     public static bool killAll;
     public static bool killAllCrew;
     public static bool killAllImps;
-    // Host-Only (ported from Hydra)
+    // Host-Only
     public static bool disableCloseDoors;
     public static bool disableMeetings;
     public static bool banMidGame;
@@ -286,7 +285,7 @@ public struct CheatToggles
     // AssignRolesFromList to force each player's pre-chosen role.
     public static bool roleAssignerEnabled;
 
-    // Protections (ported from Hydra) - all default off (opt-in); several sit in the network
+    // Protections - all default off (opt-in); several sit in the network
     // receive path, so they stay inert until you enable them.
     public static bool forceDtls;
     public static bool blockServerTeleports;
@@ -299,11 +298,11 @@ public struct CheatToggles
     public static bool preventVotekick;
     public static bool shapeshiftBypass;
 
-    // Spoofer (ported from Hydra)
+    // Spoofer
     public static bool versionSpoof;
     public static bool moddedProtocol;
 
-    // Anticheat (ported from Hydra) - detection + notifications only, all default off
+    // Anticheat - detection + notifications only, all default off
     public static bool anticheat;
     public static bool anticheatDiscard;
     public static bool anticheatPlatform;

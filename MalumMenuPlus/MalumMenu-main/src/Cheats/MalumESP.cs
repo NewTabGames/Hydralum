@@ -403,11 +403,22 @@ public static class MalumESP
 
         try
         {
-            // Prefer the recorded send-time state; fall back to live IsDead only for a bubble we never saw
-            // recorded (e.g. one created before this hook ran), which keeps old behaviour for that rare case.
+            // Decide whether this bubble should read as a ghost (dead-at-send-time) message:
+            //  - Living owner right now -> NEVER a ghost message. This is the fix for the grey bubble landing
+            //    on a living player's message: the game reuses pooled bubbles for its own vote-reveal notes
+            //    and for living players, and a stale recorded "true" from the bubble's previous DEAD owner
+            //    must not grey out the living player who now owns it.
+            //  - Dead owner now -> use the recorded send-time state, so a message they typed while ALIVE isn't
+            //    retroactively greyed the instant they die; only assume ghost when we have no record.
+            //  - Unknown owner -> trust the recorded state, else treat as not-ghost.
+            bool hasRecord = _chatSentAsGhost.TryGetValue(chatBubble.gameObject.GetInstanceID(), out bool recorded);
             bool sentAsGhost;
-            if (!_chatSentAsGhost.TryGetValue(chatBubble.gameObject.GetInstanceID(), out sentAsGhost))
-                sentAsGhost = chatBubble.playerInfo != null && chatBubble.playerInfo.IsDead;
+            if (chatBubble.playerInfo == null)
+                sentAsGhost = hasRecord && recorded;
+            else if (!chatBubble.playerInfo.IsDead)
+                sentAsGhost = false;
+            else
+                sentAsGhost = hasRecord ? recorded : true;
 
             // Only the bubble BACKGROUND is greyed for ghost messages - the name, message text and avatar keep
             // their full colour. Applied both ways because bubbles are pooled/reused.

@@ -5,7 +5,7 @@ using InnerNet;
 
 namespace MalumMenu;
 
-// Host-authoritative powers adapted from Hydra (https://github.com/MrDiamond64/Hydra), GPL-3.0.
+// Host-authoritative powers.
 // These are Harmony patches that read their CheatToggles directly, mirroring the No Game End
 // patches in LogicGameFlowPatches. They only have a real effect while you are the host.
 
@@ -70,8 +70,8 @@ public static class SecurityCameraSystemType_UpdateSystem
 [HarmonyPatch(typeof(LogicRoleSelectionNormal), nameof(LogicRoleSelectionNormal.AssignRolesFromList))]
 public static class LogicRoleSelectionNormal_AssignRolesFromList
 {
-    // Assign ourselves a chosen role at the start of the next round (adapted from Hydra's
-    // AlwaysImposter). The 2026.6.5 signature gained a teamMax parameter; Harmony matches the
+    // Assign ourselves a chosen role at the start of the next round. The 2026.6.5 signature gained a
+    // teamMax parameter; Harmony matches the
     // parameters we declare by name, so we simply omit teamMax.
     public static void Prefix(Il2CppSystem.Collections.Generic.List<NetworkedPlayerInfo> players,
         Il2CppSystem.Collections.Generic.List<RoleTypes> roleList, ref int rolesAssigned)

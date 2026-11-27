@@ -38,6 +38,7 @@ namespace HydraMenu.ui.sections
 
 			ModuleManager.disableGameEnd.Enabled = GUILayout.Toggle(ModuleManager.disableGameEnd.Enabled, "Disable Game End");
 			ModuleManager.disableVentClean.Enabled = GUILayout.Toggle(ModuleManager.disableVentClean.Enabled, "Disable Vent Clean");
+			ModuleManager.disableCloseDoors.Enabled = GUILayout.Toggle(ModuleManager.disableCloseDoors.Enabled, "Disable Close Doors");
 
 			ModuleManager.fakeShapeshiftBubble.Enabled = GUILayout.Toggle(ModuleManager.fakeShapeshiftBubble.Enabled, "Fake Shapeshift Bubble");
 
@@ -79,7 +80,12 @@ namespace HydraMenu.ui.sections
 			{
 				KillAllPlayersInLobby();
 			}
-			GUILayout.Label("<color=#9A9A9A>(Clients can not see the body/ghost)</color>");
+			GUILayout.Label("<color=#9A9A9A>Kill Everyone (In Lobby): clients can not see the body/ghost</color>");
+
+			if(GUILayout.Button("Invisible All Players"))
+			{
+				InvisibleAllPlayers();
+			}
 
 			GUILayout.BeginHorizontal();
 			if(GUILayout.Button("Force Crewmate Victory"))
@@ -257,6 +263,24 @@ namespace HydraMenu.ui.sections
 			GUILayout.Label($"Color randomization delay: {Hydra.routines.discoHost.RandomizationDelay:F2}s");
 			Hydra.routines.discoHost.RandomizationDelay = GUILayout.HorizontalSlider(Hydra.routines.discoHost.RandomizationDelay, 0.1f, 2.0f);
 
+		}
+
+		// Invisible All Players: despawns every player's NetTransform + MyPhysics
+		// netobjects so their body disappears for everyone, and hides them locally. Host-only; the despawns
+		// are broadcast to all clients.
+		private static void InvisibleAllPlayers()
+		{
+			AmongUsClient instance = AmongUsClient.Instance;
+			if(instance == null || !instance.AmHost || PlayerControl.AllPlayerControls == null) return;
+
+			foreach(PlayerControl player in PlayerControl.AllPlayerControls)
+			{
+				if(player == null) continue;
+
+				if(player != PlayerControl.LocalPlayer) player.Visible = false;
+				if(player.NetTransform != null) instance.Despawn(player.NetTransform);
+				if(player.MyPhysics != null) instance.Despawn(player.MyPhysics);
+			}
 		}
 
 		private static void KillAllPlayers()

@@ -171,6 +171,14 @@ public static class ChatBubble_SetName
     public static void Postfix(ChatBubble __instance)
 	{
         MalumESP.ChatNametags(__instance);
+
+        // Re-capture the send-time dead state here, not only in ChatController.AddChat. Bubbles are pooled, so
+        // a message that bypasses AddChat (e.g. the game's meeting vote-reveal lines) reuses a GameObject that
+        // may still carry a previous DEAD sender's ghost flag, which would wrongly grey an ALIVE player's
+        // message. SetName runs whenever a bubble is (re)assigned a player, so recording here keeps the flag
+        // in sync with whoever the bubble currently belongs to.
+        if (__instance != null)
+            MalumESP.RecordChatSendState(__instance, __instance.playerInfo != null && __instance.playerInfo.IsDead);
     }
 }
 
@@ -301,7 +309,6 @@ public static class Mushroom_FixedUpdate
     }
 }
 
-// Found here: https://github.com/g0aty/SickoMenu/blob/main/hooks/PlainDoor.cpp
 [HarmonyPatch(typeof(DoorBreakerGame), nameof(DoorBreakerGame.Start))]
 public static class DoorBreakerGame_Start
 {
@@ -318,7 +325,6 @@ public static class DoorBreakerGame_Start
     }
 }
 
-// Found here: https://github.com/g0aty/SickoMenu/blob/main/hooks/PlainDoor.cpp
 [HarmonyPatch(typeof(DoorCardSwipeGame), nameof(DoorCardSwipeGame.Begin))]
 public static class DoorCardSwipeGame_Begin
 {
@@ -335,7 +341,6 @@ public static class DoorCardSwipeGame_Begin
     }
 }
 
-// Found here: https://github.com/g0aty/SickoMenu/blob/main/hooks/PlainDoor.cpp
 [HarmonyPatch(typeof(MushroomDoorSabotageMinigame), nameof(MushroomDoorSabotageMinigame.Begin))]
 public static class MushroomDoorSabotageMinigame_Begin
 {
@@ -767,7 +772,6 @@ public static class IntroCutscene_CoBegin
     }
 }
 
-// Found here: https://github.com/g0aty/SickoMenu/blob/main/hooks/LobbyBehaviour.cpp
 [HarmonyPatch(typeof(GameContainer), nameof(GameContainer.SetupGameInfo))]
 public static class GameContainer_SetupGameInfo
 {

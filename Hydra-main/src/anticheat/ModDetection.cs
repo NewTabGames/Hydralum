@@ -3,7 +3,7 @@ using HarmonyLib;
 
 namespace HydraMenu.anticheat
 {
-	// Passive client fingerprinting (same idea as KrushMenu's ModDetection).
+	// Passive client fingerprinting.
 	//
 	// Vanilla Among Us only sends PlayerControl RPCs whose callId is in the RpcCalls enum (plus a few
 	// newer vanilla ones). A menu that adds custom network features sends RPCs with its own out-of-range
@@ -14,7 +14,7 @@ namespace HydraMenu.anticheat
 	// RPCs (Hydra and Malum included) have no custom callId and so read as "Unmodded".
 	internal static class ModDetection
 	{
-		// callId -> menu name, for menus with a confirmed signature (from KrushMenu's list). Anything
+		// callId -> menu name, for menus with a confirmed signature. Anything
 		// else non-vanilla is reported generically as "Modded (RPC N)".
 		private static readonly Dictionary<byte, string> KnownMods = new Dictionary<byte, string>()
 		{
@@ -46,9 +46,9 @@ namespace HydraMenu.anticheat
 			{ 133, "Lunar / NjordMenu" },
 			{ 210, "Lunar / NjordMenu" },
 			{ 89,  "NjordMenu (Old)" },
-			{ 202, "ModMenuCrew" },        // from Krush's spoof list (sends an "MMC_v5" handshake)
-			{ 162, "Unknown (RPC 162)" },  // real menu in Krush's list; name obfuscated there
-			{ 255, "Unknown (RPC 255)" }   // real menu in Krush's list; name obfuscated there
+			{ 202, "ModMenuCrew" },        // sends an "MMC_v5" handshake
+			{ 162, "Unknown (RPC 162)" },
+			{ 255, "Unknown (RPC 255)" }
 		};
 
 		// Newer-but-vanilla RPCs added after the pinned GameLibs; these must not be flagged.

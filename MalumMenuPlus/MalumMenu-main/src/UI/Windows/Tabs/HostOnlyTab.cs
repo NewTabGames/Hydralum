@@ -120,9 +120,9 @@ public class HostOnlyTab : ITab
     {
         GUILayout.Label("Role Assign", GUIStylePreset.TabSubtitle);
 
-        CheatToggles.roleAssignerEnabled = GUILayout.Toggle(CheatToggles.roleAssignerEnabled, " Enable Role Assigner");
-
-        if (!Utils.isHost && !Utils.isFreePlay)
+        if (Utils.isHost || Utils.isFreePlay)
+            GUILayout.Label("<color=#88ff88>Active as host - pick each player's role below.</color>", GUIStylePreset.Hint);
+        else
             GUILayout.Label("<color=#ffcc55>You must be the host for this to take effect.</color>", GUIStylePreset.Hint);
 
         GUILayout.Space(6f);

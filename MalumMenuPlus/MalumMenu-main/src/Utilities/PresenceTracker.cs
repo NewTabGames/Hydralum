@@ -11,13 +11,13 @@ namespace MalumMenu
 {
     public static class PresenceTracker
     {
-        private const string FirebaseUrl = "https://hydralum-presence-default-rtdb.firebaseio.com/presence";
+        // Base of the online service. Clients only ever POST their own status here and read back the
+        // online COUNT (plus announcement + required version). They cannot read anyone else's data.
+        private const string BackendUrl = "https://hydralum-core.hydralum.workers.dev";
         private static readonly string SessionId = Guid.NewGuid().ToString("N");
-        // The presence DB node is keyed by the player's STABLE id (PUID, else friend code) rather than a
-        // random per-launch GUID. A GUID key made every relaunch / extra game instance of the SAME account
-        // create a brand-new node that lingered (pruned only after 10 min), so one person showed up several
-        // times in the presence list. A stable key means an account always overwrites its single node.
-        // SessionId stays only as a last-resort fallback for a client with neither a PUID nor a friend code.
+        // The status key is the player's STABLE id (PUID, else friend code) rather than a random
+        // per-launch GUID, so relaunches / extra game instances of the SAME account overwrite one row
+        // instead of piling up. SessionId stays only as a last-resort fallback for a client with neither.
         private static volatile string _presenceKey;
         private static readonly HttpClient HttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
         private static CancellationTokenSource _cts;
@@ -27,32 +27,17 @@ namespace MalumMenu
         // (separate assemblies, so neither can share the constant). Bump BOTH on every Hydralum release. If they
         // drift, the lower one fails the required-version check and sets the shared "HydralumOutdated" AppDomain
         // flag, which makes the OTHER (correct) plugin pop a bogus "UPDATE REQUIRED" dialog showing equal versions.
-        public const string CurrentHydralumVersion = "1.9.6";
-        // Hydra's version, reported in presence/info. Malum can't reference Hydra's assembly, so keep
+        public const string CurrentHydralumVersion = "1.9.9";
+        // Hydra's version, reported in the status payload. Malum can't reference Hydra's assembly, so keep
         // this in sync with Hydra's csproj <Version> on each Hydra bump.
         public const string HydraVersion = "2.2.0";
-        public const string GitHubActionsUrl = "https://github.com/NewTabGames/Hydralum/actions";
+        public const string GitHubUrl = "https://github.com/NewTabGames/Hydralum";
         public static bool IsOutdated { get; set; } = false;
         public static string RequiredVersion { get; set; } = "1.2.0";
-        private static volatile bool _updateDismissed = false;
-
-        public static bool IsUpdateDismissed
-        {
-            get
-            {
-                if (_updateDismissed) return true;
-                try
-                {
-                    if (AppDomain.CurrentDomain.GetData("HydralumUpdateDismissed") is bool d && d)
-                    {
-                        _updateDismissed = true;
-                        return true;
-                    }
-                }
-                catch { }
-                return false;
-            }
-        }
+        // The outdated check is latched the first time we successfully read the required version (at launch).
+        // After that it never changes for this session, so pushing a new required version does not suddenly
+        // lock out a player who is already in-game - it only takes effect the next time they launch.
+        private static volatile bool _versionChecked = false;
 
         public static int OnlineCount { get; private set; } = 1;
 
@@ -68,10 +53,6 @@ namespace MalumMenu
         private static string _lastGameState = "Menus";
         private static volatile bool _forceRefresh = false;
 
-        // Structured list of active Hydralum peers in the current lobby
-        private static readonly List<PeerData> _currentRoomPeers = new();
-        private static readonly object _peerLock = new();
-
         public static int GetOnlineCount()
         {
             var val = AppDomain.CurrentDomain.GetData("HydralumOnlineCount");
@@ -83,13 +64,13 @@ namespace MalumMenu
         }
 
         private static float lastUpdateTime = 0f;
-        
+
         // Called on Unity Main Thread (e.g. MenuUI.Update)
         public static void UpdateMainThread()
         {
             if (UnityEngine.Time.unscaledTime - lastUpdateTime < 1f) return;
             lastUpdateTime = UnityEngine.Time.unscaledTime;
-            
+
             try
             {
                 bool inOnlineGame = false;
@@ -183,13 +164,6 @@ namespace MalumMenu
                     CurrentRoomCode = "";
                     gameState = "Menus";
                     id = -1;
-
-                    // Clear stale peer data from previous lobby
-                    lock (_peerLock)
-                    {
-                        _currentRoomPeers.Clear();
-                    }
-                    try { AppDomain.CurrentDomain.SetData("HydralumPeersJson", "[]"); } catch { }
                 }
 
                 CurrentGameState = gameState;
@@ -273,6 +247,9 @@ namespace MalumMenu
             return false;
         }
 
+        // A player is a dev if their stable identity (PUID / friend code) matches the hardcoded dev list.
+        // This resolves purely from in-game networked data, so the dev tag renders for everyone without any
+        // online lookup.
         public static bool IsDevUser(NetworkedPlayerInfo playerInfo)
         {
             if (playerInfo == null || playerInfo.Disconnected) return false;
@@ -310,7 +287,7 @@ namespace MalumMenu
                         {
                             targetPuid = charClient.ProductUserId;
                         }
-                        if (string.IsNullOrEmpty(targetFriendCode) && !string.IsNullOrEmpty(charClient.FriendCode))
+                        if (string.IsNullOrEmpty(targetFriendCode) && charClient != null && !string.IsNullOrEmpty(charClient.FriendCode))
                         {
                             targetFriendCode = charClient.FriendCode;
                         }
@@ -322,128 +299,19 @@ namespace MalumMenu
             if (IsDevId(targetPuid) || IsDevId(targetFriendCode))
                 return true;
 
-            // Also check if any active room peer marked as dev matches this player
-            lock (_peerLock)
-            {
-                foreach (var peer in _currentRoomPeers)
-                {
-                    if (peer == null) continue;
-                    if (IsDevId(peer.Puid) || IsDevId(peer.FriendCode))
-                    {
-                        if (!string.IsNullOrWhiteSpace(peer.Puid) && !string.IsNullOrWhiteSpace(targetPuid) &&
-                            string.Equals(peer.Puid.Trim(), targetPuid.Trim(), StringComparison.OrdinalIgnoreCase))
-                            return true;
-
-                        if (!string.IsNullOrWhiteSpace(peer.FriendCode) && !string.IsNullOrWhiteSpace(targetFriendCode) &&
-                            string.Equals(peer.FriendCode.Trim(), targetFriendCode.Trim(), StringComparison.OrdinalIgnoreCase))
-                            return true;
-
-                        if (!string.IsNullOrWhiteSpace(peer.Name) && !string.IsNullOrWhiteSpace(playerInfo.PlayerName) &&
-                            string.Equals(peer.Name.Trim(), playerInfo.PlayerName.Trim(), StringComparison.OrdinalIgnoreCase))
-                            return true;
-
-                        if (peer.PlayerId >= 0 && playerInfo.PlayerId >= 0 && peer.PlayerId == playerInfo.PlayerId)
-                            return true;
-                    }
-                }
-            }
-
             return false;
         }
 
-        public static bool IsHydralumUser(NetworkedPlayerInfo playerInfo)
+        // True if THIS client's own stable identity is a dev. Works outside a lobby (unlike the per-player
+        // overloads, which need a NetworkedPlayerInfo), so UI can gate dev-only convenience toggles.
+        public static bool IsLocalDev()
         {
-            if (playerInfo == null || playerInfo.Disconnected) return false;
-
-            // Devs are always Hydralum users
-            if (IsDevUser(playerInfo)) return true;
-
-            // Local player is always running Hydralum
-            if (PlayerControl.LocalPlayer != null && playerInfo == PlayerControl.LocalPlayer.Data)
-            {
-                return true;
-            }
-
-            string targetName = playerInfo.PlayerName ?? "";
-            int targetId = playerInfo.PlayerId;
-            string targetFriendCode = playerInfo.FriendCode ?? "";
-            string targetPuid = "";
-
             try
             {
-                if (AmongUsClient.Instance != null)
-                {
-                    var client = AmongUsClient.Instance.GetClientFromPlayerInfo(playerInfo);
-                    if (client != null)
-                    {
-                        if (!string.IsNullOrEmpty(client.ProductUserId)) targetPuid = client.ProductUserId;
-                        if (string.IsNullOrEmpty(targetFriendCode) && !string.IsNullOrEmpty(client.FriendCode)) targetFriendCode = client.FriendCode;
-                    }
-                    if (string.IsNullOrEmpty(targetPuid) && playerInfo.Object != null)
-                    {
-                        var charClient = AmongUsClient.Instance.GetClientFromCharacter(playerInfo.Object);
-                        if (charClient != null && !string.IsNullOrEmpty(charClient.ProductUserId))
-                        {
-                            targetPuid = charClient.ProductUserId;
-                        }
-                    }
-                }
+                if (IsDevId(LocalPuid) || IsDevId(LocalFriendCode)) return true;
+                if (IsDevId(EOSManager.Instance?.ProductUserId) || IsDevId(EOSManager.Instance?.FriendCode)) return true;
             }
             catch { }
-
-            // Check in-process cache
-            lock (_peerLock)
-            {
-                if (CheckPeerMatch(_currentRoomPeers, targetName, targetId, targetFriendCode, targetPuid))
-                    return true;
-            }
-
-            // Cross-plugin fallback via AppDomain
-            try
-            {
-                if (AppDomain.CurrentDomain.GetData("HydralumPeersJson") is string peersJson && !string.IsNullOrEmpty(peersJson))
-                {
-                    var domainPeers = JsonSerializer.Deserialize<List<PeerData>>(peersJson);
-                    if (domainPeers != null && CheckPeerMatch(domainPeers, targetName, targetId, targetFriendCode, targetPuid))
-                        return true;
-                }
-            }
-            catch { }
-
-            return false;
-        }
-
-        private static bool CheckPeerMatch(List<PeerData> peers, string targetName, int targetId, string targetFriendCode, string targetPuid)
-        {
-            if (peers == null || peers.Count == 0) return false;
-
-            foreach (var peer in peers)
-            {
-                if (peer == null) continue;
-
-                // 1. Pinpoint Match via PUID (EOS Product User ID)
-                if (!string.IsNullOrWhiteSpace(peer.Puid) && !string.IsNullOrWhiteSpace(targetPuid))
-                {
-                    if (string.Equals(peer.Puid.Trim(), targetPuid.Trim(), StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-
-                // 2. Pinpoint Match via Friend Code
-                if (!string.IsNullOrWhiteSpace(peer.FriendCode) && !string.IsNullOrWhiteSpace(targetFriendCode))
-                {
-                    if (string.Equals(peer.FriendCode.Trim(), targetFriendCode.Trim(), StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-
-                // 3. Strict Fallback: Both exact Name AND PlayerId must match simultaneously (never name-alone or id-alone)
-                if (!string.IsNullOrWhiteSpace(peer.Name) && !string.IsNullOrWhiteSpace(targetName))
-                {
-                    if (string.Equals(peer.Name, targetName, StringComparison.Ordinal) && peer.PlayerId == targetId && targetId >= 0)
-                    {
-                        return true;
-                    }
-                }
-            }
             return false;
         }
 
@@ -468,16 +336,15 @@ namespace MalumMenu
             {
                 _cts?.Cancel();
                 _started = false;
-                // Fire-and-forget cleanup (non-blocking): remove the node under the key we last wrote.
-                string delKey = _presenceKey ?? SessionId;
-                _ = Task.Run(async () => { try { using var r = await HttpClient.DeleteAsync($"{FirebaseUrl}/{delKey}.json"); } catch { } });
+                // No explicit delete: once we stop sending heartbeats the server drops our row on its own
+                // (it expires after a short window of silence). Clients have no way to delete rows anyway.
                 AppDomain.CurrentDomain.SetData("HydralumPresenceActive", null);
             }
             catch { }
         }
 
-        // Builds the stable presence-node key for this account. Prefers the EOS PUID (hex, always key-safe),
-        // then the friend code, and only falls back to the random SessionId if neither is known yet.
+        // Builds the stable status key for this account. Prefers the EOS PUID, then the friend code, and only
+        // falls back to the random SessionId if neither is known yet.
         private static string BuildPresenceKey()
         {
             if (!string.IsNullOrWhiteSpace(LocalPuid)) return SanitizeKey(LocalPuid);
@@ -485,14 +352,12 @@ namespace MalumMenu
             return SessionId;
         }
 
-        // Firebase keys may not contain '.', '$', '#', '[', ']', '/', or control characters. PUIDs are hex
-        // (safe); friend codes contain '#', so sanitize any key to be safe.
         private static string SanitizeKey(string s)
         {
             s = s.Trim();
             var sb = new StringBuilder(s.Length);
             foreach (char c in s)
-                sb.Append(c == '.' || c == '$' || c == '#' || c == '[' || c == ']' || c == '/' || char.IsControl(c) ? '_' : c);
+                sb.Append(char.IsControl(c) ? '_' : c);
             return sb.Length > 0 ? sb.ToString() : SessionId;
         }
 
@@ -502,43 +367,32 @@ namespace MalumMenu
             {
                 try
                 {
-                    long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                     string roomCode = CurrentRoomCode;
                     string pState = CurrentGameState;
                     string pName = LocalPlayerName;
                     int pId = LocalPlayerId;
                     string pFriendCode = LocalFriendCode;
                     string pPuid = LocalPuid;
-
-                    // Stable node key for this account (PUID, else friend code), so relaunches and extra
-                    // game instances overwrite one node instead of piling up as duplicates.
                     string key = BuildPresenceKey();
 
-                    // 1. Send heartbeat - but only once we actually have a player name. At launch the loop
-                    // can tick before LocalPlayer/the account name has loaded (pName is still ""); publishing
-                    // then would create an empty-named "Nameless" node in the presence DB (visible only in the
-                    // DevMenu) that lingers until it prunes. Skipping the write until named avoids ever creating
-                    // it - we still fall through to the fetch below, so the online count keeps working meanwhile.
+                    string responseJson = null;
+
+                    // Send our heartbeat - but only once we actually have a player name. At launch the loop can
+                    // tick before the account name has loaded (pName is still ""); publishing then would create
+                    // an empty-named row. Until named we still fetch the count below, so "Online" keeps working.
                     if (!string.IsNullOrEmpty(pName))
                     {
-                        // If our key changed since the last heartbeat (e.g. the PUID loaded after an earlier
-                        // friend-code/GUID write), delete the node under the old key so it doesn't linger.
-                        string prevKey = _presenceKey;
-                        if (!string.IsNullOrEmpty(prevKey) && prevKey != key)
-                        {
-                            try { using var delOld = await HttpClient.DeleteAsync($"{FirebaseUrl}/{prevKey}.json", token); } catch { }
-                        }
                         _presenceKey = key;
 
                         var payloadObj = new PresenceNode
                         {
+                            key = key,
                             name = pName,
                             room = roomCode,
                             state = pState,
                             p_id = pId,
                             friend_code = pFriendCode,
                             friend_puid = pPuid,
-                            last_seen = now,
                             last_seen_time = GetCentralTimeString(),
                             versions = new VersionInfo
                             {
@@ -549,183 +403,32 @@ namespace MalumMenu
                         };
 
                         string payload = JsonSerializer.Serialize(payloadObj);
-                        using (var content = new StringContent(payload, Encoding.UTF8, "application/json"))
-                        {
-                            using var putResp = await HttpClient.PutAsync($"{FirebaseUrl}/{key}.json", content, token);
-                        }
+                        using var content = new StringContent(payload, Encoding.UTF8, "application/json");
+                        using var resp = await HttpClient.PostAsync($"{BackendUrl}/presence", content, token);
+                        if (resp.IsSuccessStatusCode)
+                            responseJson = await resp.Content.ReadAsStringAsync(token);
+                    }
+                    else
+                    {
+                        // No name yet: read the public count/announcement/version without publishing anything.
+                        string syncUrl = $"{BackendUrl}/sync?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                        using var resp = await HttpClient.GetAsync(syncUrl, token);
+                        if (resp.IsSuccessStatusCode)
+                            responseJson = await resp.Content.ReadAsStringAsync(token);
                     }
 
-                    // 2. Fetch active presence nodes
-                    string fetchUrl = $"{FirebaseUrl}.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-                    using var response = await HttpClient.GetAsync(fetchUrl, token);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var json = await response.Content.ReadAsStringAsync(token);
-                        if (!string.IsNullOrWhiteSpace(json) && json != "null")
-                        {
-                            int active = 0;
-                            var matchedPeers = new List<PeerData>();
-                            var staleSessionIds = new List<string>();
-
-                            try
-                            {
-                                using var doc = JsonDocument.Parse(json);
-                                foreach (var prop in doc.RootElement.EnumerateObject())
-                                {
-                                    try
-                                    {
-                                        string sessionIdKey = prop.Name;
-                                        var el = prop.Value;
-                                        if (el.ValueKind != JsonValueKind.Object)
-                                        {
-                                            if (sessionIdKey != key) staleSessionIds.Add(sessionIdKey);
-                                            continue;
-                                        }
-
-                                        long lastSeen = 0;
-                                        if (el.TryGetProperty("last_seen", out var lsProp))
-                                        {
-                                            if (lsProp.TryGetInt64(out var lsVal)) lastSeen = lsVal;
-                                            else if (lsProp.TryGetInt32(out var lsInt)) lastSeen = lsInt;
-                                            else if (long.TryParse(lsProp.GetString(), out var lsParsed)) lastSeen = lsParsed;
-                                        }
-
-                                        // Clamp at 0 (do NOT Math.Abs): a peer whose device clock runs ahead
-                                        // writes a last_seen in the future, so now - lastSeen is negative.
-                                        // Math.Abs turned that into a large fake age that got the peer pruned
-                                        // even though they were online - a big part of the delete war.
-                                        long age = lastSeen > 0 ? Math.Max(0L, now - lastSeen) : 999999;
-                                        if (age < 60)
-                                        {
-                                            active++;
-
-                                            string room = el.TryGetProperty("room", out var rProp) ? rProp.GetString() ?? "" : "";
-                                            if (!string.IsNullOrEmpty(roomCode) &&
-                                                string.Equals(room, roomCode, StringComparison.OrdinalIgnoreCase) &&
-                                                sessionIdKey != key)
-                                            {
-                                                string peerName = el.TryGetProperty("name", out var nProp) ? nProp.GetString() ?? "" : "";
-                                                int peerId = el.TryGetProperty("p_id", out var idProp) && idProp.TryGetInt32(out var idVal) ? idVal : -1;
-                                                string fCode = el.TryGetProperty("friend_code", out var fcProp) ? fcProp.GetString() ?? "" : "";
-                                                string fPuid = el.TryGetProperty("friend_puid", out var fpProp) ? fpProp.GetString() ?? "" : "";
-
-                                                matchedPeers.Add(new PeerData
-                                                {
-                                                    Name = peerName,
-                                                    PlayerId = peerId,
-                                                    FriendCode = fCode,
-                                                    Puid = fPuid
-                                                });
-                                            }
-                                        }
-                                        else if (sessionIdKey != key && age >= 600)
-                                        {
-                                            // Only prune genuinely-dead nodes (10+ min with no heartbeat).
-                                            // The old 60s window made every client delete each other's still-
-                                            // active nodes the moment their clocks differed by ~1 min, which
-                                            // just got re-added on the next heartbeat - the endless delete war.
-                                            staleSessionIds.Add(sessionIdKey);
-                                        }
-                                    }
-                                    catch { }
-                                }
-                            }
-                            catch { }
-
-                            // Prune stale sessions asynchronously from Firebase
-                            if (staleSessionIds.Count > 0)
-                            {
-                                _ = Task.Run(async () =>
-                                {
-                                    foreach (var staleId in staleSessionIds)
-                                    {
-                                        try
-                                        {
-                                            using var delResp = await HttpClient.DeleteAsync($"{FirebaseUrl}/{staleId}.json");
-                                        }
-                                        catch { }
-                                    }
-                                });
-                            }
-
-                                lock (_peerLock)
-                                {
-                                    _currentRoomPeers.Clear();
-                                    _currentRoomPeers.AddRange(matchedPeers);
-                                }
-
-                                try
-                                {
-                                    string peersJson = JsonSerializer.Serialize(matchedPeers);
-                                    AppDomain.CurrentDomain.SetData("HydralumPeersJson", peersJson);
-                                }
-                                catch { }
-
-                                OnlineCount = Math.Max(1, active);
-                                AppDomain.CurrentDomain.SetData("HydralumOnlineCount", OnlineCount);
-                            }
-                        }
-
-                    // 3. Fetch announcement
-                    await AnnouncementManager.RefreshAsync(token);
-
-                    // 4. Check version requirement via /announcement/required_version
-                    try
-                    {
-                        string reqVer = "";
-
-                        // Try protected endpoint first
-                        try
-                        {
-                            string reqUrl = $"https://hydralum-presence-default-rtdb.firebaseio.com/announcement/required_version.json?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-                            using var reqResp = await HttpClient.GetAsync(reqUrl, token);
-                            if (reqResp.IsSuccessStatusCode)
-                            {
-                                var rj = await reqResp.Content.ReadAsStringAsync(token);
-                                if (!string.IsNullOrWhiteSpace(rj) && rj != "null")
-                                {
-                                    reqVer = rj.Trim().Trim('"');
-                                }
-                            }
-                        }
-                        catch { }
-
-                        if (!string.IsNullOrWhiteSpace(reqVer))
-                        {
-                            RequiredVersion = reqVer.Trim();
-                            // Semantic version comparison: only lock out if current < required
-                            string cleanReq = RequiredVersion.TrimStart('v', 'V');
-                            string cleanCur = CurrentHydralumVersion.TrimStart('v', 'V');
-                            if (!IsUpdateDismissed)
-                            {
-                                if (Version.TryParse(cleanReq, out var parsedReq) && Version.TryParse(cleanCur, out var parsedCur))
-                                {
-                                    IsOutdated = parsedCur < parsedReq;
-                                }
-                                else
-                                {
-                                    IsOutdated = !string.Equals(cleanReq, cleanCur, StringComparison.OrdinalIgnoreCase);
-                                }
-                                AppDomain.CurrentDomain.SetData("HydralumOutdated", IsOutdated);
-                            }
-                            else
-                            {
-                                IsOutdated = false;
-                                AppDomain.CurrentDomain.SetData("HydralumOutdated", false);
-                            }
-                            AppDomain.CurrentDomain.SetData("HydralumRequiredVersion", RequiredVersion);
-                        }
-                    }
-                    catch { }
+                    if (!string.IsNullOrWhiteSpace(responseJson) && responseJson != "null")
+                        ApplySyncResponse(responseJson);
                 }
                 catch
                 {
                     // Ignore network fluctuations
                 }
 
-                // Wait 15 seconds, or wake up sooner if room changed. Longer interval = the full-DB fetch +
-                // JSON parse (which feeds the IL2CPP GC and causes a periodic stutter) runs a third as often.
-                for (int i = 0; i < 30; i++)
+                // Heartbeat every ~30s (ticks are 500ms) so the online count and the dev presence view stay
+                // reasonably live without much traffic.
+                int ticks = 60;
+                for (int i = 0; i < ticks; i++)
                 {
                     if (_forceRefresh)
                     {
@@ -744,6 +447,59 @@ namespace MalumMenu
             }
         }
 
+        // Applies the server's reply bundle: the online count, the current announcement (stashed for
+        // AnnouncementManager, which reads it from the AppDomain), and the required version gate.
+        private static void ApplySyncResponse(string json)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Object) return;
+
+                if (root.TryGetProperty("online", out var onlineEl) && onlineEl.TryGetInt32(out var online))
+                {
+                    OnlineCount = Math.Max(1, online);
+                    try { AppDomain.CurrentDomain.SetData("HydralumOnlineCount", OnlineCount); } catch { }
+                }
+
+                if (root.TryGetProperty("announcement", out var annEl) && annEl.ValueKind == JsonValueKind.Object)
+                {
+                    try { AppDomain.CurrentDomain.SetData("HydralumAnnouncementJson", annEl.GetRawText()); } catch { }
+                }
+
+                if (root.TryGetProperty("required_version", out var rvEl))
+                {
+                    string reqVer = rvEl.ValueKind == JsonValueKind.String ? rvEl.GetString() : rvEl.ToString();
+                    ApplyRequiredVersion(reqVer);
+                }
+            }
+            catch { }
+        }
+
+        // Evaluates the required version ONCE, at launch (the first successful read), and latches the result for
+        // the rest of the session. Later changes to the required version are ignored until the game restarts.
+        private static void ApplyRequiredVersion(string reqVer)
+        {
+            if (_versionChecked) return;
+            if (string.IsNullOrWhiteSpace(reqVer)) return;
+            _versionChecked = true;
+
+            RequiredVersion = reqVer.Trim();
+            string cleanReq = RequiredVersion.TrimStart('v', 'V');
+            string cleanCur = CurrentHydralumVersion.TrimStart('v', 'V');
+            if (Version.TryParse(cleanReq, out var parsedReq) && Version.TryParse(cleanCur, out var parsedCur))
+            {
+                IsOutdated = parsedCur < parsedReq;
+            }
+            else
+            {
+                IsOutdated = !string.Equals(cleanReq, cleanCur, StringComparison.OrdinalIgnoreCase);
+            }
+            try { AppDomain.CurrentDomain.SetData("HydralumOutdated", IsOutdated); } catch { }
+            try { AppDomain.CurrentDomain.SetData("HydralumRequiredVersion", RequiredVersion); } catch { }
+        }
+
         private static Rect _lockoutWindowRect = new Rect(0, 0, 560, 340);
         private static GUIStyle _lockoutTitleStyle;
         private static GUIStyle _lockoutVerStyle;
@@ -755,8 +511,6 @@ namespace MalumMenu
         {
             try
             {
-                if (IsUpdateDismissed) return;
-
                 var outdatedVal = AppDomain.CurrentDomain.GetData("HydralumOutdated");
                 bool isOutdated = (outdatedVal is bool b && b) || IsOutdated;
                 if (!isOutdated) return;
@@ -846,7 +600,7 @@ namespace MalumMenu
                         normal = { textColor = new Color(0.88f, 0.88f, 0.90f) }
                     };
                 }
-                GUILayout.Label("You are running an <b>outdated version</b> of Hydralum. It is good to keep this menu up to date so your account stays undetected and you don't get bugged out.\n\nClick the button below to download the latest release build from GitHub Actions.", _lockoutBodyStyle);
+                GUILayout.Label("You are running an <b>outdated version</b> of Hydralum. It is good to keep this menu up to date so your account stays undetected and you don't get bugged out.\n\nClick the button below to download the latest release build from GitHub.", _lockoutBodyStyle);
 
                 GUILayout.FlexibleSpace();
 
@@ -861,18 +615,17 @@ namespace MalumMenu
                         normal = { textColor = Color.white }
                     };
                 }
-                if (GUILayout.Button("DOWNLOAD & UPDATE (GitHub Actions)", _lockoutBtnStyle, GUILayout.Height(42)))
+                if (GUILayout.Button("DOWNLOAD & UPDATE", _lockoutBtnStyle, GUILayout.Height(42)))
                 {
-                    Application.OpenURL(GitHubActionsUrl);
+                    Application.OpenURL(GitHubUrl);
+                    OpenPluginsFolder();
+                    Application.Quit();
                 }
 
                 GUILayout.Space(8);
 
-                // Action Buttons Row (Update Later & Exit Game)
-                GUILayout.BeginHorizontal();
-
-                // Update Later Button (Amber)
-                GUI.backgroundColor = new Color(0.95f, 0.65f, 0.15f);
+                // Exit Game Button (Red) - the only other option; this screen cannot be dismissed.
+                GUI.backgroundColor = new Color(0.85f, 0.22f, 0.22f);
                 if (_lockoutExitBtnStyle == null)
                 {
                     _lockoutExitBtnStyle = new GUIStyle(GUI.skin.button)
@@ -882,31 +635,28 @@ namespace MalumMenu
                         normal = { textColor = Color.white }
                     };
                 }
-                if (GUILayout.Button("Update Later", _lockoutExitBtnStyle, GUILayout.Height(30)))
-                {
-                    _updateDismissed = true;
-                    IsOutdated = false;
-                    try
-                    {
-                        AppDomain.CurrentDomain.SetData("HydralumUpdateDismissed", true);
-                        AppDomain.CurrentDomain.SetData("HydralumOutdated", false);
-                    }
-                    catch { }
-                    Application.OpenURL(GitHubActionsUrl);
-                }
-
-                GUILayout.Space(8);
-
-                // Exit Game Button (Red)
-                GUI.backgroundColor = new Color(0.85f, 0.22f, 0.22f);
-                if (GUILayout.Button("Exit Game", _lockoutExitBtnStyle, GUILayout.Height(30)))
+                if (GUILayout.Button("Exit Game", _lockoutExitBtnStyle, GUILayout.Height(34)))
                 {
                     Application.Quit();
                 }
 
-                GUILayout.EndHorizontal();
-
                 GUILayout.Space(8);
+            }
+            catch { }
+        }
+
+        // Opens the BepInEx plugins folder of THIS install (works wherever Among Us lives - Steam on another
+        // drive, Epic, etc.), falling back to the default Steam path only if BepInEx can't report its own path.
+        private static void OpenPluginsFolder()
+        {
+            try
+            {
+                string path = "";
+                try { path = BepInEx.Paths.PluginPath; } catch { }
+                if (string.IsNullOrEmpty(path))
+                    path = @"C:\Program Files (x86)\Steam\steamapps\common\Among Us\BepInEx\plugins";
+                path = path.Replace('/', '\\');
+                System.Diagnostics.Process.Start("explorer.exe", $"\"{path}\"");
             }
             catch { }
         }
@@ -939,23 +689,15 @@ namespace MalumMenu
             public string malum { get; set; } = MalumMenu.malumVersion;
         }
 
-        public class PeerData
-        {
-            public string Name { get; set; } = "";
-            public int PlayerId { get; set; } = -1;
-            public string FriendCode { get; set; } = "";
-            public string Puid { get; set; } = "";
-        }
-
         public class PresenceNode
         {
+            public string key { get; set; } = "";
             public string name { get; set; } = "";
             public string room { get; set; } = "";
             public string state { get; set; } = "Menus";
             public int p_id { get; set; } = -1;
             public string friend_code { get; set; } = "";
             public string friend_puid { get; set; } = "";
-            public long last_seen { get; set; }
             public string last_seen_time { get; set; } = "";
             public VersionInfo versions { get; set; } = new VersionInfo();
         }

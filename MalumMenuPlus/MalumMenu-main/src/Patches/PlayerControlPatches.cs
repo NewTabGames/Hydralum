@@ -207,7 +207,7 @@ public static class PlayerControl_CompleteTask
 
 // Roles > Impostor > Allow Tasks: when we're the host, make an Impostor's task completion actually register
 // (mark the PlayerTask complete + refresh the task-completion check). Host-only and sends no RPC, so there's
-// no anticheat exposure - mirrors KrushMenu's ForceCompleteAnyTask (which was also host-gated).
+// no anticheat exposure.
 [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.CompleteTask))]
 public static class PlayerControl_CompleteTask_ImpostorTasks
 {

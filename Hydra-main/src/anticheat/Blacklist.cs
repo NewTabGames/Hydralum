@@ -26,6 +26,11 @@ namespace HydraMenu.anticheat
 		// regardless. Persisted in the blacklist file.
 		public static bool AutoDetect = true;
 
+		// When on, flagged players are automatically removed on sight: BANNED if you're the host, or kicked via
+		// the server-authoritative exploit (once the round has started) if you're not. Persisted in the
+		// blacklist file alongside AutoDetect.
+		public static bool AutoKick = false;
+
 		public class Entry
 		{
 			public string Puid { get; set; }
@@ -39,6 +44,7 @@ namespace HydraMenu.anticheat
 		private class FileData
 		{
 			public bool AutoDetect { get; set; } = true;
+			public bool AutoKick { get; set; } = false;
 			public List<Entry> Entries { get; set; } = new List<Entry>();
 		}
 
@@ -85,6 +91,7 @@ namespace HydraMenu.anticheat
 					if (data != null)
 					{
 						AutoDetect = data.AutoDetect;
+						AutoKick = data.AutoKick;
 						if (data.Entries != null) _entries.AddRange(data.Entries.Where(e => e != null));
 					}
 				}
@@ -99,7 +106,7 @@ namespace HydraMenu.anticheat
 			{
 				if (!Directory.Exists(FOLDER_PATH)) Directory.CreateDirectory(FOLDER_PATH);
 				var opts = new JsonSerializerOptions { WriteIndented = true };
-				var data = new FileData { AutoDetect = AutoDetect, Entries = _entries };
+				var data = new FileData { AutoDetect = AutoDetect, AutoKick = AutoKick, Entries = _entries };
 				File.WriteAllText(FilePath, JsonSerializer.Serialize(data, opts));
 			}
 			catch { }
@@ -178,8 +185,11 @@ namespace HydraMenu.anticheat
 
 			if (IsBlacklistedIdentity(puid, fc))
 			{
-				// Already flagged - refresh the last-known name (and persist it) so the list stays readable.
-				if (UpdateName(puid, fc, name)) Save();
+				// Already flagged - refresh the last-known name AND merge in any NEW reason, so the entry
+				// reflects everything they've been caught for rather than only the first thing.
+				bool changed = UpdateName(puid, fc, name);
+				if (AddReason(puid, fc, reason)) changed = true;
+				if (changed) Save();
 				return false;
 			}
 
@@ -213,6 +223,39 @@ namespace HydraMenu.anticheat
 			return changed;
 		}
 
+		// Merges a new reason into every entry matching this identity, de-duping so the same reason is never
+		// listed twice. Returns true if anything changed, so an already-flagged player accumulates the full set
+		// of things they've been caught for (e.g. "illegal cosmetic | modded RPC | overflow attempt").
+		private static bool AddReason(string puid, string fc, string reason)
+		{
+			if (string.IsNullOrEmpty(reason)) return false;
+			bool changed = false;
+			foreach (var e in _entries)
+			{
+				bool match = (!string.IsNullOrEmpty(puid) && e.Puid == puid) || (!string.IsNullOrEmpty(fc) && e.FriendCode == fc);
+				if (!match) continue;
+
+				if (string.IsNullOrEmpty(e.Reason))
+				{
+					e.Reason = reason;
+					changed = true;
+				}
+				else if (!ReasonAlreadyListed(e.Reason, reason))
+				{
+					e.Reason = e.Reason + " | " + reason;
+					changed = true;
+				}
+			}
+			return changed;
+		}
+
+		private static bool ReasonAlreadyListed(string existing, string reason)
+		{
+			foreach (var part in existing.Split('|'))
+				if (string.Equals(part.Trim(), reason.Trim(), System.StringComparison.OrdinalIgnoreCase)) return true;
+			return false;
+		}
+
 		// Called when a blacklisted player is encountered in a lobby/game (driven from BlacklistEsp). If the
 		// player is on the list but is now using a different name than we have stored, update the stored name
 		// to the one they are using now and persist it. Because matching is on PUID / friend code, this keeps
@@ -244,6 +287,48 @@ namespace HydraMenu.anticheat
 			_entries.Remove(entry);
 			RebuildIndex();
 			Save();
+		}
+
+		// Throttle so we don't resend the kick RPC every FixedUpdate while a flagged player is still
+		// disconnecting. Keyed on owner id; a rejoin gets a fresh id and is re-kicked after the window.
+		private static readonly Dictionary<int, long> _lastAutoKick = new Dictionary<int, long>();
+		private const long AutoKickCooldownMs = 5000;
+
+		// Called per flagged player (driven from BlacklistEsp's per-frame sweep). When Auto-Kick is on, remove
+		// the flagged player on sight - throttled so we don't fire every FixedUpdate. Routing mirrors the
+		// Players > Kick Player feature via Utilities.KickPlayer: as HOST it bans them from the lobby; as a
+		// NON-HOST it runs the server-authoritative kick exploit, which only works once the round has started,
+		// so we wait for ShipStatus (and a server-authoritative lobby) before trying.
+		public static void EnforceAutoKick(PlayerControl p)
+		{
+			if (!AutoKick) return;
+			try
+			{
+				if (p == null || p.Data == null || p.Data.Disconnected) return;
+				if (AmongUsClient.Instance == null) return;
+				if (p == PlayerControl.LocalPlayer || p.AmOwner) return;        // never target yourself
+				try { if (PresenceTracker.IsDevUser(p.Data)) return; } catch { } // never target a developer
+
+				bool host = AmongUsClient.Instance.AmHost;
+				if (!host)
+				{
+					// Non-host kick only works in a server-authoritative lobby, after the round starts, and
+					// never against the lobby host. Bail quietly otherwise so we don't spam notifications.
+					if (ShipStatus.Instance == null) return;
+					if (p.OwnerId == AmongUsClient.Instance.HostId) return;
+					if (!Utilities.IsAnticheatPresent()) return;
+				}
+
+				int ownerId = p.OwnerId;
+				long now = System.Environment.TickCount64;
+				if (_lastAutoKick.TryGetValue(ownerId, out long last) && now - last < AutoKickCooldownMs) return;
+				_lastAutoKick[ownerId] = now;
+
+				// Host -> ban; non-host -> server-authoritative kick. Utilities.KickPlayer picks the path and
+				// handles its own notification.
+				Utilities.KickPlayer(p);
+			}
+			catch { }
 		}
 
 		public static void Clear()

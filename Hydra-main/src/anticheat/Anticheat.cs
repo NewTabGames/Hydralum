@@ -40,10 +40,17 @@ namespace HydraMenu.anticheat
 			{ RpcCalls.ClimbLadder, new ClimbLadder() },
 			{ RpcCalls.UsePlatform, new UsePlatform() },
 			{ RpcCalls.UpdateSystem, new UpdateSystem() },
-			{ RpcCalls.SetLevel, new SetLevel() }
+			{ RpcCalls.SetLevel, new SetLevel() },
+			{ RpcCalls.SetHatStr, new SetHatStr() },
+			{ RpcCalls.SetSkinStr, new SetSkinStr() },
+			{ RpcCalls.SetVisorStr, new SetVisorStr() },
+			{ RpcCalls.SetPetStr, new SetPetStr() }
 		};
 
 		public static bool CheckSpoofedPlatforms { get; set; } = true;
+
+		// Flag players wearing cosmetics that can't be obtained legitimately (see IllegalCosmetics).
+		public static bool CheckIllegalCosmetics { get; set; } = true;
 
 		// Flag someone who calls a sabotage while a meeting is active (also blacklists them, like the
 		// non-impostor sabotage check). Toggleable - part of the UpdateSystem check.

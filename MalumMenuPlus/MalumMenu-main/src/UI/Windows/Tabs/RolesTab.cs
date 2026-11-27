@@ -163,7 +163,7 @@ public class RolesTab : ITab
     {
         GUILayout.Label("Influencer", GUIStylePreset.TabSubtitle);
 
-        // "Reach" is KrushMenu's Infinite Message Range (SpiritGuideRole.FindClosestTarget bypass).
+        // "Reach" is Infinite Message Range (SpiritGuideRole.FindClosestTarget bypass).
         CheatToggles.spiritGuideReach = GUILayout.Toggle(CheatToggles.spiritGuideReach, " Reach");
     }
 

@@ -498,7 +498,7 @@ public static class Utils
     }
 
     // Whether the current lobby enforces server-side anticheat. True on vanilla online lobbies (net
-    // objects owned by the server), false on local, freeplay, and modded lobbies. Ported from Hydra.
+    // objects owned by the server), false on local, freeplay, and modded lobbies.
     public static bool IsAnticheatPresent()
     {
         if (Constants.IsVersionModded() || PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null)
@@ -592,33 +592,22 @@ public static class Utils
             var level = playerInfo.PlayerLevel + 1;
 
             bool isDev = PresenceTracker.IsDevUser(playerInfo);
-            bool isHydralum = isDev || PresenceTracker.IsHydralumUser(playerInfo);
-            bool isLocal = PlayerControl.LocalPlayer != null && playerInfo == PlayerControl.LocalPlayer.Data;
 
-            bool showGem = isHydralum;
-            if (CheatToggles.hideAllGems)
+            // Local-only convenience: let the dev hide their OWN [DEV] tag on this client (e.g. while
+            // recording a video). This only changes what this client renders - everyone else still sees it.
+            if (isDev && CheatToggles.hideMyDevTag && PlayerControl.LocalPlayer != null
+                && playerInfo == PlayerControl.LocalPlayer.Data)
             {
-                showGem = false;
-            }
-            else if (isLocal && CheatToggles.hideMyGem)
-            {
-                showGem = false;
+                isDev = false;
             }
 
-            string gemTop = "";
-            string gemInline = "";
-            if (showGem)
+            // The dev keeps a gold [DEV] tag above their name, visible to everyone. No other name markers.
+            string devTop = "";
+            string devInline = "";
+            if (isDev)
             {
-                if (isDev)
-                {
-                    gemTop = "<color=#FFD700>[DEV]</color>\r\n";
-                    gemInline = "<color=#FFD700>[DEV]</color> ";
-                }
-                else
-                {
-                    gemTop = "<color=#00E5FF>◆</color>\r\n";
-                    gemInline = "<color=#00E5FF>◆</color> ";
-                }
+                devTop = "<color=#FFD700>[DEV]</color>\r\n";
+                devInline = "<color=#FFD700>[DEV]</color> ";
             }
 
             var platform = "Unknown";
@@ -645,19 +634,19 @@ public static class Utils
                 {
                     if (isChat)
                     {
-                        return $"{gemInline}<color=#{roleColor}>{nameTag} <size=65%>{roleName}</size></color> <size=65%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
+                        return $"{devInline}<color=#{roleColor}>{nameTag} <size=65%>{roleName}</size></color> <size=65%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
                     }
 
-                    return $"{gemTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{roleColor}><size=70%>{roleName}</size>\r\n{nameTag}</color>";
+                    return $"{devTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{roleColor}><size=70%>{roleName}</size>\r\n{nameTag}</color>";
                 }
                 else
                 {
                     if (isChat)
                     {
-                        return $"{gemInline}<color=#{roleColor}>{nameTag} <size=70%>{roleName}</size></color>";
+                        return $"{devInline}<color=#{roleColor}>{nameTag} <size=70%>{roleName}</size></color>";
                     }
 
-                    return $"{gemTop}<color=#{roleColor}><size=70%>{roleName}</size>\r\n{nameTag}</color>";
+                    return $"{devTop}<color=#{roleColor}><size=70%>{roleName}</size>\r\n{nameTag}</color>";
                 }
             }
             else
@@ -671,19 +660,19 @@ public static class Utils
                         string nameColorHex = ColorUtility.ToHtmlStringRGB(role.NameColor);
                         if (isChat)
                         {
-                            return $"{gemInline}<color=#{nameColorHex}>{nameTag}</color> <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
+                            return $"{devInline}<color=#{nameColorHex}>{nameTag}</color> <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
                         }
 
-                        return $"{gemTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{nameColorHex}>{nameTag}</color>";
+                        return $"{devTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{nameColorHex}>{nameTag}</color>";
                     }
                     else
                     {
                         if (isChat)
                         {
-                            return $"{gemInline}{nameTag} <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
+                            return $"{devInline}{nameTag} <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
                         }
 
-                        return $"{gemTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n{nameTag}";
+                        return $"{devTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n{nameTag}";
                     }
                 }
                 else
@@ -695,17 +684,17 @@ public static class Utils
                         string nameColorHex = ColorUtility.ToHtmlStringRGB(role.NameColor);
                         if (isChat)
                         {
-                            return $"{gemInline}<color=#{nameColorHex}>{nameTag}</color>";
+                            return $"{devInline}<color=#{nameColorHex}>{nameTag}</color>";
                         }
-                        return $"{gemTop}<color=#{nameColorHex}>{nameTag}</color>";
+                        return $"{devTop}<color=#{nameColorHex}>{nameTag}</color>";
                     }
                     else
                     {
                         if (isChat)
                         {
-                            return $"{gemInline}{nameTag}";
+                            return $"{devInline}{nameTag}";
                         }
-                        return $"{gemTop}{nameTag}";
+                        return $"{devTop}{nameTag}";
                     }
                 }
             }
@@ -732,13 +721,21 @@ public static class Utils
 
         try
         {
-            var pc = playerInfo.Object;
-            int colorId = (pc != null && pc.CurrentOutfit != null)
-                ? pc.CurrentOutfit.ColorId
-                : (playerInfo.DefaultOutfit != null ? playerInfo.DefaultOutfit.ColorId : 0);
+            if (Palette.PlayerColors == null) return null;
 
-            if (Palette.PlayerColors != null && colorId >= 0 && colorId < Palette.PlayerColors.Length)
-                return ColorUtility.ToHtmlStringRGB(Palette.PlayerColors[colorId]);
+            // Try, in order: the current outfit (so it matches shapeshift/disguises), then the default
+            // outfit. A dead/ghost player's CurrentOutfit can briefly carry an out-of-range ColorId, which
+            // is what made the colour "sometimes" drop on dead players - so we fall through a bad value to
+            // the stable default outfit instead of giving up on the first one.
+            var pc = playerInfo.Object;
+            int current = (pc != null && pc.CurrentOutfit != null) ? pc.CurrentOutfit.ColorId : -1;
+            int fallback = playerInfo.DefaultOutfit != null ? playerInfo.DefaultOutfit.ColorId : -1;
+
+            foreach (int colorId in new[] { current, fallback })
+            {
+                if (colorId >= 0 && colorId < Palette.PlayerColors.Length)
+                    return ColorUtility.ToHtmlStringRGB(Palette.PlayerColors[colorId]);
+            }
         }
         catch { }
 

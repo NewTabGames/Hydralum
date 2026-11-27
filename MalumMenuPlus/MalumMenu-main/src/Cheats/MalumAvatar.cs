@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace MalumMenu;
 
-// Avatar Controls, adapted from Hydra (https://github.com/MrDiamond64/Hydra), GPL-3.0.
+// Avatar Controls.
 public static class MalumAvatar
 {
     // Picks a color id not currently used by anyone in the lobby (falls back to any of the 18 base

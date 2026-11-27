@@ -18,10 +18,6 @@ public class ESPTab : ITab
 
         DrawCamera();
         
-        GUILayout.Space(15);
-
-        DrawHydralumUsers();
-
         GUILayout.EndVertical();
 
         GUILayout.BeginVertical();
@@ -48,25 +44,6 @@ public class ESPTab : ITab
         GUILayout.Space(15); // Extra padding for the whole tab
     }
 
-    private void DrawHydralumUsers()
-    {
-        GUILayout.Label("Hydralum Users <size=11><color=#888888>(Client-sided)</color></size>", GUIStylePreset.TabSubtitle);
-
-        bool newHideMy = GUILayout.Toggle(CheatToggles.hideMyGem, " Disable My Gem");
-        if (newHideMy != CheatToggles.hideMyGem)
-        {
-            CheatToggles.hideMyGem = newHideMy;
-            if (MalumMenu.hideMyGem != null) MalumMenu.hideMyGem.Value = newHideMy;
-        }
-
-        bool newHideAll = GUILayout.Toggle(CheatToggles.hideAllGems, " Disable All Gems");
-        if (newHideAll != CheatToggles.hideAllGems)
-        {
-            CheatToggles.hideAllGems = newHideAll;
-            if (MalumMenu.hideAllGems != null) MalumMenu.hideAllGems.Value = newHideAll;
-        }
-    }
-
     private void DrawGeneral()
     {
         GUILayout.Label("Players", GUIStylePreset.TabSubtitle);
@@ -75,6 +52,10 @@ public class ESPTab : ITab
         CheatToggles.seeRoles = GUILayout.Toggle(CheatToggles.seeRoles, " See Roles");
         CheatToggles.showFriendCode = GUILayout.Toggle(CheatToggles.showFriendCode, " See Friend Code");
         CheatToggles.nameTagColors = GUILayout.Toggle(CheatToggles.nameTagColors, " Name Tag Colors");
+        // Shown only to the dev: hides their own [DEV] tag on this client only (for recording). No effect
+        // on what anyone else sees.
+        if (PresenceTracker.IsLocalDev())
+            CheatToggles.hideMyDevTag = GUILayout.Toggle(CheatToggles.hideMyDevTag, " Hide My [DEV] Tag (local only)");
         CheatToggles.seeGhosts = GUILayout.Toggle(CheatToggles.seeGhosts, " See Ghosts");
         CheatToggles.chatColorTags = GUILayout.Toggle(CheatToggles.chatColorTags, " Chat Color Tags");
         CheatToggles.revealVotes = GUILayout.Toggle(CheatToggles.revealVotes, " Reveal Votes");

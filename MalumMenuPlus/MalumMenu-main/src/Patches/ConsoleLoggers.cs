@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace MalumMenu;
 
-// Extra Console event loggers (adapted from the KrushMenu reference). Each is gated by its own Console-tab
+// Extra Console event loggers. Each is gated by its own Console-tab
 // toggle and writes to the existing ConsoleUI.Log timeline, with player colors embedded inline to match
 // Malum's other console loggers. These sit alongside Malum's existing loggers (Deaths/Shapeshifts/Vents/
 // Meetings/Tasks/Game State) rather than replacing them.
