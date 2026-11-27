@@ -47,6 +47,12 @@ namespace HydraMenu.network
 		{
 			GameDataTypes type = (GameDataTypes)reader.Tag;
 
+			// A menu handshake can arrive as a GameData message with a non-vanilla tag, which the invalid-message
+			// filter below would silently drop. Surface it for detection first (log-only - custom tags are also
+			// used by modded servers, so we don't auto-flag). Runs regardless of whether the filter is enabled.
+			if(type == GameDataTypes.Invalid || type == (GameDataTypes)3 || type > GameDataTypes.ReadyFlag)
+				ModDetection.ObserveCustomTag((byte)type);
+
 			if(ModuleManager.antiOverload.Enabled && ModuleManager.antiOverload.BlockInvalidGameDataMessages && (type == GameDataTypes.Invalid || type == (GameDataTypes)3 || type > GameDataTypes.ReadyFlag))
 			{
 				reader.Recycle();

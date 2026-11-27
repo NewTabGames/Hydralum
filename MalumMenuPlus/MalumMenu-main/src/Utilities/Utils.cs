@@ -651,52 +651,27 @@ public static class Utils
             }
             else
             {
+                // See Roles OFF: no role/team colouring at all. The old "same team" colouring tinted only
+                // your OWN team's names and left the other team uncoloured - which (in chat) fell through to
+                // the black base (the "impostors show black" bug) AND leaked who was on which team. Removing
+                // it is the whole fix: names keep whatever colour Name Tag Colors / vanilla give them, so the
+                // Name Tag Colors toggle is respected and no team can be inferred. Role reveal stays under
+                // "See Roles". (nameTag was already body-coloured above iff Name Tag Colors is on.)
                 if (CheatToggles.seePlayerInfo)
                 {
-                    bool isSameTeam = PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.Role != null && role != null && PlayerControl.LocalPlayer.Data.Role.NameColor == role.NameColor;
-
-                    if (isSameTeam && role != null)
+                    if (isChat)
                     {
-                        string nameColorHex = ColorUtility.ToHtmlStringRGB(role.NameColor);
-                        if (isChat)
-                        {
-                            return $"{devInline}<color=#{nameColorHex}>{nameTag}</color> <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
-                        }
-
-                        return $"{devTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n<color=#{nameColorHex}>{nameTag}</color>";
+                        return $"{devInline}{nameTag} <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
                     }
-                    else
-                    {
-                        if (isChat)
-                        {
-                            return $"{devInline}{nameTag} <size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>";
-                        }
 
-                        return $"{devTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n{nameTag}";
-                    }
+                    return $"{devTop}<size=70%><color=#fb0>{hostString}Lv:{level} - {platform}</color></size>\r\n{nameTag}";
                 }
-                else
+
+                if (isChat)
                 {
-                    bool isSameTeam = PlayerControl.LocalPlayer != null && PlayerControl.LocalPlayer.Data != null && PlayerControl.LocalPlayer.Data.Role != null && role != null && PlayerControl.LocalPlayer.Data.Role.NameColor == role.NameColor;
-
-                    if (isSameTeam && role != null)
-                    {
-                        string nameColorHex = ColorUtility.ToHtmlStringRGB(role.NameColor);
-                        if (isChat)
-                        {
-                            return $"{devInline}<color=#{nameColorHex}>{nameTag}</color>";
-                        }
-                        return $"{devTop}<color=#{nameColorHex}>{nameTag}</color>";
-                    }
-                    else
-                    {
-                        if (isChat)
-                        {
-                            return $"{devInline}{nameTag}";
-                        }
-                        return $"{devTop}{nameTag}";
-                    }
+                    return $"{devInline}{nameTag}";
                 }
+                return $"{devTop}{nameTag}";
             }
         }
         catch { }

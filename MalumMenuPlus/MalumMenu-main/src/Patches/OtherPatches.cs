@@ -526,6 +526,10 @@ public static class MedScanMinigame_Begin_Patch
         if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return;
         if (__instance == null) return;
 
+        // Fresh scan starting: clear any stale "finished" mark (instance IDs can be reused
+        // after the old minigame object is destroyed) so this one runs normally.
+        MedScanMinigame_FixedUpdate_Patch.FinishedScans.Remove(__instance.GetInstanceID());
+
         // For fake scans, __instance.medscan might be null because the prefab wasn't initialized with a real MedScanSystem console.
         // We MUST assign it to prevent WalkToOffset from throwing a NullReferenceException and getting the player stuck.
         if (__instance.medscan == null && ShipStatus.Instance != null && ShipStatus.Instance.Systems != null)
@@ -562,11 +566,37 @@ public static class MedScanMinigame_Begin_Patch
 [HarmonyPatch(typeof(MedScanMinigame), nameof(MedScanMinigame.FixedUpdate))]
 public static class MedScanMinigame_FixedUpdate_Patch
 {
+    // Instance IDs of faked scans we've already finished (nulled tasks + called Close()).
+    // Once a scan is in here we must NEVER let the vanilla FixedUpdate run on it again:
+    // during the close animation the scanner releases, our CurrentUser guard stops matching,
+    // and vanilla would dereference the MyNormTask we nulled -> NullReferenceException spam.
+    // Cleared per-instance when a new scan Begins (ids can be reused after the object dies).
+    internal static readonly HashSet<int> FinishedScans = new HashSet<int>();
+
+    // How long (seconds) a faked scan runs before we close it. Kept a touch under the
+    // real medbay scan length so we close BEFORE vanilla reaches its own end-of-scan
+    // cycle - otherwise vanilla gets one frame to reset/restart the fill (a visible
+    // "blip" at the end of the animation). The bar is ~visually full by here anyway.
+    private const float ScanCloseTime = 9.0f;
+
+    // Mark a faked scan as finished so no later FixedUpdate hands control back to vanilla.
+    // Clear-before-add keeps the just-added id present even when we trim the set.
+    internal static void MarkFinished(MedScanMinigame mg)
+    {
+        if (mg == null) return;
+        if (FinishedScans.Count > 64) FinishedScans.Clear(); // keep it tiny
+        FinishedScans.Add(mg.GetInstanceID());
+    }
+
     public static bool Prefix(MedScanMinigame __instance)
     {
         if (!CheatToggles.enableMedScan) return true;
         if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.Data == null) return true;
         if (__instance == null) return true;
+
+        // Already finished this faked scan: never hand control back to vanilla (it would
+        // deref the tasks we nulled). Just let it finish its close animation untouched.
+        if (FinishedScans.Contains(__instance.GetInstanceID())) return false;
 
         bool hasRealTask = false;
         if (PlayerControl.LocalPlayer.myTasks != null)
@@ -601,18 +631,23 @@ public static class MedScanMinigame_FixedUpdate_Patch
                     __instance.ScanTimer += 0.0001f;
                 }
 
-                if (__instance.ScanTimer + Time.fixedDeltaTime >= 10f)
+                if (__instance.ScanTimer + Time.fixedDeltaTime >= ScanCloseTime)
                 {
-                    // Nullify tasks so vanilla Close() doesn't call NextStep()
+                    // Mark finished FIRST so no later teardown frame runs vanilla on the
+                    // minigame after we null its tasks below. (Our Close prefix also marks
+                    // it, which is what covers manual / early closes.)
+                    MarkFinished(__instance);
+
+                    // Nullify tasks so vanilla Close() doesn't call NextStep() on a fake task.
                     __instance.MyTask = null;
                     __instance.MyNormTask = null;
-                    
+
                     __instance.Close(); // Call vanilla Close() to properly unfreeze the UI!
-                    
+
                     return false; // Skip original FixedUpdate only on the final frame
                 }
-                
-                return true; // Let original FixedUpdate run to animate the UI
+
+                return true; // Let original FixedUpdate run to walk us onto the pad & animate
             }
         }
 
@@ -647,6 +682,12 @@ public static class MedScanMinigame_Close_Patch
 
         if (!hasRealTask)
         {
+            // Mark finished BEFORE nulling: this close (manual X, walking away, or our own
+            // auto-complete) starts the teardown frames, and once the tasks are null any
+            // vanilla FixedUpdate on this minigame would NRE. The FixedUpdate prefix checks
+            // this set and skips vanilla for the rest of the minigame's life.
+            MedScanMinigame_FixedUpdate_Patch.MarkFinished(__instance);
+
             // Nullify tasks before vanilla Close() runs so it skips NextStep()
             __instance.MyTask = null;
             __instance.MyNormTask = null;

@@ -44,6 +44,10 @@ namespace HydraMenu.ui.sections
 			}
 			GUILayout.EndHorizontal();
 
+			// Modded servers (and their custom RPCs/features) can trip the detectors, so suggest turning
+			// Auto-Flag off when playing modded to avoid false flags.
+			GUILayout.Label("<size=10><color=#888888>Tip: turn Auto-Flag off if you're playing on a modded server.</color></size>");
+
 			// What the anticheat auto-flags (blacklists) players for.
 			Anticheat.CheckSpoofedPlatforms = GUILayout.Toggle(Anticheat.CheckSpoofedPlatforms, "Flag Spoofed Platform Data");
 			Anticheat.CheckIllegalCosmetics = GUILayout.Toggle(Anticheat.CheckIllegalCosmetics, "Flag Illegal Cosmetics");

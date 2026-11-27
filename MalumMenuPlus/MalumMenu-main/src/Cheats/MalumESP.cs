@@ -349,7 +349,11 @@ public static class MalumESP
                 chatBubble.Background.color = dark ? new Color(0.13f, 0.13f, 0.16f, 1f) : Color.white;
             if (chatBubble.TextArea != null)
                 chatBubble.TextArea.color = dark ? new Color(0.93f, 0.93f, 0.96f, 1f) : Color.black;
-            chatBubble.NameText.color = dark ? Color.white : Color.black;
+            // Name base colour is WHITE in both modes - vanilla chat names are plain white (kept legible by
+            // the game's outline), NOT the player's body colour and NOT the old forced black. Only inline
+            // colours from GetNameTag - See Roles (role colour) or Name Tag Colors (body colour) - override
+            // it, so with both of those off, every name is white (impostors included).
+            chatBubble.NameText.color = Color.white;
 
             // Adjust the chatBubble's size to fit the (possibly wrapped) nametag and message.
             if (chatBubble.Background != null && chatBubble.TextArea != null)

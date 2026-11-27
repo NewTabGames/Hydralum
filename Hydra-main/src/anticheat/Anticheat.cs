@@ -79,8 +79,6 @@ namespace HydraMenu.anticheat
 		{
 			static bool Prefix(PlayerControl __instance, byte callId, MessageReader reader)
 			{
-				// Fingerprint the sending client on every PlayerControl RPC, before the anticheat may discard it.
-				ModDetection.Observe(__instance, callId);
 				return HandleRpc(typeof(PlayerControl), __instance, (RpcCalls)callId, reader);
 			}
 		}
@@ -114,6 +112,11 @@ namespace HydraMenu.anticheat
 
 		private static bool HandleRpc(Type sourceNetObj, PlayerControl player, RpcCalls rpc, MessageReader reader)
 		{
+			// Fingerprint the sending client on every RPC across all patched player-owned net objects
+			// (PlayerControl / PlayerPhysics / CustomNetworkTransform), before the anticheat may discard it.
+			// ShipStatus passes a null player, which Observe ignores. reader lets Observe read a handshake payload.
+			ModDetection.Observe(player, (byte)rpc, reader);
+
 			RpcHandlers.TryGetValue(rpc, out RpcCheck rpcCheck);
 			if(!Enabled || rpcCheck == null || !rpcCheck.Enabled) return true;
 
